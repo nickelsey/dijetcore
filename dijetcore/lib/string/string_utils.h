@@ -60,7 +60,7 @@ namespace dijetcore {
   // remove all instances of pred in a string
   
   template<typename T, typename P>
-  T remove_if(T beg, T end, P pred)
+  T RemoveIf(T beg, T end, P pred)
   {
     T dest = beg;
     for (T itr = beg;itr != end; ++itr)
@@ -87,7 +87,7 @@ namespace dijetcore {
     std::set<T> ret;
     
     // remove all spaces
-    str.erase(::dijetcore::remove_if(str.begin(), str.end(), ::isspace), str.end());
+    str.erase(::dijetcore::RemoveIf(str.begin(), str.end(), ::isspace), str.end());
     
     string token;
     while ( str.find(",") != string::npos ) {
