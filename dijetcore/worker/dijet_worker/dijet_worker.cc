@@ -127,7 +127,8 @@ namespace dijetcore {
         
         // make sure the subleading hard jet isn't a failed match
         if (!subleading_hard_jet.has_associated_cluster_sequence()) {
-          cluster_result.insert(std::move({key, std::move(dijet_container)}));
+          cluster_result[key] = std::move(dijet_container);
+          //cluster_result.insert(std::move({key, std::move(dijet_container)}));
           continue;
         }
         
@@ -158,7 +159,8 @@ namespace dijetcore {
         
         // if there are no jets (should not happen) then continue
         if (lead_match_jets.size() == 0 || sublead_match_jets.size() == 0) {
-          cluster_result.insert(std::move({key, std::move(dijet_container)}));
+          cluster_result[key] = std::move(dijet_container);
+          //cluster_result.insert(std::move({key, std::move(dijet_container)}));
           continue;
         }
         
@@ -177,7 +179,8 @@ namespace dijetcore {
         
         if (lead_subtracted_matched.size() == 0 ||
             sub_subtracted_matched.size() == 0) {
-          cluster_result.insert(std::move({key, std::move(dijet_container)}));
+          cluster_result[key] = std::move(dijet_container);
+          //cluster_result.insert(std::move({key, std::move(dijet_container)}));
           continue;
         }
         
@@ -187,7 +190,8 @@ namespace dijetcore {
         
         if (!leading_matched_jet.has_associated_cluster_sequence() ||
             !subleading_matched_jet.has_associated_cluster_sequence()) {
-          cluster_result.insert(std::move({key, std::move(dijet_container)}));
+          cluster_result[key] = std::move(dijet_container);
+          //cluster_result.insert(std::move({key, std::move(dijet_container)}));
           continue;
         }
         
@@ -199,7 +203,8 @@ namespace dijetcore {
         dijet_container->sublead_match = subleading_matched_jet;
         dijet_container->sublead_match_rho = sub_match_bkg.first;
         dijet_container->sublead_match_sigma = sub_match_bkg.second;
-        cluster_result.insert(std::move({key, std::move(dijet_container)}));
+        cluster_result[key] = std::move(dijet_container);
+        //cluster_result.insert(std::move({key, std::move(dijet_container)}));
       }
     }
     return cluster_result;
