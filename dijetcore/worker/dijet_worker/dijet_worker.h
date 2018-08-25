@@ -86,12 +86,12 @@ namespace dijetcore {
     // clusters a set of input particles (fastjet::PseudoJets)
     // and gives as output a dictionary containing the dijet pairs
     // of all DijetDefinitions where a dijet pair was found
-    std::unordered_map<std::string, std::unique_ptr<ClusterOutput>>&
+    std::unordered_map<std::string, unique_ptr<ClusterOutput>>&
     Run(const std::vector<fastjet::PseudoJet>& input);
     
     // second method to access the dictionary, outside
     // of calling run.
-    std::unordered_map<std::string, std::unique_ptr<ClusterOutput>>& Dijets() {return cluster_result;}
+    std::unordered_map<std::string, unique_ptr<ClusterOutput>>& Dijets() {return cluster_result;}
     
   private:
     
@@ -100,7 +100,7 @@ namespace dijetcore {
     
     // Internal step for running the clustering for each DijetDefinition
     bool RunClustering(const std::vector<fastjet::PseudoJet>& input, const DijetDefinition& def,
-                       string cluster_identifier);
+                       string cluster_identifier, double min_lead_pt, double min_sub_pt);
     
     // Internal step for identifying the correct cluster sequences for
     // a specific DijetDefinition
@@ -151,12 +151,12 @@ namespace dijetcore {
     
     // used to keep cluster sequences in scope, in case user wants to
     // access constituents
-    std::unordered_map<std::string, std::unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_lead_hard;
-    std::unordered_map<std::string, std::unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_sub_hard;
-    std::unordered_map<std::string, std::unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_lead_match;
-    std::unordered_map<std::string, std::unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_sub_match;
+    std::unordered_map<std::string, unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_lead_hard;
+    std::unordered_map<std::string, unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_sub_hard;
+    std::unordered_map<std::string, unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_lead_match;
+    std::unordered_map<std::string, unique_ptr<fastjet::ClusterSequenceArea>> cluster_seq_sub_match;
     
-    std::unordered_map<std::string, std::unique_ptr<ClusterOutput>> cluster_result;
+    std::unordered_map<std::string, unique_ptr<ClusterOutput>> cluster_result;
     
     
   };

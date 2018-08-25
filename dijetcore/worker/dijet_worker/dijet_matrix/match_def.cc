@@ -4,7 +4,7 @@ namespace dijetcore {
   
   bool MatchDef::EquivalentCluster(const MatchDef& rhs) const {
     return rhs.InitialJetDef().EquivalentCluster(InitialJetDef()) &&
-    rhs.MatchedJetDef().EquivalentCluster(InitialJetDef());
+    rhs.MatchedJetDef().EquivalentCluster(MatchedJetDef());
   }
   
 } // namespace dijetcore

@@ -83,7 +83,7 @@ namespace dijetcore {
     inline std::size_t Size() {return dijet_defs_.size();}
     
     // get access to the dijet definitions
-    std::unordered_map<string, std::unique_ptr<DijetDefinition>>& DijetDefinitions()
+    std::unordered_map<string, unique_ptr<DijetDefinition>>& DijetDefinitions()
         {return dijet_defs_;}
     
     // dijet definition sets that have been selected such that
@@ -103,6 +103,9 @@ namespace dijetcore {
     
     // keys sorted to match SortedDefinitions()
     const std::vector<string>& SortedKeys() const {return ordered_keys_;}
+    
+    // minimum pT needed for jet sets - returns {lead_hard_pt_min, sub_hard_pt_min}
+    const std::vector<std::pair<double, double>>& SortedDefinitionsMinPt() {return ordered_min_pt_;}
     
     // The Matrix will build all logically consistent di-jet pairs
     // (i.e. if pt sub > pt lead, it will be ignored, that sort of
@@ -233,9 +236,9 @@ namespace dijetcore {
     fastjet::JetDefinition bkg_definition_;
     
     // populated by the DijetMatrix
-    std::unordered_map<string, std::unique_ptr<DijetDefinition>> dijet_defs_;
-    std::set<std::unique_ptr<MatchDef>> lead_matchdefs_;
-    std::set<std::unique_ptr<MatchDef>> sub_matchdefs_;
+    std::unordered_map<string, unique_ptr<DijetDefinition>> dijet_defs_;
+    std::set<unique_ptr<MatchDef>> lead_matchdefs_;
+    std::set<unique_ptr<MatchDef>> sub_matchdefs_;
     
     // set of dijet_definitions that can be run with a single
     // cluster sequence for more efficiency
@@ -249,6 +252,7 @@ namespace dijetcore {
     
     // organized keys
     std::vector<string> ordered_keys_;
+    std::vector<std::pair<double, double>> ordered_min_pt_;
   };
   
 } // namespace dijetcore

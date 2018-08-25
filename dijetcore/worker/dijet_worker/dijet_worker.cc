@@ -5,6 +5,8 @@
 
 #include "TMath.h"
 
+#include <iostream>
+
 namespace dijetcore {
   
   // default constructor
@@ -43,11 +45,11 @@ namespace dijetcore {
   DijetWorker::DijetWorker(const DijetMatrix& rhs) :
   DijetMatrix(rhs) { }
   
-  std::unordered_map<std::string, std::unique_ptr<ClusterOutput>>&
+  std::unordered_map<std::string, unique_ptr<ClusterOutput>>&
   DijetWorker::Run(const std::vector<fastjet::PseudoJet>& input) {
     // clear the last event
     ClearResults();
-    
+
     // make sure the DijetMatrix is initialized,
     // if not, do so
     if (Size() == 0) {
@@ -57,10 +59,15 @@ namespace dijetcore {
     // get the sorted list of all dijet definitions
     auto& sorted_dijet_definitions = SortedDefinitions();
     auto& sorted_dijet_keys = SortedKeys();
-    for (int i = 0; i < sorted_dijet_definitions.size(); ++i) {
+    auto& sorted_dijet_min_pt = SortedDefinitionsMinPt();
     
+    for (int i = 0; i < sorted_dijet_definitions.size(); ++i) {
+
       auto& dijet_set = sorted_dijet_definitions.at(i);
       const string& dijet_set_key = sorted_dijet_keys.at(i);
+      
+      double min_pt_lead = sorted_dijet_min_pt[i].first;
+      double min_pt_sub  = sorted_dijet_min_pt[i].second;
       
       if (dijet_set.size() == 0) {
         LOG(ERROR) << "error in DijetMatrix: size of sorted DijetDefinition container is zero";
@@ -69,9 +76,9 @@ namespace dijetcore {
       
       // now lets loop over all dijet definitions in the set
       for (auto&& dijet_def : dijet_set) {
-        
+
         // create output container
-        std::unique_ptr<ClusterOutput> dijet_container = std::make_unique<ClusterOutput>(dijet_def.second);
+        unique_ptr<ClusterOutput> dijet_container = make_unique<ClusterOutput>(dijet_def.second);
         
         // load the dijet key & Matchdefs
         const string& key = dijet_def.first;
@@ -79,8 +86,9 @@ namespace dijetcore {
         MatchDef* sub = dijet_def.second->sub;
         
         // run the clustering if its necessary
-        if (!RunClustering(input, *dijet_def.second, dijet_set_key))
-          continue;
+        if (!RunClustering(input, *dijet_def.second, dijet_set_key, min_pt_lead, min_pt_sub)) {
+          break;
+        }
         
         // load proper cluster sequence
         auto cl_sequences = LoadProperClusterSequence(dijet_set_key);
@@ -112,7 +120,7 @@ namespace dijetcore {
         fastjet::PseudoJet subleading_hard_jet = SelectSubLeadingHardJet(leading_hard_jet,
                                                                          sublead_hard_jets,
                                                                          dijet_def.second->dPhi);
-        
+      
         // we have a trigger jet at least
         dijet_container->found_lead = true;
         dijet_container->lead_hard = leading_hard_jet;
@@ -206,17 +214,17 @@ namespace dijetcore {
   }
   
   bool DijetWorker::RunClustering(const std::vector<fastjet::PseudoJet>& input, const DijetDefinition& def,
-                                  string cluster_identifier) {
+                                  string cluster_identifier, double min_pt_lead, double min_pt_sub) {
     // check if the clustering has been run yet -
     // if not, run the clustering for this dijet set
     if (cluster_seq_lead_hard.find(cluster_identifier) == cluster_seq_lead_hard.end()) {
       MatchDef* lead = def.lead;
       MatchDef* sub = def.sub;
       
-      std::unique_ptr<fastjet::ClusterSequenceArea> lead_hard_seq(nullptr);
-      std::unique_ptr<fastjet::ClusterSequenceArea> lead_match_seq(nullptr);
-      std::unique_ptr<fastjet::ClusterSequenceArea> sub_hard_seq(nullptr);
-      std::unique_ptr<fastjet::ClusterSequenceArea> sub_match_seq(nullptr);
+      unique_ptr<fastjet::ClusterSequenceArea> lead_hard_seq(nullptr);
+      unique_ptr<fastjet::ClusterSequenceArea> lead_match_seq(nullptr);
+      unique_ptr<fastjet::ClusterSequenceArea> sub_hard_seq(nullptr);
+      unique_ptr<fastjet::ClusterSequenceArea> sub_match_seq(nullptr);
       
       // first, the hard core jets
       
@@ -245,16 +253,42 @@ namespace dijetcore {
       }
       
       // if there are no jets we can continue -
-      // we fill the dictionary anyways to make sure the clustering isn't
-      // run again
-      if (cluster_seq_lead_hard[cluster_identifier]->inclusive_jets().size() < 2 ||
-          (cluster_seq_sub_hard.find(cluster_identifier) != cluster_seq_sub_hard.end() &&
-           cluster_seq_sub_hard[cluster_identifier]->inclusive_jets().size() < 2)) {
-        return false;
+      if (cluster_seq_sub_hard.find(cluster_identifier) != cluster_seq_sub_hard.end() &&
+          cluster_seq_sub_hard[cluster_identifier].get() != nullptr) {
+        if (cluster_seq_sub_hard[cluster_identifier]->inclusive_jets().size() < 1 ||
+            cluster_seq_lead_hard[cluster_identifier]->inclusive_jets().size() < 1)
+          return false;
       }
+      else {
+        if (cluster_seq_lead_hard[cluster_identifier]->inclusive_jets().size() < 2)
+          return false;
+      }
+      
+      // if the jets do not satisfy our min pT cuts, we can continue - we will
+      // identify potential leading & subleading jets, and check against min pT
+      fastjet::PseudoJet tmp_lead = fastjet::sorted_by_pt(cluster_seq_lead_hard[cluster_identifier]->inclusive_jets())[0];
+      fastjet::Selector tmp_sel = !fastjet::SelectorCircle(lead->InitialJetDef().R());
+      tmp_sel.set_reference(tmp_lead);
+      
+      fastjet::PseudoJet tmp_sub;
+      if (cluster_seq_sub_hard.find(cluster_identifier) != cluster_seq_sub_hard.end()) {
+        if (tmp_sel(cluster_seq_sub_hard[cluster_identifier]->inclusive_jets()).size() == 0)
+          return false;
+        tmp_sub = fastjet::sorted_by_pt(tmp_sel(cluster_seq_sub_hard[cluster_identifier]->inclusive_jets()))[0];
+      }
+      
+      else {
+        if (tmp_sel(cluster_seq_lead_hard[cluster_identifier]->inclusive_jets()).size() == 0)
+          return false;
+        tmp_sub = fastjet::sorted_by_pt(tmp_sel(cluster_seq_lead_hard[cluster_identifier]->inclusive_jets()))[0];
+      }
+      
+      if (tmp_lead.pt() < min_pt_lead || tmp_sub.pt() < min_pt_sub)
+        return false;
       
       // now we will perform the matching jet finding
       // for both leading & subleading jets
+      
       if (EquivalentClusterInput(lead->MatchedJetDef(), sub->MatchedJetDef())) {
         lead_match_seq = make_unique<fastjet::ClusterSequenceArea>(lead->MatchedJetDef().ConstituentSelector()(input),
                                                                    lead->MatchedJetDef(),
@@ -313,8 +347,8 @@ namespace dijetcore {
   
   
   fastjet::PseudoJet DijetWorker::SelectSubLeadingHardJet(const fastjet::PseudoJet& trigger_jet,
-                                             const std::vector<fastjet::PseudoJet>& sublead_candidates,
-                                             double dPhi_range) {
+                                                          const std::vector<fastjet::PseudoJet>& sublead_candidates,
+                                                          double dPhi_range) {
     // select the highest momentum jet that is dPhi > pi - dPhi_cut
     fastjet::Selector recoil_selector = !fastjet::SelectorRectangle(2.1, TMath::Pi() - dPhi_range);
     recoil_selector.set_reference(trigger_jet);

@@ -324,7 +324,7 @@ namespace dijetcore {
               match_def.SetJetSelector(match_jet_selector);
               
               // create the MatchDef
-              lead_matchdefs_.insert(std::make_unique<MatchDef>(init_def, match_def));
+              lead_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
             }
           }
         }
@@ -375,7 +375,7 @@ namespace dijetcore {
               match_def.SetJetSelector(match_jet_selector);
               
               // create the MatchDef
-              sub_matchdefs_.insert(std::make_unique<MatchDef>(init_def, match_def));
+              sub_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
               
             }
           }
@@ -414,7 +414,9 @@ namespace dijetcore {
             continue;
         }
         
-        auto tmp = std::make_unique<DijetDefinition>(lead.get(), sub.get(), 0.4);
+        auto tmp = make_unique<DijetDefinition>(lead.get(), sub.get(),
+                                                     std::min(lead->InitialJetDef().R(),
+                                                              sub->InitialJetDef().R()));
         
         string key = MakeKeyFromDijetDefinition(*tmp);
         dijet_defs_.insert({key, std::move(tmp)});
@@ -435,10 +437,20 @@ namespace dijetcore {
       for (int i = 0; i < ordered_defs_.size(); ++i) {
         const string& set_key = ordered_defs_[i].begin()->first;
         DijetDefinition* set_def = ordered_defs_[i].begin()->second;
-        
+      
         if (set_def->EquivalentCluster(*new_def)) {
+      
           ordered_defs_[i][new_key] = new_def;
           match_success = true;
+      
+          double lead_pt_min = ExtractDoubleFromSelector(new_def->lead->InitialJetDef().JetSelector(), "pt >=");
+          double sub_pt_min = ExtractDoubleFromSelector(new_def->sub->InitialJetDef().JetSelector(), "pt >=");
+      
+          if (lead_pt_min < ordered_min_pt_[i].first)
+            ordered_min_pt_[i].first = lead_pt_min;
+          if (sub_pt_min < ordered_min_pt_[i].second)
+            ordered_min_pt_[i].second = sub_pt_min;
+  
           break;
         }
       }
@@ -448,6 +460,9 @@ namespace dijetcore {
         tmp.insert({new_key, new_def});
         ordered_defs_.push_back(std::move(tmp));
         ordered_keys_.push_back(MakeSortedKeyFromDijetDefinition(*new_def));
+        double lead_pt_min = ExtractDoubleFromSelector(new_def->lead->InitialJetDef().JetSelector(), "pt >=");
+        double sub_pt_min = ExtractDoubleFromSelector(new_def->sub->InitialJetDef().JetSelector(), "pt >=");
+        ordered_min_pt_.push_back({lead_pt_min, sub_pt_min});
       }
     }
     

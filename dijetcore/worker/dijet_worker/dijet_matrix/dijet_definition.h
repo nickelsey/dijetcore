@@ -20,7 +20,7 @@ namespace dijetcore {
     lead(rhs.lead), sub(rhs.sub), dPhi(rhs.dPhi) { };
     DijetDefinition(MatchDef* lead, MatchDef* sub, double phi = 0.4) :
     lead(lead), sub(sub), dPhi(phi) { };
-    DijetDefinition(std::unique_ptr<MatchDef> lead, std::unique_ptr<MatchDef>sub, double phi = 0.4) :
+    DijetDefinition(unique_ptr<MatchDef> lead, unique_ptr<MatchDef>sub, double phi = 0.4) :
     lead(lead.get()), sub(sub.get()), dPhi(phi) { };
     
     virtual ~DijetDefinition() { };
