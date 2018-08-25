@@ -15,6 +15,7 @@ add_subdirectory(util)
 add_subdirectory(proto)
 add_subdirectory(worker)
 add_subdirectory(dijet_imbalance)
+add_subdirectory(resources)
 
 ## compile libraries
 
