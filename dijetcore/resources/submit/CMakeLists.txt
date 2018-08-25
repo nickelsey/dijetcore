@@ -8,5 +8,5 @@ file(GLOB CMAKEFILES *.txt)
 ## and exclude the CMakeLists file from install list
 list(REMOVE_ITEM SUBMITSRCS ${CMAKEFILES})
 
-install(PROGRAM ${SUBMITSRCS} DESTINATION submit)
+install(PROGRAMS ${SUBMITSRCS} PERMISSIONS  DESTINATION submit)
 
