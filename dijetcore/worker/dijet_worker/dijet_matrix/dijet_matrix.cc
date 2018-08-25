@@ -419,7 +419,7 @@ namespace dijetcore {
                                                               sub->InitialJetDef().R()));
         
         string key = MakeKeyFromDijetDefinition(*tmp);
-        dijet_defs_.insert({key, std::move(tmp)});
+        dijet_defs_.insert(std::move({key, std::move(tmp)}));
         keys_.insert(key);
       }
     }
