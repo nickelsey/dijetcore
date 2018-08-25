@@ -28,7 +28,7 @@ endif(DC_BENCH_SRCS)
 install(FILES ${DC_HDRS} DESTINATION include/dijetcore/dijet_imbalance)
 
 ## add subdirectories
-## none
+add_subdirectory(submit_scripts)
 
 
 ## export file lists to parent scope

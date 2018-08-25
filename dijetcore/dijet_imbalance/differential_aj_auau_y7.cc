@@ -13,6 +13,7 @@
 #include "dijetcore/util/data/vector_conversion.h"
 #include "dijetcore/util/data/trigger_lookup.h"
 #include "dijetcore/worker/dijet_worker/dijet_worker.h"
+#include "dijetcore/worker/dijet_worker/off_axis_worker.h"
 
 #include "TTree.h"
 #include "TChain.h"
@@ -40,6 +41,7 @@
 using std::string;
 
 DIJETCORE_DEFINE_string(input, "", "input file");
+DIJETCORE_DEFINE_string(offAxisInput, "", "input file for off-axis bkg effect estimation");
 DIJETCORE_DEFINE_string(outputDir, "tmp", "directory for output");
 DIJETCORE_DEFINE_string(name, "job", "name for output file");
 DIJETCORE_DEFINE_int(id, 0, "job id (when running parallel jobs)");
@@ -72,6 +74,11 @@ int main(int argc, char* argv[]) {
   // first, build our input chain
   TChain* chain = dijetcore::NewChainFromInput(FLAGS_input);
   
+  // and a chain for the off axis worker if it exists
+  TChain* off_axis_chain = nullptr;
+  if (boost::filesystem::exists(FLAGS_offAxisInput))
+    off_axis_chain = dijetcore::NewChainFromInput(FLAGS_offAxisInput);
+  
   // build output directory if it doesn't exist, using boost::filesystem
   if (FLAGS_outputDir.empty())
     FLAGS_outputDir = "tmp";
@@ -85,6 +92,13 @@ int main(int argc, char* argv[]) {
   // initialize the reader
   TStarJetPicoReader* reader = new TStarJetPicoReader();
   dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList);
+  
+  // initialize the OffAxisWorker
+  dijetcore::OffAxisWorker* off_axis_worker = nullptr;
+  if (off_axis_chain != nullptr) {
+    off_axis_worker = new dijetcore::OffAxisWorker();
+    dijetcore::InitReaderWithDefaults(dynamic_cast<TStarJetPicoReader*>(off_axis_worker), chain, FLAGS_towList);
+  }
   
   // get the trigger IDs that will be used
   std::set<unsigned> triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
@@ -169,7 +183,14 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, double> sublead_match_rho_dict;
   std::unordered_map<std::string, double> sublead_match_sigma_dict;
   std::unordered_map<std::string, double> sublead_match_area_dict;
-  
+  std::unordered_map<std::string, TLorentzVector> lead_off_axis_jet_dict;
+  std::unordered_map<std::string, int> lead_off_axis_nconst_dict;
+  std::unordered_map<std::string, double> lead_off_axis_rho_dict;
+  std::unordered_map<std::string, double> lead_off_axis_sigma_dict;
+  std::unordered_map<std::string, TLorentzVector> sublead_off_axis_jet_dict;
+  std::unordered_map<std::string, int> sublead_off_axis_nconst_dict;
+  std::unordered_map<std::string, double> sublead_off_axis_rho_dict;
+  std::unordered_map<std::string, double> sublead_off_axis_sigma_dict;
   // fill the maps first, so that they don't decide to resize/move themselves
   // after branch creation...
   for (auto key : keys) {
@@ -205,6 +226,12 @@ int main(int argc, char* argv[]) {
     sublead_match_rho_dict.insert({key, 0});
     sublead_match_sigma_dict.insert({key, 0});
     sublead_match_area_dict.insert({key, 0});
+    lead_off_axis_jet_dict.insert({key, TLorentzVector()});
+    lead_off_axis_rho_dict.insert({key, 0});
+    lead_off_axis_sigma_dict.insert({key, 0});
+    sublead_off_axis_jet_dict.insert({key, TLorentzVector()});
+    sublead_off_axis_rho_dict.insert({key, 0});
+    sublead_off_axis_sigma_dict.insert({key, 0});
   }
   
   for (auto key : keys) {
@@ -226,6 +253,8 @@ int main(int argc, char* argv[]) {
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
     tmp->Branch("jlm", &lead_match_jet_dict[key]);
     tmp->Branch("jsm", &sublead_match_jet_dict[key]);
+    tmp->Branch("jloa", &lead_off_axis_jet_dict[key]);
+    tmp->Branch("jsoa", &sublead_off_axis_jet_dict[key]);
     tmp->Branch("jlconst", &lead_hard_jet_nconst_dict[key]);
     tmp->Branch("jlrho", &lead_hard_rho_dict[key]);
     tmp->Branch("jlsig", &lead_hard_sigma_dict[key]);
@@ -242,6 +271,12 @@ int main(int argc, char* argv[]) {
     tmp->Branch("jsmrho", &sublead_match_rho_dict[key]);
     tmp->Branch("jsmsig", &sublead_match_sigma_dict[key]);
     tmp->Branch("jsmarea", &sublead_match_area_dict[key]);
+    tmp->Branch("jlofconst", &lead_off_axis_nconst_dict[key]);
+    tmp->Branch("jloarho", &lead_off_axis_rho_dict[key]);
+    tmp->Branch("jloasig", &lead_off_axis_sigma_dict[key]);
+    tmp->Branch("jsoaconst", &sublead_off_axis_nconst_dict[key]);
+    tmp->Branch("jsoarho", &sublead_off_axis_rho_dict[key]);
+    tmp->Branch("jsoasig", &sublead_off_axis_sigma_dict[key]);
     
     trees.insert({key, tmp});
   }
@@ -303,6 +338,10 @@ int main(int argc, char* argv[]) {
       // run the worker
       auto& worker_out = worker.Run(primary_particles);
       
+      std::unordered_map<std::string, dijetcore::unique_ptr<dijetcore::OffAxisOutput>> off_axis_worker_out;
+      if (off_axis_worker)
+        off_axis_worker_out = std::move(off_axis_worker->Run(worker, centrality_bin));
+      
       // process any found di-jet pairs
       for (auto& result : worker_out) {
         std::string key = result.first;
@@ -334,7 +373,12 @@ int main(int argc, char* argv[]) {
                                                    out.lead_hard.py(),
                                                    out.lead_hard.pz(),
                                                    out.lead_hard.E());
-          lead_hard_jet_nconst_dict[key] = out.lead_hard.constituents().size();
+          int l_const = 0;
+          for (int i = 0; i < out.lead_hard.constituents().size(); ++i) {
+            if (out.lead_hard.constituents()[i].pt() > 0.01)
+              l_const++;
+          }
+          lead_hard_jet_nconst_dict[key] = l_const;
           lead_hard_rho_dict[key] = out.lead_hard_rho;
           lead_hard_sigma_dict[key] = out.lead_hard_sigma;
           lead_hard_area_dict[key] = out.lead_hard.area();
@@ -342,7 +386,11 @@ int main(int argc, char* argv[]) {
                                                     out.lead_match.py(),
                                                     out.lead_match.pz(),
                                                     out.lead_match.E());
-          lead_match_jet_nconst_dict[key] = out.lead_match.constituents().size();
+          int lm_const = 0;
+          for (int i = 0; i < out.lead_match.constituents().size(); ++i)
+            if (out.lead_match.constituents()[i].pt() > 0.01)
+              lm_const++;
+          lead_match_jet_nconst_dict[key] = lm_const;
           lead_match_rho_dict[key] = out.lead_match_rho;
           lead_match_sigma_dict[key] = out.lead_match_sigma;
           lead_match_area_dict[key] = out.lead_match.area();
@@ -350,7 +398,11 @@ int main(int argc, char* argv[]) {
                                                       out.sublead_hard.py(),
                                                       out.sublead_hard.pz(),
                                                       out.sublead_hard.E());
-          sublead_hard_jet_nconst_dict[key] = out.sublead_hard.constituents().size();
+          int s_const = 0;
+          for (int i = 0; i < out.sublead_hard.constituents().size(); ++i)
+            if (out.sublead_hard.constituents()[i].pt() > 0.01)
+              s_const++;
+          sublead_hard_jet_nconst_dict[key] = s_const;
           sublead_hard_rho_dict[key] = out.sublead_hard_rho;
           sublead_hard_sigma_dict[key] = out.sublead_hard_sigma;
           sublead_hard_area_dict[key] = out.sublead_hard.area();
@@ -358,10 +410,52 @@ int main(int argc, char* argv[]) {
                                                        out.sublead_match.py(),
                                                        out.sublead_match.pz(),
                                                        out.sublead_match.E());
-          sublead_match_jet_nconst_dict[key] = out.sublead_match.constituents().size();
+          int sm_const = 0;
+          for (int i = 0; i < out.sublead_match.constituents().size(); ++i)
+            if (out.sublead_match.constituents()[i].pt() > 0.01)
+              sm_const++;
+          sublead_match_jet_nconst_dict[key] = sm_const;
           sublead_match_rho_dict[key] = out.sublead_match_rho;
           sublead_match_sigma_dict[key] = out.sublead_match_sigma;
           sublead_match_area_dict[key] = out.sublead_match.area();
+          
+          if (off_axis_worker != nullptr &&
+              off_axis_worker_out.find(key) != off_axis_worker_out.end()) {
+            auto& off_axis_out = *off_axis_worker_out[key].get();
+            lead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.lead_jet.px(),
+                                                         off_axis_out.lead_jet.py(),
+                                                         off_axis_out.lead_jet.pz(),
+                                                         off_axis_out.lead_jet.E());
+            int loa_const = 0;
+            for (int i = 0; i < off_axis_out.lead_jet.constituents().size(); ++i)
+              if (off_axis_out.lead_jet.constituents()[i].pt() > 0.01)
+                loa_const++;
+            lead_off_axis_nconst_dict[key] = loa_const;
+            lead_off_axis_rho_dict[key] = off_axis_out.lead_jet_rho;
+            lead_off_axis_sigma_dict[key] = off_axis_out.lead_jet_sigma;
+
+            sublead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.sub_jet.px(),
+                                                            off_axis_out.sub_jet.py(),
+                                                            off_axis_out.sub_jet.pz(),
+                                                            off_axis_out.sub_jet.E());
+            int soa_const = 0;
+            for (int i = 0; i < off_axis_out.sub_jet.constituents().size(); ++i)
+              if (off_axis_out.sub_jet.constituents()[i].pt() > 0.01)
+                soa_const++;
+            sublead_off_axis_nconst_dict[key] = soa_const;
+            sublead_off_axis_rho_dict[key] = off_axis_out.sub_jet_rho;
+            sublead_off_axis_sigma_dict[key] = off_axis_out.sub_jet_sigma;
+          }
+          else {
+            lead_off_axis_jet_dict[key] = TLorentzVector();
+            lead_off_axis_nconst_dict[key] = 0;
+            lead_off_axis_rho_dict[key] = 0;
+            lead_off_axis_sigma_dict[key] = 0;
+            sublead_off_axis_jet_dict[key] = TLorentzVector();
+            sublead_off_axis_nconst_dict[key] = 0;
+            sublead_off_axis_rho_dict[key] = 0;
+            sublead_off_axis_sigma_dict[key] = 0;
+          }
           
           trees[key]->Fill();
         }
@@ -373,7 +467,6 @@ int main(int argc, char* argv[]) {
   
   out.Write();
   out.Close();
-  
   
   gflags::ShutDownCommandLineFlags();
   return 0;
