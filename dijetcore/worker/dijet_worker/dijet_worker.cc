@@ -199,7 +199,7 @@ namespace dijetcore {
         dijet_container->sublead_match = subleading_matched_jet;
         dijet_container->sublead_match_rho = sub_match_bkg.first;
         dijet_container->sublead_match_sigma = sub_match_bkg.second;
-        cluster_result.insert({key, std::move(dijet_container)});
+        cluster_result.insert(std::move({key, std::move(dijet_container)}));
       }
     }
     return cluster_result;
