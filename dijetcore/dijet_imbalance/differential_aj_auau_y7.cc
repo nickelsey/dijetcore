@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
   dijetcore::OffAxisWorker* off_axis_worker = nullptr;
   if (off_axis_chain != nullptr) {
     off_axis_worker = new dijetcore::OffAxisWorker();
-    dijetcore::InitReaderWithDefaults(dynamic_cast<TStarJetPicoReader*>(off_axis_worker), chain, FLAGS_towList);
+    dijetcore::InitReaderWithDefaults(dynamic_cast<TStarJetPicoReader*>(off_axis_worker), off_axis_chain, FLAGS_towList);
   }
   
   // get the trigger IDs that will be used
