@@ -85,13 +85,14 @@ namespace dijetcore {
   
   std::pair<fastjet::PseudoJet, std::pair<double, double>>
   OffAxisWorker::RunCluster(MatchDef* def, const std::vector<fastjet::PseudoJet>& input, const fastjet::PseudoJet& reference) {
+  
     std::unique_ptr<fastjet::ClusterSequenceArea>
     cluster = make_unique<fastjet::ClusterSequenceArea>(def->MatchedJetDef().ConstituentSelector()(input),
                                                         def->MatchedJetDef(),
                                                         def->MatchedJetDef().AreaDefinition());
     
     std::vector<fastjet::PseudoJet> jets = fastjet::sorted_by_pt(def->MatchedJetDef().JetSelector()(cluster->inclusive_jets()));
-    
+  
     // do bkg subtraction
     fastjet::JetMedianBackgroundEstimator bkg_est(def->MatchedJetDef().BackgroundSelector(),
                                                   def->MatchedJetDef().BackgroundJetDef(),
@@ -99,7 +100,7 @@ namespace dijetcore {
     bkg_est.set_particles(def->MatchedJetDef().ConstituentSelector()(input));
     fastjet::Subtractor bkgdSubtractor(&bkg_est);
     std::vector<fastjet::PseudoJet> subtracted_jets = fastjet::sorted_by_pt(bkgdSubtractor(jets));
-    
+  
     std::pair<double, double> bkg_stats = {bkg_est.rho(), bkg_est.sigma()};
     
     // find matched jet
@@ -107,7 +108,7 @@ namespace dijetcore {
     circle_sel.set_reference(reference);
     
     subtracted_jets = fastjet::sorted_by_pt(circle_sel(subtracted_jets));
-    
+  
     // insert cluster sequence
     cluster_sequence_.push_back(std::move(cluster));
     

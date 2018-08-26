@@ -367,6 +367,7 @@ int main(int argc, char* argv[]) {
         off_axis_worker_out = std::move(off_axis_worker->Run(worker, centrality_bin));
       
       // process any found di-jet pairs
+      
       for (auto& result : worker_out) {
         std::string key = result.first;
         dijetcore::ClusterOutput& out = *result.second.get();
@@ -378,7 +379,7 @@ int main(int argc, char* argv[]) {
   
         // now fill dijet results
         if (out.found_match) {
-  
+          
           // fill all branches for that key
           run_id_dict[key] = header->GetRunId();
           event_id_dict[key] = header->GetEventId();
@@ -460,7 +461,10 @@ int main(int argc, char* argv[]) {
           sublead_match_area_dict[key] = out.sublead_match.area();
           
           if (off_axis_worker != nullptr &&
-              off_axis_worker_out.find(key) != off_axis_worker_out.end()) {
+              off_axis_worker_out.find(key) != off_axis_worker_out.end() &&
+              off_axis_worker_out[key]->lead_jet.has_constituents() &&
+              off_axis_worker_out[key]->sub_jet.has_constituents()) {
+            
             auto& off_axis_out = *off_axis_worker_out[key].get();
             lead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.lead_jet.px(),
                                                          off_axis_out.lead_jet.py(),
@@ -473,15 +477,16 @@ int main(int argc, char* argv[]) {
             lead_off_axis_nconst_dict[key] = loa_const;
             lead_off_axis_rho_dict[key] = off_axis_out.lead_jet_rho;
             lead_off_axis_sigma_dict[key] = off_axis_out.lead_jet_sigma;
-
             sublead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.sub_jet.px(),
                                                             off_axis_out.sub_jet.py(),
                                                             off_axis_out.sub_jet.pz(),
                                                             off_axis_out.sub_jet.E());
             int soa_const = 0;
-            for (int i = 0; i < off_axis_out.sub_jet.constituents().size(); ++i)
-              if (off_axis_out.sub_jet.constituents()[i].pt() > 0.01)
+            for (int i = 0; i < off_axis_out.sub_jet.constituents().size(); ++i) {
+              if (off_axis_out.sub_jet.constituents()[i].pt() > 0.01) {
                 soa_const++;
+              }
+            }
             sublead_off_axis_nconst_dict[key] = soa_const;
             sublead_off_axis_rho_dict[key] = off_axis_out.sub_jet_rho;
             sublead_off_axis_sigma_dict[key] = off_axis_out.sub_jet_sigma;
