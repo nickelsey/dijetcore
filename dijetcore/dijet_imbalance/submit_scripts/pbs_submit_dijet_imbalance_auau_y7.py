@@ -138,6 +138,7 @@ def main(args) :
       clargs = clargs + ' --leadConstPtMatch=' + args.leadConstPtMatch + ' --subConstPtMatch='
       clargs = clargs + args.subConstPtMatch + ' --leadR=' + args.leadR + ' --subR=' + args.subR
       clargs = clargs + ' --leadJetPt=' + args.leadJetPt + ' --subJetPt=' + args.subJetPt
+      clargs = clargs + ' --offAxisInput=' args.offAxisData
       
       
       qsub = 'qsub -V -p ' + str(args.priority) + ' -l mem=' + str(args.mem) + 'GB -l nodes=' + str(args.nodes)
@@ -188,7 +189,7 @@ if __name__ == "__main__":
   parser.add_argument('--leadJetPt', default='20.0', help='list of leading jet pt cuts to use during jetfinding')
   parser.add_argument('--subR', default='0.4', help='list of jet radii to be used for subleading jet')
   parser.add_argument('--subJetPt', default='10.0', help='list of subleading jet pt cuts to use during jetfinding')
-  
+  parser.add_argument('--offAxisData', default='', help='data file/list for estimating the effect of background on the dijet imbalance')
   args = parser.parse_args()
   main( args )
 

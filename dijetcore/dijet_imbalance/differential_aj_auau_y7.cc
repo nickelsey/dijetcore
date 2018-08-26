@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) {
     tmp->Branch("jsmrho", &sublead_match_rho_dict[key]);
     tmp->Branch("jsmsig", &sublead_match_sigma_dict[key]);
     tmp->Branch("jsmarea", &sublead_match_area_dict[key]);
-    tmp->Branch("jlofconst", &lead_off_axis_nconst_dict[key]);
+    tmp->Branch("jloaconst", &lead_off_axis_nconst_dict[key]);
     tmp->Branch("jloarho", &lead_off_axis_rho_dict[key]);
     tmp->Branch("jloasig", &lead_off_axis_sigma_dict[key]);
     tmp->Branch("jsoaconst", &sublead_off_axis_nconst_dict[key]);
