@@ -164,21 +164,29 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, int> nglobal_dict;
   std::unordered_map<std::string, int> npart_dict;
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_dict;
+  std::unordered_map<std::string, TH1D*> lead_hard_jet_const_pt_dict;
+  std::unordered_map<std::string, TH1D*> lead_hard_jet_const_dr_dict;
   std::unordered_map<std::string, int> lead_hard_jet_nconst_dict;
   std::unordered_map<std::string, double> lead_hard_rho_dict;
   std::unordered_map<std::string, double> lead_hard_sigma_dict;
   std::unordered_map<std::string, double> lead_hard_area_dict;
   std::unordered_map<std::string, TLorentzVector> lead_match_jet_dict;
+  std::unordered_map<std::string, TH1D*> lead_match_jet_const_pt_dict;
+  std::unordered_map<std::string, TH1D*> lead_match_jet_const_dr_dict;
   std::unordered_map<std::string, int> lead_match_jet_nconst_dict;
   std::unordered_map<std::string, double> lead_match_rho_dict;
   std::unordered_map<std::string, double> lead_match_sigma_dict;
   std::unordered_map<std::string, double> lead_match_area_dict;
   std::unordered_map<std::string, TLorentzVector> sublead_hard_jet_dict;
+  std::unordered_map<std::string, TH1D*> sublead_hard_jet_const_pt_dict;
+  std::unordered_map<std::string, TH1D*> sublead_hard_jet_const_dr_dict;
   std::unordered_map<std::string, int> sublead_hard_jet_nconst_dict;
   std::unordered_map<std::string, double> sublead_hard_rho_dict;
   std::unordered_map<std::string, double> sublead_hard_sigma_dict;
   std::unordered_map<std::string, double> sublead_hard_area_dict;
   std::unordered_map<std::string, TLorentzVector> sublead_match_jet_dict;
+  std::unordered_map<std::string, TH1D*> sublead_match_jet_const_pt_dict;
+  std::unordered_map<std::string, TH1D*> sublead_match_jet_const_dr_dict;
   std::unordered_map<std::string, int> sublead_match_jet_nconst_dict;
   std::unordered_map<std::string, double> sublead_match_rho_dict;
   std::unordered_map<std::string, double> sublead_match_sigma_dict;
@@ -207,21 +215,37 @@ int main(int argc, char* argv[]) {
     nglobal_dict.insert({key, 0});
     npart_dict.insert({key, 0});
     lead_hard_jet_dict.insert({key, TLorentzVector()});
+    lead_hard_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlconstpt").c_str(),
+                                                      "", 90, 0, 30)});
+    lead_hard_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlconstdr").c_str(),
+                                                      "", 100, 0.0, 1.0)});
     lead_hard_jet_nconst_dict.insert({key, 0});
     lead_hard_rho_dict.insert({key, 0});
     lead_hard_sigma_dict.insert({key, 0});
     lead_hard_area_dict.insert({key, 0});
     lead_match_jet_dict.insert({key, TLorentzVector()});
+    lead_match_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlmconstpt").c_str(),
+                                                      "", 90, 0, 30)});
+    lead_match_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlmconstdr").c_str(),
+                                                      "", 100, 0.0, 1.0)});
     lead_match_jet_nconst_dict.insert({key, 0});
     lead_match_rho_dict.insert({key, 0});
     lead_match_sigma_dict.insert({key, 0});
     lead_match_area_dict.insert({key, 0});
     sublead_hard_jet_dict.insert({key, TLorentzVector()});
+    sublead_hard_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsconstpt").c_str(),
+                                                         "", 90, 0, 30)});
+    sublead_hard_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsconstdr").c_str(),
+                                                         "", 100, 0.0, 1.0)});
     sublead_hard_jet_nconst_dict.insert({key, 0});
     sublead_hard_rho_dict.insert({key, 0});
     sublead_hard_sigma_dict.insert({key, 0});
     sublead_hard_area_dict.insert({key, 0});
     sublead_match_jet_dict.insert({key, TLorentzVector()});
+    sublead_match_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsmconstpt").c_str(),
+                                                          "", 90, 0, 30)});
+    sublead_match_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsmconstdr").c_str(),
+                                                          "", 100, 0.0, 1.0)});
     sublead_match_jet_nconst_dict.insert({key, 0});
     sublead_match_rho_dict.insert({key, 0});
     sublead_match_sigma_dict.insert({key, 0});
@@ -351,9 +375,10 @@ int main(int argc, char* argv[]) {
           lead_jet_count_dict[key]->Fill(header->GetReferenceMultiplicity());
         if (out.found_sublead)
           sublead_jet_count_dict[key]->Fill(header->GetReferenceMultiplicity());
-        
+  
         // now fill dijet results
         if (out.found_match) {
+  
           // fill all branches for that key
           run_id_dict[key] = header->GetRunId();
           event_id_dict[key] = header->GetEventId();
@@ -375,8 +400,11 @@ int main(int argc, char* argv[]) {
                                                    out.lead_hard.E());
           int l_const = 0;
           for (int i = 0; i < out.lead_hard.constituents().size(); ++i) {
-            if (out.lead_hard.constituents()[i].pt() > 0.01)
+            if (out.lead_hard.constituents()[i].pt() > 0.01) {
               l_const++;
+              lead_hard_jet_const_pt_dict[key]->Fill(out.lead_hard.constituents()[i].pt());
+              lead_hard_jet_const_dr_dict[key]->Fill(out.lead_hard.constituents()[i].delta_R(out.lead_hard));
+            }
           }
           lead_hard_jet_nconst_dict[key] = l_const;
           lead_hard_rho_dict[key] = out.lead_hard_rho;
@@ -387,9 +415,13 @@ int main(int argc, char* argv[]) {
                                                     out.lead_match.pz(),
                                                     out.lead_match.E());
           int lm_const = 0;
-          for (int i = 0; i < out.lead_match.constituents().size(); ++i)
-            if (out.lead_match.constituents()[i].pt() > 0.01)
-              lm_const++;
+          for (int i = 0; i < out.lead_match.constituents().size(); ++i) {
+            if (out.lead_match.constituents()[i].pt() > 0.01) {
+                lm_const++;
+              lead_match_jet_const_pt_dict[key]->Fill(out.lead_match.constituents()[i].pt());
+              lead_match_jet_const_dr_dict[key]->Fill(out.lead_match.constituents()[i].delta_R(out.lead_match));
+            }
+          }
           lead_match_jet_nconst_dict[key] = lm_const;
           lead_match_rho_dict[key] = out.lead_match_rho;
           lead_match_sigma_dict[key] = out.lead_match_sigma;
@@ -399,9 +431,13 @@ int main(int argc, char* argv[]) {
                                                       out.sublead_hard.pz(),
                                                       out.sublead_hard.E());
           int s_const = 0;
-          for (int i = 0; i < out.sublead_hard.constituents().size(); ++i)
-            if (out.sublead_hard.constituents()[i].pt() > 0.01)
+          for (int i = 0; i < out.sublead_hard.constituents().size(); ++i) {
+            if (out.sublead_hard.constituents()[i].pt() > 0.01) {
               s_const++;
+              sublead_hard_jet_const_pt_dict[key]->Fill(out.sublead_hard.constituents()[i].pt());
+              sublead_hard_jet_const_dr_dict[key]->Fill(out.sublead_hard.constituents()[i].delta_R(out.sublead_hard));
+            }
+          }
           sublead_hard_jet_nconst_dict[key] = s_const;
           sublead_hard_rho_dict[key] = out.sublead_hard_rho;
           sublead_hard_sigma_dict[key] = out.sublead_hard_sigma;
@@ -411,9 +447,13 @@ int main(int argc, char* argv[]) {
                                                        out.sublead_match.pz(),
                                                        out.sublead_match.E());
           int sm_const = 0;
-          for (int i = 0; i < out.sublead_match.constituents().size(); ++i)
-            if (out.sublead_match.constituents()[i].pt() > 0.01)
+          for (int i = 0; i < out.sublead_match.constituents().size(); ++i) {
+            if (out.sublead_match.constituents()[i].pt() > 0.01) {
               sm_const++;
+              sublead_match_jet_const_pt_dict[key]->Fill(out.sublead_match.constituents()[i].pt());
+              sublead_match_jet_const_dr_dict[key]->Fill(out.sublead_match.constituents()[i].delta_R(out.sublead_match));
+            }
+          }
           sublead_match_jet_nconst_dict[key] = sm_const;
           sublead_match_rho_dict[key] = out.sublead_match_rho;
           sublead_match_sigma_dict[key] = out.sublead_match_sigma;
