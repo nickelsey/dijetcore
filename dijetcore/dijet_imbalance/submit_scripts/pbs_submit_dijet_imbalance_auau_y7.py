@@ -176,7 +176,7 @@ if __name__ == "__main__":
   parser.add_argument('--priority', type=int, default=0, help=' queue priority')
   parser.add_argument('--queue', default='erhiq', help=' queue to submit jobs to' )
   parser.add_argument('--maxjobs',type=int, default=100, help=' max number of jobs to have in running or queue states')
-  parser.add_argument('--output', default='out/post/tmp', help=' directory for output root files' )
+  parser.add_argument('--output', default='out', help=' directory for output root files' )
   parser.add_argument('--badTowers', default='resources/bad_tower_lists/y7_y6_bad_tower.txt', help=' csv file containing towers to mask')
   parser.add_argument('--triggers', default='y7ht', help=' event triggers to consider: [y7, y10, y11, y14, y6pp, y9pp, y12pp] + [HT, MB, HT2, HT3, VPDMB30, VPDMB5, MBMON, ALL] (default "ALL": accept all events)')
   parser.add_argument('--constEta', default='1.0', help='list of constituent eta ranges to use during jetfinding')
