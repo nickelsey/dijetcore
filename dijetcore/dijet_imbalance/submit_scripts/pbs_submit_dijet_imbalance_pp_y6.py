@@ -111,7 +111,7 @@ def main(args) :
   
   ## some paths
   execpath = os.getcwd()
-  executable = './bin/dijet_imbalance/dijet_imbalance_pp_y7'
+  executable = './bin/differential_aj_pp_y6_y7_embed'
   ## find the qwrap file
   qwrap = execpath + '/submit/qwrap.sh'
   
