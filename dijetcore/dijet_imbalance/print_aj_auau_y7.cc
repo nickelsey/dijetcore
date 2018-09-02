@@ -50,6 +50,30 @@ void GetTreesFromFile(const TFile& file, std::unordered_map<string, TTree*>& map
   }
 }
 
+std::vector<TH1D*> SplitByCentrality(TH2D* h, int bins = 9) {
+  
+  std::vector<TH1D*> ret;
+  for (int i = 1; i <= bins; ++i) {
+    string name = string(h->GetName()) + std::to_string(i);
+    TH1D* tmp = h->ProjectionY(name.c_str(), i, i);
+    ret.push_back(tmp);
+  }
+  return ret;
+}
+
+std::vector<TH1D*> SplitByCentralityNormalized(TH2D* h, int bins = 9) {
+  
+  std::vector<TH1D*> ret;
+  for (int i = 1; i <= bins; ++i) {
+    string name = string(h->GetName()) + std::to_string(i);
+    TH1D* tmp = h->ProjectionY(name.c_str(), i, i);
+    if (tmp->Integral() > 0)
+      tmp->Scale(1.0 / tmp->Integral());
+    ret.push_back(tmp);
+  }
+  return ret;
+}
+
 int main(int argc, char* argv[]) {
   
   string usage = "Run 7 differential di-jet imbalance print routine";
@@ -82,9 +106,9 @@ int main(int argc, char* argv[]) {
   TFile auau_file(FLAGS_input.c_str(), "READ");
   
   // define our centrality bins
+  std::vector<unsigned> cent_boundaries = {485, 399, 269, 178, 114, 69, 39, 21, 10};
   std::vector<string> refcent_string{"0-5%", "5-10%", "10-20%", "20-30%",
-    "30-40%", "40-50%", "50-60%", "60-70%",
-    "70-80%"};
+    "30-40%", "40-50%", "50-60%", "60-70%", "70-80%"};
   
   
   // now we'll get the trees from the files, ignoring any objects
@@ -131,6 +155,16 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> auau_match_aj;
   std::unordered_map<string, TH2D*> auau_dphi;
   std::unordered_map<string, TH2D*> auau_hard_lead_rp;
+  std::unordered_map<string, TH2D*> auau_off_axis_lead_pt;
+  std::unordered_map<string, TH2D*> auau_off_axis_sub_pt;
+  std::unordered_map<string, TH2D*> auau_off_axis_aj;
+  
+  std::unordered_map<string, TH2D*> auau_hard_lead_const;
+  std::unordered_map<string, TH2D*> auau_hard_sub_const;
+  std::unordered_map<string, TH2D*> auau_match_lead_const;
+  std::unordered_map<string, TH2D*> auau_match_sub_const;
+  std::unordered_map<string, TH2D*> auau_off_axis_lead_const;
+  std::unordered_map<string, TH2D*> auau_off_axis_sub_const;
   
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_pt_cent;
@@ -138,6 +172,16 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_aj_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_match_aj_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_pt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_pt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_aj_cent;
+  
+  std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_const_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_const_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_match_lead_const_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_const_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_const_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_const_cent;
   
   std::unordered_map<string, TH2D*> auau_hard_lead_rho;
   std::unordered_map<string, TH2D*> auau_hard_sub_rho;
@@ -149,6 +193,11 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> auau_match_lead_sig;
   std::unordered_map<string, TH2D*> auau_match_sub_sig;
   
+  std::unordered_map<string, TH2D*> auau_off_axis_lead_rho;
+  std::unordered_map<string, TH2D*> auau_off_axis_sub_rho;
+  std::unordered_map<string, TH2D*> auau_off_axis_lead_sig;
+  std::unordered_map<string, TH2D*> auau_off_axis_sub_sig;
+  
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_rho_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_rho_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_match_lead_rho_cent;
@@ -158,6 +207,11 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_sig_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_match_lead_sig_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_sig_cent;
+  
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_rho_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_rho_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_sig_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_sig_cent;
   
   std::unordered_map<string, TH2D*> auau_npart;
   
@@ -215,13 +269,13 @@ int main(int argc, char* argv[]) {
     // pt & dr
     TH1D* auau_jl_pt_single = auau_jl_pt[key];
     TH1D* auau_jlm_pt_single = auau_jlm_pt[key];
-    TH1D* auau_js_pt_single = auau_jl_pt[key];
-    TH1D* auau_jsm_pt_single = auau_jlm_pt[key];
+    TH1D* auau_js_pt_single = auau_js_pt[key];
+    TH1D* auau_jsm_pt_single = auau_jsm_pt[key];
     
     TH1D* auau_jl_dr_single = auau_jl_dr[key];
     TH1D* auau_jlm_dr_single = auau_jlm_dr[key];
-    TH1D* auau_js_dr_single = auau_jl_dr[key];
-    TH1D* auau_jsm_dr_single = auau_jlm_dr[key];
+    TH1D* auau_js_dr_single = auau_js_dr[key];
+    TH1D* auau_jsm_dr_single = auau_jsm_dr[key];
     
     auau_jl_pt_single->Scale(1.0 / auau_jl_pt_single->Integral());
     auau_jlm_pt_single->Scale(1.0 / auau_jlm_pt_single->Integral());
@@ -233,14 +287,16 @@ int main(int argc, char* argv[]) {
     auau_js_dr_single->Scale(1.0 / auau_js_dr_single->Integral());
     auau_jsm_dr_single->Scale(1.0 / auau_jsm_dr_single->Integral());
     
+    
+    
     dijetcore::Overlay1D(auau_jl_pt_single, auau_js_pt_single, "leading jet", "subleading jet",
-                         hopts, coptslogy, file_prefix, "const_pt_hard", "p_{T}", "fraction", "", "p_{T}^{const} > 2.0 GeV");
+                         hopts, coptslogy, file_prefix, "const_pt_hard", "", "p_{T}", "fraction", "p_{T}^{const} > 2.0 GeV");
     dijetcore::Overlay1D(auau_jlm_pt_single, auau_jsm_pt_single, "leading jet", "subleading jet",
-                         hopts, coptslogy, file_prefix, "const_pt_matched", "p_{T}", "fraction", "", "p_{T}^{const} > 0.2 GeV");
+                         hopts, coptslogy, file_prefix, "const_pt_matched", "", "p_{T}", "fraction", "p_{T}^{const} > 0.2 GeV");
     dijetcore::Overlay1D(auau_jl_dr_single, auau_js_dr_single, "leading jet", "subleading jet",
-                         hopts, copts, file_prefix, "const_dr_hard", "d_{R}", "fraction", "", "p_{T}^{const} > 2.0 GeV");
-    dijetcore::Overlay1D(auau_jlm_pt_single, auau_jsm_pt_single, "leading jet", "subleading jet",
-                         hopts, copts, file_prefix, "const_dr_matched", "d_{R}", "fraction", "", "p_{T}^{const} > 0.2 GeV");
+                         hopts, copts, file_prefix, "const_dr_hard", "", "d_{R}", "fraction", "p_{T}^{const} > 2.0 GeV");
+    dijetcore::Overlay1D(auau_jlm_dr_single, auau_jsm_dr_single, "leading jet", "subleading jet",
+                         hopts, copts, file_prefix, "const_dr_matched", "", "d_{R}", "fraction", "p_{T}^{const} > 0.2 GeV");
     
     // process the trees
     TTree* auau_tree = auau_trees[key];
@@ -277,12 +333,236 @@ int main(int argc, char* argv[]) {
     TTreeReaderValue<int> auau_jsmconst(auau_reader, "jsmconst");
     TTreeReaderValue<double> auau_jsmrho(auau_reader, "jsmrho");
     TTreeReaderValue<double> auau_jsmsig(auau_reader, "jsmsig");
-    TTreeReaderValue<int> auau_jloaconst(auau_reader, "jlosconst");
-    TTreeReaderValue<int> auau_jloarho(auau_reader, "jloarho");
-    TTreeReaderValue<int> auau_jloasig(auau_reader, "jloasig");
+    TTreeReaderValue<int> auau_jloaconst(auau_reader, "jloaconst");
+    TTreeReaderValue<double> auau_jloarho(auau_reader, "jloarho");
+    TTreeReaderValue<double> auau_jloasig(auau_reader, "jloasig");
     TTreeReaderValue<int> auau_jsoaconst(auau_reader, "jsoaconst");
-    TTreeReaderValue<int> auau_jsoarho(auau_reader, "jsoarho");
-    TTreeReaderValue<int> auau_jsoasig(auau_reader, "jsoasig");
+    TTreeReaderValue<double> auau_jsoarho(auau_reader, "jsoarho");
+    TTreeReaderValue<double> auau_jsoasig(auau_reader, "jsoasig");
+    
+    // insert into the dictionaries
+    auau_hard_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadpt").c_str(),
+                                      "p_{T}", 9, -0.5, 8.5, 100, 0, 100);
+    auau_hard_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubpt").c_str(),
+                                    "p_{T}", 9, -0.5, 8.5, 100, 0, 100);
+    auau_match_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadpt").c_str(),
+                                       "p_{T}", 9, -0.5, 8.5, 100, 0, 100);
+    auau_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubpt").c_str(),
+                                      "p_{T}", 9, -0.5, 8.5, 100, 0, 100);
+    auau_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardaj").c_str(),
+                                 "A_{J}", 9, -0.5, 8.5, 30, 0, 0.9);
+    auau_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchaj").c_str(),
+                                  "A_{J}", 9, -0.5, 8.5, 30, 0, 0.9);
+    auau_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaudphi").c_str(),
+                              "d#phi", 9, -0.5, 8.5, 100, 0, 2*TMath::Pi());
+    
+    auau_off_axis_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadpt").c_str(),
+                                          "p_{T}", 9, -0.5, 8.5, 100, 0, 100);
+    auau_off_axis_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubpt").c_str(),
+                                         "p_{T}", 9, -0.5, 8.5, 100, 0, 100);
+    auau_off_axis_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisaj").c_str(),
+                                     "A_{J}", 9, -0.5, 8.5, 30, 0, 0.9);
+    
+    auau_hard_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadconst").c_str(),
+                                         "", 9, -0.5, 8.5, 100, 0, 100);
+    auau_hard_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubconst").c_str(),
+                                        "", 9, -0.5, 8.5, 100, 0, 100);
+    auau_match_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadconst").c_str(),
+                                          "", 9, -0.5, 8.5, 100, 0, 100);
+    auau_match_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubconst").c_str(),
+                                         "", 9, -0.5, 8.5, 100, 0, 100);
+    auau_off_axis_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadconst").c_str(),
+                                             "", 9, -0.5, 8.5, 100, 0, 100);
+    auau_off_axis_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubconst").c_str(),
+                                            "", 9, -0.5, 8.5, 100, 0, 100);
+    
+    auau_hard_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadrho").c_str(),
+                                       "auau hard lead rho", 9, -0.5, 8.5, 100, 0, 100);
+    auau_hard_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadsig").c_str(),
+                                       "auau hard lead sig", 9, -0.5, 8.5, 100, 0, 20);
+    auau_hard_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubrho").c_str(),
+                                      "auau hard sub rho", 9, -0.5, 8.5, 100, 0, 100);
+    auau_hard_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubsig").c_str(),
+                                      "auau hard sub sig", 9, -0.5, 8.5, 100, 0, 20);
+    auau_match_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadrho").c_str(),
+                                        "auau match lead rho", 9, -0.5, 8.5, 100, 0, 100);
+    auau_match_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadsig").c_str(),
+                                        "auau match lead sig", 9, -0.5, 8.5, 100, 0, 20);
+    auau_match_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubrho").c_str(),
+                                       "auau match sub rho", 9, -0.5, 8.5, 100, 0, 100);
+    auau_match_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubsig").c_str(),
+                                       "auau match sub sig", 9, -0.5, 8.5, 100, 0, 20);
+    
+    auau_off_axis_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadrho").c_str(),
+                                           "", 9, -0.5, 8.5, 100, 0, 100);
+    auau_off_axis_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubrho").c_str(),
+                                          "", 9, -0.5, 8.5, 100, 0, 100);
+    auau_off_axis_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadsig").c_str(),
+                                           "", 9, -0.5, 8.5, 100, 0, 20);
+    auau_off_axis_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubsig").c_str(),
+                                          "", 9, -0.5, 8.5, 100, 0, 20);
+    
+    auau_npart[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaunpart").c_str(), ";refmult;nPart",
+                               9, -0.5, 8.5, 100, 0.5, 2500.5);
+    
+    
+    
+    // loop over the data & fill histograms
+    while (auau_reader.Next()) {
+      
+      // auau jet pt
+      auau_hard_lead_pt[key]->Fill(*auau_cent, (*auau_jl).Pt());
+      auau_hard_lead_rho[key]->Fill(*auau_cent, *auau_jlrho);
+      auau_hard_lead_sig[key]->Fill(*auau_cent, *auau_jlsig);
+      auau_hard_sub_pt[key]->Fill(*auau_cent, (*auau_js).Pt());
+      auau_hard_sub_rho[key]->Fill(*auau_cent, *auau_jsrho);
+      auau_hard_sub_sig[key]->Fill(*auau_cent, *auau_jssig);
+      auau_match_lead_pt[key]->Fill(*auau_cent,(*auau_jlm).Pt());
+      auau_match_lead_rho[key]->Fill(*auau_cent, *auau_jlmrho);
+      auau_match_lead_sig[key]->Fill(*auau_cent, *auau_jlmsig);
+      auau_match_sub_pt[key]->Fill(*auau_cent, (*auau_jsm).Pt());
+      auau_match_sub_rho[key]->Fill(*auau_cent, *auau_jsmrho);
+      auau_match_sub_sig[key]->Fill(*auau_cent, *auau_jsmsig);
+      auau_hard_lead_const[key]->Fill(*auau_cent, *auau_jlconst);
+      auau_hard_sub_const[key]->Fill(*auau_cent, *auau_jsconst);
+      auau_match_lead_const[key]->Fill(*auau_cent, *auau_jlmconst);
+      auau_match_sub_const[key]->Fill(*auau_cent, *auau_jsmconst);
+      
+      if (*auau_jloaconst != 0 && *auau_jsoaconst != 0) {
+        auau_off_axis_lead_pt[key]->Fill(*auau_cent, (*auau_jloa).Pt());
+        auau_off_axis_lead_rho[key]->Fill(*auau_cent, *auau_jloarho);
+        auau_off_axis_lead_sig[key]->Fill(*auau_cent, *auau_jloasig);
+        auau_off_axis_sub_pt[key]->Fill(*auau_cent, (*auau_jsoa).Pt());
+        auau_off_axis_sub_rho[key]->Fill(*auau_cent, *auau_jsoarho);
+        auau_off_axis_sub_sig[key]->Fill(*auau_cent, *auau_jsoasig);
+        auau_off_axis_lead_const[key]->Fill(*auau_cent, *auau_jloaconst);
+        auau_off_axis_sub_const[key]->Fill(*auau_cent, *auau_jsoaconst);
+        auau_off_axis_aj[key]->Fill(*auau_cent,
+                                    fabs((*auau_jloa).Pt() - (*auau_jsoa).Pt())/((*auau_jloa).Pt() + (*auau_jsoa).Pt()));
+      }
+      // auau Aj
+      auau_hard_aj[key]->Fill(*auau_cent,
+                           fabs((*auau_jl).Pt() - (*auau_js).Pt())/((*auau_jl).Pt() + (*auau_js).Pt()));
+      auau_match_aj[key]->Fill(*auau_cent,
+                            fabs((*auau_jlm).Pt() - (*auau_jsm).Pt())/((*auau_jlm).Pt() + (*auau_jsm).Pt()));
+      
+      // auau dphi
+      double dphi = (*auau_jl).Phi() - (*auau_js).Phi();
+      
+      //rotate dphi to be in [0,2*pi]
+      while (dphi < 0)
+      dphi += 2 * TMath::Pi();
+      while (dphi > 2.0 * TMath::Pi())
+      dphi -= 2.0 * TMath::Pi();
+      
+      auau_dphi[key]->Fill(*auau_cent, dphi);
+      
+      // and grefmult/npart
+      auau_npart[key]->Fill(*auau_cent, *auau_nprt);
+    }
+    
+    
+    // extract nPart in centrality bins
+    auau_npart_cent[key] = SplitByCentralityNormalized(auau_npart[key]);
+    
+    auau_hard_lead_pt_cent[key] = SplitByCentralityNormalized(auau_hard_lead_pt[key]);
+    auau_hard_sub_pt_cent[key] = SplitByCentralityNormalized(auau_hard_sub_pt[key]);
+    auau_match_lead_pt_cent[key] = SplitByCentralityNormalized(auau_match_lead_pt[key]);
+    auau_match_sub_pt_cent[key] = SplitByCentralityNormalized(auau_match_sub_pt[key]);
+    auau_hard_aj_cent[key] = SplitByCentralityNormalized(auau_hard_aj[key]);
+    auau_match_aj_cent[key] = SplitByCentralityNormalized(auau_match_aj[key]);
+    auau_off_axis_lead_pt_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_pt[key]);
+    auau_off_axis_sub_pt_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_pt[key]);
+    auau_off_axis_aj_cent[key] = SplitByCentralityNormalized(auau_off_axis_aj[key]);
+    
+    auau_hard_lead_const_cent[key] = SplitByCentralityNormalized(auau_hard_lead_const[key]);
+    auau_hard_sub_const_cent[key] = SplitByCentralityNormalized(auau_hard_sub_const[key]);
+    auau_match_lead_const_cent[key] = SplitByCentralityNormalized(auau_match_lead_const[key]);
+    auau_match_sub_const_cent[key] = SplitByCentralityNormalized(auau_match_sub_const[key]);
+    auau_off_axis_lead_const_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_const[key]);
+    auau_off_axis_sub_const_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_const[key]);
+    
+    auau_hard_lead_rho_cent[key] = SplitByCentralityNormalized(auau_hard_lead_rho[key]);
+    auau_hard_sub_rho_cent[key] = SplitByCentralityNormalized(auau_hard_sub_rho[key]);
+    auau_match_lead_rho_cent[key] = SplitByCentralityNormalized(auau_match_lead_rho[key]);
+    auau_match_sub_rho_cent[key] = SplitByCentralityNormalized(auau_match_sub_rho[key]);
+    
+    auau_hard_lead_sig_cent[key] = SplitByCentralityNormalized(auau_hard_lead_sig[key]);
+    auau_hard_sub_sig_cent[key] = SplitByCentralityNormalized(auau_hard_sub_sig[key]);
+    auau_match_lead_sig_cent[key] = SplitByCentralityNormalized(auau_match_lead_sig[key]);
+    auau_match_sub_sig_cent[key] = SplitByCentralityNormalized(auau_match_sub_sig[key]);
+    
+    auau_off_axis_lead_rho_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_rho[key]);
+    auau_off_axis_sub_rho_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_rho[key]);
+    auau_off_axis_lead_sig_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_sig[key]);
+    auau_off_axis_sub_sig_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_sig[key]);
+    
+    for (int i = 0; i < auau_hard_aj_cent[key].size(); ++i) {
+      auau_hard_aj_cent[key][i]->RebinX(2);
+      auau_match_aj_cent[key][i]->RebinX(2);
+      auau_off_axis_aj_cent[key][i]->RebinX(2);
+    }
+    
+    Overlay1D(auau_npart_cent[key], refcent_string, hopts, copts, out_loc, "auau_npart_cent",
+              "", "N_{part}", "fraction", "Centrality");
+    Overlay1D(auau_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_aj",
+              "", "A_{J}", "fraction", "Centrality");
+    Overlay1D(auau_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_aj",
+              "", "A_{J}", "fraction", "Centrality");
+    Overlay1D(auau_off_axis_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_aj",
+              "", "A_{J}", "fraction", "Centrality");
+    Overlay1D(auau_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_pt",
+              "", "p_{T}", "fraction", "Centrality");
+    Overlay1D(auau_match_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_pt",
+              "", "p_{T}", "fraction", "Centrality");
+    Overlay1D(auau_hard_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_pt",
+              "", "p_{T}", "fraction", "Centrality");
+    Overlay1D(auau_match_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_pt",
+              "", "p_{T}", "fraction", "Centrality");
+    Overlay1D(auau_off_axis_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_pt",
+              "", "p_{T}", "fraction", "Centrality");
+    Overlay1D(auau_off_axis_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_pt",
+              "", "p_{T}", "fraction", "Centrality");
+    
+    Overlay1D(auau_hard_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_const",
+              "", "N_{constituents}", "fraction");
+    Overlay1D(auau_hard_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_const",
+              "", "N_{constituents}", "fraction");
+    Overlay1D(auau_match_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_const",
+              "", "N_{constituents}", "fraction");
+    Overlay1D(auau_match_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_const",
+              "", "N_{constituents}", "fraction");
+    Overlay1D(auau_off_axis_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_const",
+              "", "N_{constituents}", "fraction");
+    Overlay1D(auau_off_axis_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_const",
+              "", "N_{constituents}", "fraction");
+    
+    Overlay1D(auau_hard_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_rho",
+              "", "#rho", "fraction");
+    Overlay1D(auau_hard_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_rho",
+              "", "#rho", "fraction");
+    Overlay1D(auau_match_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_rho",
+              "", "#rho", "fraction");
+    Overlay1D(auau_match_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_rho",
+              "", "#rho", "fraction");
+    
+    Overlay1D(auau_hard_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_sig",
+              "", "#sigma", "fraction");
+    Overlay1D(auau_hard_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_sig",
+              "", "#sigma", "fraction");
+    Overlay1D(auau_match_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_sig",
+              "", "#sigma", "fraction");
+    Overlay1D(auau_match_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_sig",
+              "", "#sigma", "fraction");
+    
+    Overlay1D(auau_off_axis_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_rho",
+              "", "#rho", "fraction");
+    Overlay1D(auau_off_axis_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_sub_rho",
+              "", "#rho", "fraction");
+    Overlay1D(auau_off_axis_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_sig",
+              "", "#sigma", "fraction");
+    Overlay1D(auau_off_axis_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_sig",
+              "", "#sigma", "fraction");
     
   }
   

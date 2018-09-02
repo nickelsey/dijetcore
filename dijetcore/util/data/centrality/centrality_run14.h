@@ -107,4 +107,4 @@ namespace dijetcore {
   
 } // namespace dijetcore
 
-#endif // DIJETCORE_UTIL_DATA_CENTRALITY_CENTRALITY_RUN14_HH
+#endif // DIJETCORE_UTIL_DATA_CENTRALITY_CENTRALITY_RUN14_H

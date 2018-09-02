@@ -13,7 +13,8 @@
 #include "dijetcore/util/data/vector_conversion.h"
 #include "dijetcore/util/data/trigger_lookup.h"
 #include "dijetcore/worker/dijet_worker/dijet_worker.h"
-#include "dijetcore/worker/dijet_worker/off_axis_worker.h"
+#include "dijetcore/util/data/efficiency/run7_eff.h"
+#include "dijetcore/util/data/centrality/centrality_run7.h"
 
 #include "TTree.h"
 #include "TChain.h"
@@ -41,12 +42,15 @@
 using std::string;
 
 DIJETCORE_DEFINE_string(input, "", "input file");
+DIJETCORE_DEFINE_string(embedInput, "", "input file for embedding Au+Au");
 DIJETCORE_DEFINE_string(offAxisInput, "", "input file for off-axis bkg effect estimation");
+DIJETCORE_DEFINE_string(efficiencyFile, "", "file with efficiency curves if applicable");
 DIJETCORE_DEFINE_string(outputDir, "tmp", "directory for output");
 DIJETCORE_DEFINE_string(name, "job", "name for output file");
 DIJETCORE_DEFINE_int(id, 0, "job id (when running parallel jobs)");
 DIJETCORE_DEFINE_string(towList, "", "bad tower list");
-DIJETCORE_DEFINE_string(triggers, "y7ht", "trigger selection");
+DIJETCORE_DEFINE_string(triggers, "y6ppht", "trigger selection");
+DIJETCORE_DEFINE_string(embedTriggers, "y7mb", "trigger selection for embedding");
 DIJETCORE_DEFINE_string(constEta, "1.0", "constitutent eta cuts (comma separated)");
 DIJETCORE_DEFINE_string(leadConstPt, "2.0", "leading constituent pT cut (comma separated)");
 DIJETCORE_DEFINE_string(subConstPt, "2.0", "subleading constituent pT cut (comma separated)");
@@ -56,10 +60,30 @@ DIJETCORE_DEFINE_string(leadR, "0.4", "leading jet R (comma separated");
 DIJETCORE_DEFINE_string(subR, "0.4", "subleading jet R (comma separated");
 DIJETCORE_DEFINE_string(leadJetPt, "20.0", "leading jet pT cut (comma separated)");
 DIJETCORE_DEFINE_string(subJetPt, "10.0", "subleading jet pT cut (comma separated)");
+DIJETCORE_DEFINE_int(towerUnc, 0, "tower scaling for systematic uncertainties");
+DIJETCORE_DEFINE_int(trackingUnc, 0, "tracking efficiency ratio scaling for systematic uncertainties");
+DIJETCORE_DEFINE_int(seed, 0, "seed for the random number generator, so that results can be reproducible");
+DIJETCORE_DEFINE_bool(useEfficiency, true, "flag to scale pp efficiency to be run 7 AuAu-like");
+DIJETCORE_DEFINE_int(minCentrality, 2, "minimum cutoff for embedding centrality - should not be greater than 2 if efficiency is on")
+
+bool GetEmbedEvent(TStarJetPicoReader* reader, std::set<unsigned>& triggers, dijetcore::CentralityRun7& cent) {
+  while(reader->NextEvent()) {
+    if (cent.Centrality9(reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity()) > FLAGS_minCentrality)
+      continue;
+    if (triggers.size()) {
+      for (auto trigger : triggers)
+        if (reader->GetEvent()->GetHeader()->HasTriggerId(trigger))
+          return true;
+    }
+    else
+      return true;
+  }
+  return false;
+}
 
 int main(int argc, char* argv[]) {
   
-  string usage = "Run 7 differential di-jet imbalance analysis routine";
+  string usage = "Run 6 embedded pp differential di-jet imbalance analysis routine";
   
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
@@ -67,21 +91,22 @@ int main(int argc, char* argv[]) {
   
   // check to make sure the input file paths are sane
   if (!boost::filesystem::exists(FLAGS_input)) {
-    LOG(ERROR) << "input file does not exist: " << FLAGS_input;;
+    LOG(ERROR) << "input file does not exist: " << FLAGS_input;
+    return 1;
+  }
+  
+  // check efficiency and centrality logic is sane
+  if (FLAGS_useEfficiency && FLAGS_minCentrality > 2) {
+    LOG(ERROR) << "Can not use efficiency corrections for centrality bins past 0-20%";
     return 1;
   }
   
   // first, build our input chain
   TChain* chain = dijetcore::NewChainFromInput(FLAGS_input);
   
-  // and a chain for the off axis worker if it exists
-  TChain* off_axis_chain = nullptr;
-  if (boost::filesystem::exists(FLAGS_offAxisInput))
-    off_axis_chain = dijetcore::NewChainFromInput(FLAGS_offAxisInput);
-  
   // build output directory if it doesn't exist, using boost::filesystem
   if (FLAGS_outputDir.empty())
-    FLAGS_outputDir = "tmp";
+  FLAGS_outputDir = "tmp";
   boost::filesystem::path dir(FLAGS_outputDir.c_str());
   boost::filesystem::create_directories(dir);
   
@@ -93,21 +118,28 @@ int main(int argc, char* argv[]) {
   TStarJetPicoReader* reader = new TStarJetPicoReader();
   dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList);
   
-  // initialize the OffAxisWorker
-  dijetcore::OffAxisWorker* off_axis_worker = nullptr;
-  if (off_axis_chain != nullptr) {
-    off_axis_worker = new dijetcore::OffAxisWorker();
-    dijetcore::InitReaderWithDefaults(dynamic_cast<TStarJetPicoReader*>(off_axis_worker), off_axis_chain, FLAGS_towList);
+  // if requested, setup the embedding reader
+  TChain* embed_chain = nullptr;
+  TStarJetPicoReader* embed_reader = nullptr;
+  if (!FLAGS_embedInput.empty()) {
+    embed_chain = dijetcore::NewChainFromInput(FLAGS_embedInput);
+    dijetcore::InitReaderWithDefaults(embed_reader, embed_chain, FLAGS_towList);
+  }
+                                      
+  // get the trigger IDs that will be used
+  std::set<unsigned> triggers;
+  if (!FLAGS_triggers.empty()) {
+    triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
+    LOG(INFO) << "taking triggers: " << FLAGS_triggers << " for primary";
+    LOG(INFO) << "trigger ids: " << triggers;
   }
   
-  // get the trigger IDs that will be used
-  std::set<unsigned> triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
-  
-  LOG(INFO) << "taking triggers: " << FLAGS_triggers << " for analysis";
-  LOG(INFO) << "trigger ids: ";
-  for (auto i : triggers)
-    LOG(INFO) << i << " ";
-  LOG(INFO);
+  std::set<unsigned> embed_triggers;
+  if (embed_reader != nullptr && !FLAGS_embedTriggers.empty()) {
+    embed_triggers = dijetcore::GetTriggerIDs(FLAGS_embedTriggers);
+    LOG(INFO) << "taking triggers: " << FLAGS_embedTriggers << " for embedding";
+    LOG(INFO) << "trigger ids: " << embed_triggers;
+  }
   
   // parse jetfinding variables
   // --------------------------
@@ -137,20 +169,17 @@ int main(int argc, char* argv[]) {
                                 sublead_const_match_pt, const_eta);
   worker.Initialize();
   
+  LOG(INFO) << "worker initialized - number of dijet definitions: " << worker.Size();
+  
   std::set<std::string> keys = worker.Keys();
-  
-  // define the centrality cuts for year 7
-  std::vector<unsigned> cent_boundaries = {485, 399, 269, 178, 114, 69, 39, 21, 10};
-  
   for (auto key : keys)
     LOG(INFO) << key;
   
   // create an output tree for each definition
   // -----------------------------------------
   
-  std::unordered_map<std::string, std::shared_ptr<TTree>> trees;
+  std::unordered_map<std::string, dijetcore::unique_ptr<TTree>> trees;
   
-  // and the necessary branches
   std::unordered_map<std::string, int> run_id_dict;
   std::unordered_map<std::string, int> event_id_dict;
   std::unordered_map<std::string, double> vz_dict;
@@ -164,41 +193,39 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, int> nglobal_dict;
   std::unordered_map<std::string, int> npart_dict;
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_dict;
-  std::unordered_map<std::string, TH1D*> lead_hard_jet_const_pt_dict;
-  std::unordered_map<std::string, TH1D*> lead_hard_jet_const_dr_dict;
   std::unordered_map<std::string, int> lead_hard_jet_nconst_dict;
   std::unordered_map<std::string, double> lead_hard_rho_dict;
   std::unordered_map<std::string, double> lead_hard_sigma_dict;
   std::unordered_map<std::string, double> lead_hard_area_dict;
   std::unordered_map<std::string, TLorentzVector> lead_match_jet_dict;
-  std::unordered_map<std::string, TH1D*> lead_match_jet_const_pt_dict;
-  std::unordered_map<std::string, TH1D*> lead_match_jet_const_dr_dict;
   std::unordered_map<std::string, int> lead_match_jet_nconst_dict;
   std::unordered_map<std::string, double> lead_match_rho_dict;
   std::unordered_map<std::string, double> lead_match_sigma_dict;
   std::unordered_map<std::string, double> lead_match_area_dict;
   std::unordered_map<std::string, TLorentzVector> sublead_hard_jet_dict;
-  std::unordered_map<std::string, TH1D*> sublead_hard_jet_const_pt_dict;
-  std::unordered_map<std::string, TH1D*> sublead_hard_jet_const_dr_dict;
   std::unordered_map<std::string, int> sublead_hard_jet_nconst_dict;
   std::unordered_map<std::string, double> sublead_hard_rho_dict;
   std::unordered_map<std::string, double> sublead_hard_sigma_dict;
   std::unordered_map<std::string, double> sublead_hard_area_dict;
   std::unordered_map<std::string, TLorentzVector> sublead_match_jet_dict;
-  std::unordered_map<std::string, TH1D*> sublead_match_jet_const_pt_dict;
-  std::unordered_map<std::string, TH1D*> sublead_match_jet_const_dr_dict;
   std::unordered_map<std::string, int> sublead_match_jet_nconst_dict;
   std::unordered_map<std::string, double> sublead_match_rho_dict;
   std::unordered_map<std::string, double> sublead_match_sigma_dict;
   std::unordered_map<std::string, double> sublead_match_area_dict;
-  std::unordered_map<std::string, TLorentzVector> lead_off_axis_jet_dict;
-  std::unordered_map<std::string, int> lead_off_axis_nconst_dict;
-  std::unordered_map<std::string, double> lead_off_axis_rho_dict;
-  std::unordered_map<std::string, double> lead_off_axis_sigma_dict;
-  std::unordered_map<std::string, TLorentzVector> sublead_off_axis_jet_dict;
-  std::unordered_map<std::string, int> sublead_off_axis_nconst_dict;
-  std::unordered_map<std::string, double> sublead_off_axis_rho_dict;
-  std::unordered_map<std::string, double> sublead_off_axis_sigma_dict;
+  
+  // if embedding is being done
+  std::unordered_map<std::string, int> embed_runid_dict;
+  std::unordered_map<std::string, int> embed_eventid_dict;
+  std::unordered_map<std::string, int> embed_refmult_dict;
+  std::unordered_map<std::string, int> embed_grefmult_dict;
+  std::unordered_map<std::string, double> embed_refmultcorr_dict;
+  std::unordered_map<std::string, double> embed_grefmultcorr_dict;
+  std::unordered_map<std::string, int> embed_cent_dict;
+  std::unordered_map<std::string, int> embed_npart_dict;
+  std::unordered_map<std::string, double> embed_vz_dict;
+  std::unordered_map<std::string, double> embed_zdc_dict;
+  std::unordered_map<std::string, double> embed_rp_dict;
+  
   // fill the maps first, so that they don't decide to resize/move themselves
   // after branch creation...
   for (auto key : keys) {
@@ -215,51 +242,43 @@ int main(int argc, char* argv[]) {
     nglobal_dict.insert({key, 0});
     npart_dict.insert({key, 0});
     lead_hard_jet_dict.insert({key, TLorentzVector()});
-    lead_hard_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlconstpt").c_str(),
-                                                      "", 90, 0, 30)});
-    lead_hard_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlconstdr").c_str(),
-                                                      "", 100, 0.0, 1.0)});
     lead_hard_jet_nconst_dict.insert({key, 0});
     lead_hard_rho_dict.insert({key, 0});
     lead_hard_sigma_dict.insert({key, 0});
     lead_hard_area_dict.insert({key, 0});
     lead_match_jet_dict.insert({key, TLorentzVector()});
-    lead_match_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlmconstpt").c_str(),
-                                                      "", 90, 0, 30)});
-    lead_match_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlmconstdr").c_str(),
-                                                      "", 100, 0.0, 1.0)});
     lead_match_jet_nconst_dict.insert({key, 0});
     lead_match_rho_dict.insert({key, 0});
     lead_match_sigma_dict.insert({key, 0});
     lead_match_area_dict.insert({key, 0});
     sublead_hard_jet_dict.insert({key, TLorentzVector()});
-    sublead_hard_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsconstpt").c_str(),
-                                                         "", 90, 0, 30)});
-    sublead_hard_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsconstdr").c_str(),
-                                                         "", 100, 0.0, 1.0)});
     sublead_hard_jet_nconst_dict.insert({key, 0});
     sublead_hard_rho_dict.insert({key, 0});
     sublead_hard_sigma_dict.insert({key, 0});
     sublead_hard_area_dict.insert({key, 0});
     sublead_match_jet_dict.insert({key, TLorentzVector()});
-    sublead_match_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsmconstpt").c_str(),
-                                                          "", 90, 0, 30)});
-    sublead_match_jet_const_dr_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jsmconstdr").c_str(),
-                                                          "", 100, 0.0, 1.0)});
     sublead_match_jet_nconst_dict.insert({key, 0});
     sublead_match_rho_dict.insert({key, 0});
     sublead_match_sigma_dict.insert({key, 0});
     sublead_match_area_dict.insert({key, 0});
-    lead_off_axis_jet_dict.insert({key, TLorentzVector()});
-    lead_off_axis_rho_dict.insert({key, 0});
-    lead_off_axis_sigma_dict.insert({key, 0});
-    sublead_off_axis_jet_dict.insert({key, TLorentzVector()});
-    sublead_off_axis_rho_dict.insert({key, 0});
-    sublead_off_axis_sigma_dict.insert({key, 0});
+    
+    if (embed_reader != nullptr) {
+      embed_runid_dict.insert({key, 0});
+      embed_eventid_dict.insert({key, 0});
+      embed_vz_dict.insert({key, 0});
+      embed_zdc_dict.insert({key, 0});
+      embed_rp_dict.insert({key, 0});
+      embed_cent_dict.insert({key, 0});
+      embed_refmult_dict.insert({key, 0});
+      embed_grefmult_dict.insert({key, 0});
+      embed_refmultcorr_dict.insert({key, 0});
+      embed_grefmultcorr_dict.insert({key, 0});
+      embed_npart_dict.insert({key, 0});
+    }
   }
   
   for (auto key : keys) {
-    std::shared_ptr<TTree> tmp = std::make_shared<TTree>(key.c_str(), key.c_str());
+    dijetcore::unique_ptr<TTree> tmp = dijetcore::make_unique<TTree>(key.c_str(), key.c_str());
     // create branches for the tree
     tmp->Branch("runid", &run_id_dict[key]);
     tmp->Branch("eventid", &event_id_dict[key]);
@@ -277,8 +296,6 @@ int main(int argc, char* argv[]) {
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
     tmp->Branch("jlm", &lead_match_jet_dict[key]);
     tmp->Branch("jsm", &sublead_match_jet_dict[key]);
-    tmp->Branch("jloa", &lead_off_axis_jet_dict[key]);
-    tmp->Branch("jsoa", &sublead_off_axis_jet_dict[key]);
     tmp->Branch("jlconst", &lead_hard_jet_nconst_dict[key]);
     tmp->Branch("jlrho", &lead_hard_rho_dict[key]);
     tmp->Branch("jlsig", &lead_hard_sigma_dict[key]);
@@ -295,14 +312,22 @@ int main(int argc, char* argv[]) {
     tmp->Branch("jsmrho", &sublead_match_rho_dict[key]);
     tmp->Branch("jsmsig", &sublead_match_sigma_dict[key]);
     tmp->Branch("jsmarea", &sublead_match_area_dict[key]);
-    tmp->Branch("jloaconst", &lead_off_axis_nconst_dict[key]);
-    tmp->Branch("jloarho", &lead_off_axis_rho_dict[key]);
-    tmp->Branch("jloasig", &lead_off_axis_sigma_dict[key]);
-    tmp->Branch("jsoaconst", &sublead_off_axis_nconst_dict[key]);
-    tmp->Branch("jsoarho", &sublead_off_axis_rho_dict[key]);
-    tmp->Branch("jsoasig", &sublead_off_axis_sigma_dict[key]);
     
-    trees.insert({key, tmp});
+    if (embed_reader != nullptr) {
+      tmp->Branch("embed_eventid", &embed_eventid_dict[key]);
+      tmp->Branch("embed_runid", &embed_runid_dict[key]);
+      tmp->Branch("embed_refmult", &embed_refmult_dict[key]);
+      tmp->Branch("embed_grefmult", &embed_grefmult_dict[key]);
+      tmp->Branch("embed_refmultcorr", &embed_refmultcorr_dict[key]);
+      tmp->Branch("embed_grefmultcorr", &embed_grefmultcorr_dict[key]);
+      tmp->Branch("embed_cent", &embed_cent_dict[key]);
+      tmp->Branch("embed_npart", &embed_npart_dict[key]);
+      tmp->Branch("embed_rp", &embed_rp_dict[key]);
+      tmp->Branch("embed_zdcrate", &embed_zdc_dict[key]);
+      tmp->Branch("embed_vz", &embed_vz_dict[key]);
+    }
+    
+    trees[key] = std::move(tmp);
   }
   
   // histograms
@@ -310,6 +335,11 @@ int main(int argc, char* argv[]) {
   
   std::unordered_map<string, TH1D*> lead_jet_count_dict;
   std::unordered_map<string, TH1D*> sublead_jet_count_dict;
+  
+  TProfile2D* eff_ratio  = new TProfile2D("pp_eff_ratio",
+                                          "average pp efficiency ratio;p_{T};#eta;ratio",
+                                          200, 0, 5, 10, -1.0, 1.0);
+  
   
   for (auto key : keys) {
     // create a unique histogram name for each key
@@ -322,16 +352,62 @@ int main(int argc, char* argv[]) {
     sublead_jet_count_dict.insert({key, sublead_tmp});
   }
   
-  // define a selector to reject low momentum tracks
+  // initialize efficiency curves
+  dijetcore::Run7Eff* efficiency;
+  if (FLAGS_efficiencyFile.empty())
+    efficiency = new dijetcore::Run7Eff();
+  else
+    efficiency = new dijetcore::Run7Eff(FLAGS_efficiencyFile);
+  
+  switch(FLAGS_trackingUnc) {
+    case 0 :
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NONE);
+    break;
+    case 1 :
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::POSITIVE);
+    break;
+    case -1 :
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NEGATIVE);
+    break;
+    default:
+    LOG(ERROR) << "undefined tracking efficiency setting, exiting";
+    return 1;
+  }
+  
+  // initialize Run 7 centrality
+  dijetcore::CentralityRun7 centrality;
+  
+  // define our tower uncertainty scaling as well
+  const double tower_scale_percent = 0.02;
+  if (abs(FLAGS_towerUnc) > 1) {
+    LOG(ERROR) << "undefined tower efficiency setting, exiting";
+  }
+  double tower_scale = 1.0 + tower_scale_percent * FLAGS_towerUnc;
+  
+  // and we'll need a random number generator for randomly throwing away tracks
+  std::mt19937 gen(FLAGS_seed);
+  std::uniform_real_distribution<> dis(0.0,1.0);
+  
+  // and sometimes an int distribution for generating random centrality bins
+  std::uniform_int_distribution<> cent_distribution(0, FLAGS_minCentrality);
+  
+  // define a selector to accept tracks with pT > 0.2 GeV, inside our nominal eta acceptance of +/- 1.0
   fastjet::Selector track_pt_min_selector = fastjet::SelectorPtMin(0.2) && fastjet::SelectorAbsRapMax(1.0);
   
+  // start the analysis loop
+  // -----------------------
   try {
     while (reader->NextEvent()) {
+      
       // Print out reader status every 10 seconds
       reader->PrintStatus(10);
       
       // headers for convenience
       TStarJetPicoEventHeader* header = reader->GetEvent()->GetHeader();
+      TStarJetPicoEventHeader* embed_header = nullptr;
+      if (embed_reader != nullptr) {
+        embed_header = embed_reader->GetEvent()->GetHeader();
+      }
       
       // check if event fired a trigger we will use
       if (triggers.size() != 0) {
@@ -339,35 +415,87 @@ int main(int argc, char* argv[]) {
         for (auto trigger : triggers)
           if (header->HasTriggerId(trigger))
             use_event = true;
-        if (!use_event) continue;
+        if (!use_event)
+          continue;
       }
       
-      // get centrality
-      unsigned centrality_bin = -1;
-      for (int i = 0; i < cent_boundaries.size(); ++i) {
-        if (header->GetProperReferenceMultiplicity() > cent_boundaries[i]) {
-          centrality_bin = i;
-          break;
-        }
-      }
+      int refmult = header->GetReferenceMultiplicity();
+      double refmultcorr = refmult;
+      int centrality_bin = -1;
+      int embed_centrality = -1;
       
-      // get the vector container
-      TStarJetVectorContainer<TStarJetVector>* container = reader->GetOutputContainer();
+      std::vector<fastjet::PseudoJet> particles;
+      std::vector<fastjet::PseudoJet> embed_particles;
       std::vector<fastjet::PseudoJet> primary_particles;
-      dijetcore::ConvertTStarJetVector(container, primary_particles);
+      
+      // if embedding, read next event, loop to event 0 if needed
+      if (embed_reader) {
+        if (!GetEmbedEvent(embed_reader, embed_triggers, centrality)) {
+          // we may have hit the end of the chain - if so, set to event 0 and try again
+          embed_reader->ReadEvent(0);
+          if (!GetEmbedEvent(embed_reader, embed_triggers, centrality)) {
+            // there are no events that satisfy all criteria
+            LOG(ERROR) << "no events found for embedding, given trigger requirements: exiting";
+            return 1;
+          }
+        }
+        embed_centrality = embed_reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity();
+        centrality_bin = embed_centrality;
+        
+        // if successful, load the embedding event
+        dijetcore::ConvertTStarJetVector(embed_reader->GetOutputContainer(), particles);
+        dijetcore::ConvertTStarJetVector(embed_reader->GetOutputContainer(), embed_particles);
+      }
+      // if embedding is not used, we will randomly generate our own centrality bin
+      else
+        centrality_bin = cent_distribution(gen);
+      
+      // and now convert the pp - if there is any efficiency curves to apply, do it now
+      TStarJetVectorContainer<TStarJetVector>* container = reader->GetOutputContainer();
+      for (int i = 0; i < container->GetEntries(); ++i) {
+        TStarJetVector* sv = container->Get(i);
+        
+        if (fabs(sv->Eta()) > 1.0)
+          continue;
+        
+        double scale = 1.0;
+        
+        if (sv->GetCharge() && FLAGS_useEfficiency) {
+          // if the track is charged and we are using efficiencies,
+          // then we get the efficiency ratio, and use that as the probability
+          // to keep the track
+          double ratio = efficiency->ratio(sv->Pt(), sv->Eta(), centrality_bin);
+          
+          if (!std::isfinite(ratio))
+            continue;
+          
+          eff_ratio->Fill(sv->Pt(), sv->Eta(), ratio);
+          
+          double random_ = dis(gen);
+          if (random_ > ratio)
+            continue;
+        }
+        else {
+          // the track is neutral - we keep it,
+          // but we scale it by the tower_scale
+          scale = tower_scale;
+        }
+        
+        // now create the pseudojet, set the user index to the charge, and scale
+        fastjet::PseudoJet tmpPJ = fastjet::PseudoJet(*sv);
+        tmpPJ *= scale;
+        tmpPJ.set_user_index( sv->GetCharge() );
+        particles.push_back(tmpPJ);
+        primary_particles.push_back(tmpPJ);
+      }
       
       // select tracks above the minimum pt threshold
-      primary_particles = track_pt_min_selector(primary_particles);
+      particles = track_pt_min_selector(particles);
       
       // run the worker
-      auto& worker_out = worker.Run(primary_particles);
-      
-      std::unordered_map<std::string, dijetcore::unique_ptr<dijetcore::OffAxisOutput>> off_axis_worker_out;
-      if (off_axis_worker)
-        off_axis_worker_out = std::move(off_axis_worker->Run(worker, centrality_bin));
+      auto& worker_out = worker.Run(particles);
       
       // process any found di-jet pairs
-      
       for (auto& result : worker_out) {
         std::string key = result.first;
         dijetcore::ClusterOutput& out = *result.second.get();
@@ -376,17 +504,16 @@ int main(int argc, char* argv[]) {
           lead_jet_count_dict[key]->Fill(header->GetReferenceMultiplicity());
         if (out.found_sublead)
           sublead_jet_count_dict[key]->Fill(header->GetReferenceMultiplicity());
-  
+        
         // now fill dijet results
         if (out.found_match) {
-          
           // fill all branches for that key
           run_id_dict[key] = header->GetRunId();
           event_id_dict[key] = header->GetEventId();
           vz_dict[key] = header->GetPrimaryVertexZ();
           refmult_dict[key] = header->GetReferenceMultiplicity();
           grefmult_dict[key] = header->GetGReferenceMultiplicity();
-          refmultcorr_dict[key] = header->GetCorrectedReferenceMultiplicity();
+          refmultcorr_dict[key] = refmultcorr;
           grefmultcorr_dict[key] = header->GetCorrectedGReferenceMultiplicity();
           cent_dict[key] = centrality_bin;
           zdcrate_dict[key] = header->GetZdcCoincidenceRate();
@@ -394,20 +521,27 @@ int main(int argc, char* argv[]) {
           nglobal_dict[key] = header->GetNGlobalTracks();
           npart_dict[key] = primary_particles.size();
           
+          // if embedding is being done
+          if (embed_reader != nullptr) {
+            embed_runid_dict[key] = embed_header->GetRunId();
+            embed_eventid_dict[key] = embed_header->GetEventId();
+            embed_refmult_dict[key] = embed_header->GetReferenceMultiplicity();
+            embed_grefmult_dict[key] = embed_header->GetGReferenceMultiplicity();
+            embed_refmultcorr_dict[key] = embed_header->GetCorrectedReferenceMultiplicity();
+            embed_grefmultcorr_dict[key] = embed_header->GetCorrectedGReferenceMultiplicity();
+            embed_cent_dict[key] = embed_centrality;
+            embed_vz_dict[key] = embed_header->GetPrimaryVertexZ();
+            embed_zdc_dict[key] = embed_header->GetZdcCoincidenceRate();
+            embed_rp_dict[key] = embed_header->GetReactionPlaneAngle();
+            embed_npart_dict[key] = embed_particles.size();
+          }
+          
           // set the four jets
           lead_hard_jet_dict[key] = TLorentzVector(out.lead_hard.px(),
                                                    out.lead_hard.py(),
                                                    out.lead_hard.pz(),
                                                    out.lead_hard.E());
-          int l_const = 0;
-          for (int i = 0; i < out.lead_hard.constituents().size(); ++i) {
-            if (out.lead_hard.constituents()[i].pt() > 0.01) {
-              l_const++;
-              lead_hard_jet_const_pt_dict[key]->Fill(out.lead_hard.constituents()[i].pt());
-              lead_hard_jet_const_dr_dict[key]->Fill(out.lead_hard.constituents()[i].delta_R(out.lead_hard));
-            }
-          }
-          lead_hard_jet_nconst_dict[key] = l_const;
+          lead_hard_jet_nconst_dict[key] = out.lead_hard.constituents().size();
           lead_hard_rho_dict[key] = out.lead_hard_rho;
           lead_hard_sigma_dict[key] = out.lead_hard_sigma;
           lead_hard_area_dict[key] = out.lead_hard.area();
@@ -415,15 +549,7 @@ int main(int argc, char* argv[]) {
                                                     out.lead_match.py(),
                                                     out.lead_match.pz(),
                                                     out.lead_match.E());
-          int lm_const = 0;
-          for (int i = 0; i < out.lead_match.constituents().size(); ++i) {
-            if (out.lead_match.constituents()[i].pt() > 0.01) {
-                lm_const++;
-              lead_match_jet_const_pt_dict[key]->Fill(out.lead_match.constituents()[i].pt());
-              lead_match_jet_const_dr_dict[key]->Fill(out.lead_match.constituents()[i].delta_R(out.lead_match));
-            }
-          }
-          lead_match_jet_nconst_dict[key] = lm_const;
+          lead_match_jet_nconst_dict[key] = out.lead_match.constituents().size();
           lead_match_rho_dict[key] = out.lead_match_rho;
           lead_match_sigma_dict[key] = out.lead_match_sigma;
           lead_match_area_dict[key] = out.lead_match.area();
@@ -431,15 +557,7 @@ int main(int argc, char* argv[]) {
                                                       out.sublead_hard.py(),
                                                       out.sublead_hard.pz(),
                                                       out.sublead_hard.E());
-          int s_const = 0;
-          for (int i = 0; i < out.sublead_hard.constituents().size(); ++i) {
-            if (out.sublead_hard.constituents()[i].pt() > 0.01) {
-              s_const++;
-              sublead_hard_jet_const_pt_dict[key]->Fill(out.sublead_hard.constituents()[i].pt());
-              sublead_hard_jet_const_dr_dict[key]->Fill(out.sublead_hard.constituents()[i].delta_R(out.sublead_hard));
-            }
-          }
-          sublead_hard_jet_nconst_dict[key] = s_const;
+          sublead_hard_jet_nconst_dict[key] = out.sublead_hard.constituents().size();
           sublead_hard_rho_dict[key] = out.sublead_hard_rho;
           sublead_hard_sigma_dict[key] = out.sublead_hard_sigma;
           sublead_hard_area_dict[key] = out.sublead_hard.area();
@@ -447,60 +565,10 @@ int main(int argc, char* argv[]) {
                                                        out.sublead_match.py(),
                                                        out.sublead_match.pz(),
                                                        out.sublead_match.E());
-          int sm_const = 0;
-          for (int i = 0; i < out.sublead_match.constituents().size(); ++i) {
-            if (out.sublead_match.constituents()[i].pt() > 0.01) {
-              sm_const++;
-              sublead_match_jet_const_pt_dict[key]->Fill(out.sublead_match.constituents()[i].pt());
-              sublead_match_jet_const_dr_dict[key]->Fill(out.sublead_match.constituents()[i].delta_R(out.sublead_match));
-            }
-          }
-          sublead_match_jet_nconst_dict[key] = sm_const;
+          sublead_match_jet_nconst_dict[key] = out.sublead_match.constituents().size();
           sublead_match_rho_dict[key] = out.sublead_match_rho;
           sublead_match_sigma_dict[key] = out.sublead_match_sigma;
           sublead_match_area_dict[key] = out.sublead_match.area();
-          
-          if (off_axis_worker != nullptr &&
-              off_axis_worker_out.find(key) != off_axis_worker_out.end() &&
-              off_axis_worker_out[key]->lead_jet.has_constituents() &&
-              off_axis_worker_out[key]->sub_jet.has_constituents()) {
-            
-            auto& off_axis_out = *off_axis_worker_out[key].get();
-            lead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.lead_jet.px(),
-                                                         off_axis_out.lead_jet.py(),
-                                                         off_axis_out.lead_jet.pz(),
-                                                         off_axis_out.lead_jet.E());
-            int loa_const = 0;
-            for (int i = 0; i < off_axis_out.lead_jet.constituents().size(); ++i)
-              if (off_axis_out.lead_jet.constituents()[i].pt() > 0.01)
-                loa_const++;
-            lead_off_axis_nconst_dict[key] = loa_const;
-            lead_off_axis_rho_dict[key] = off_axis_out.lead_jet_rho;
-            lead_off_axis_sigma_dict[key] = off_axis_out.lead_jet_sigma;
-            sublead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.sub_jet.px(),
-                                                            off_axis_out.sub_jet.py(),
-                                                            off_axis_out.sub_jet.pz(),
-                                                            off_axis_out.sub_jet.E());
-            int soa_const = 0;
-            for (int i = 0; i < off_axis_out.sub_jet.constituents().size(); ++i) {
-              if (off_axis_out.sub_jet.constituents()[i].pt() > 0.01) {
-                soa_const++;
-              }
-            }
-            sublead_off_axis_nconst_dict[key] = soa_const;
-            sublead_off_axis_rho_dict[key] = off_axis_out.sub_jet_rho;
-            sublead_off_axis_sigma_dict[key] = off_axis_out.sub_jet_sigma;
-          }
-          else {
-            lead_off_axis_jet_dict[key] = TLorentzVector();
-            lead_off_axis_nconst_dict[key] = 0;
-            lead_off_axis_rho_dict[key] = 0;
-            lead_off_axis_sigma_dict[key] = 0;
-            sublead_off_axis_jet_dict[key] = TLorentzVector();
-            sublead_off_axis_nconst_dict[key] = 0;
-            sublead_off_axis_rho_dict[key] = 0;
-            sublead_off_axis_sigma_dict[key] = 0;
-          }
           
           trees[key]->Fill();
         }
@@ -513,6 +581,7 @@ int main(int argc, char* argv[]) {
   out.Write();
   out.Close();
   
-  gflags::ShutDownCommandLineFlags();
+  
+  
   return 0;
 }

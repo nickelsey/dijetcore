@@ -1,6 +1,7 @@
 #include "dijetcore/worker/dijet_worker/off_axis_worker.h"
 
 #include "dijetcore/util/data/vector_conversion.h"
+#include "dijetcore/util/fastjet/selector_compare.h"
 
 #include "TStarJetPicoEvent.h"
 #include "TStarJetPicoEventHeader.h"
@@ -86,8 +87,12 @@ namespace dijetcore {
   std::pair<fastjet::PseudoJet, std::pair<double, double>>
   OffAxisWorker::RunCluster(MatchDef* def, const std::vector<fastjet::PseudoJet>& input, const fastjet::PseudoJet& reference) {
   
+    // have to remove bkg contribution from input tracks that are in the same kinematic window as the reference jet
+    double max_pt = ExtractDoubleFromSelector(def->InitialJetDef().ConstituentSelector(), "pt >=");
+    fastjet::Selector max_pt_sel = fastjet::SelectorPtMax(max_pt);
+    
     std::unique_ptr<fastjet::ClusterSequenceArea>
-    cluster = make_unique<fastjet::ClusterSequenceArea>(def->MatchedJetDef().ConstituentSelector()(input),
+    cluster = make_unique<fastjet::ClusterSequenceArea>(def->MatchedJetDef().ConstituentSelector()(max_pt_sel(input)),
                                                         def->MatchedJetDef(),
                                                         def->MatchedJetDef().AreaDefinition());
     

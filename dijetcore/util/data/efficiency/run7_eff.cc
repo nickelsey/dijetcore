@@ -111,19 +111,39 @@ namespace dijetcore {
     Double_t parset6[]={ 0.631911, 0.117639, -0.29002, 0.522928, -0.569609, -1.3921, -6.73044, 0.0588101, -0.00686795, 0.110982, 0.2951, 0.14493, 0.295612, 0.00290843 };
     
     if(cb == 0)
-    ((TF2*)func)->SetParameters(parset6);
+      ((TF2*)func)->SetParameters(parset6);
     else if(cb == 1)
-    ((TF2*)func)->SetParameters(parset5);
+      ((TF2*)func)->SetParameters(parset5);
     else if(cb == 2)
-    ((TF2*)func)->SetParameters(parset4);
+      ((TF2*)func)->SetParameters(parset4);
     
     if(cb < 0 || cb > 2)
-    std::cout << "Error: Nonsensical Centrality Class!" << std::endl;
+      std::cout << "Error: Nonsensical Centrality Class!" << std::endl;
     
     return func;
   }
   
-  double Run7Eff::ratio(double pt, double eta) {
+  double Run7Eff::ratio(double pt, double eta, int cent) {
+    Double_t pp_eff = ppEff(pt, eta);
+    Double_t auau_eff = AuAuEff(pt, eta, cent);
+    
+    double ratio_ = auau_eff / pp_eff;
+    
+    int sign_ = static_cast<int>(sys_);
+    if (sign_ == 0)
+      return ratio_;
+    
+    double systematic_ = sign_ * ratioUncertainty(pt, eta);
+    
+    ratio_ = ratio_ + ratio_ * systematic_;
+    
+    if (ratio_ > 1.0)
+      return 1.0;
+    
+    return ratio_;
+  }
+  
+  double Run7Eff::ratio020Avg(double pt, double eta) {
     Double_t pp_eff = ppEff(pt, eta);
     Double_t auau_eff = AuAuEff020Avg(pt, eta);
     
@@ -131,14 +151,14 @@ namespace dijetcore {
     
     int sign_ = static_cast<int>(sys_);
     if (sign_ == 0)
-    return ratio_;
+      return ratio_;
     
     double systematic_ = sign_ * ratioUncertainty(pt, eta);
     
     ratio_ = ratio_ + ratio_ * systematic_;
     
     if (ratio_ > 1.0)
-    return 1.0;
+      return 1.0;
     
     return ratio_;
   }

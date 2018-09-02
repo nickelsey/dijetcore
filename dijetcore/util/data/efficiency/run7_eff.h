@@ -28,7 +28,8 @@ namespace dijetcore {
     double AuAuEff(double pt, double eta, int cent);
     double AuAuEff020Avg(double pt, double eta);
     double ppEff(double pt, double eta);
-    double ratio(double pt, double eta);
+    double ratio(double pt, double eta, int cent);
+    double ratio020Avg(double pt, double eta);
     double ratioUncertainty(double pt, double eta);
     
     void setSystematicUncertainty(TrackingUncY7 sys = TrackingUncY7::NONE) {sys_ = sys;}
