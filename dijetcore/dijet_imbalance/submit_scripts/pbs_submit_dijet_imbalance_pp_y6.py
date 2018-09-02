@@ -139,12 +139,6 @@ def main(args) :
   ## count the number of qsub submission failures
   qsubfail = 0
 
-  reader = ''
-  embedReader = ''
-  if args.readerSetting is not None :
-    reader = args.readerSetting
-  if args.embedReaderSetting is not None :
-    embedReader = args.readerSetting
   
   while checkstatus(jobstatus) :
     
