@@ -68,7 +68,8 @@ DIJETCORE_DEFINE_int(minCentrality, 2, "minimum cutoff for embedding centrality 
 
 bool GetEmbedEvent(TStarJetPicoReader* reader, std::set<unsigned>& triggers, dijetcore::CentralityRun7& cent) {
   while(reader->NextEvent()) {
-    if (cent.Centrality9(reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity()) > FLAGS_minCentrality)
+    int centrality = cent.Centrality9(reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity());
+    if (centrality > FLAGS_minCentrality || centrality < 0)
       continue;
     if (triggers.size()) {
       for (auto trigger : triggers)
@@ -428,9 +429,10 @@ int main(int argc, char* argv[]) {
       std::vector<fastjet::PseudoJet> particles;
       std::vector<fastjet::PseudoJet> embed_particles;
       std::vector<fastjet::PseudoJet> primary_particles;
-      
+
       // if embedding, read next event, loop to event 0 if needed
       if (embed_reader) {
+        
         if (!GetEmbedEvent(embed_reader, embed_triggers, centrality)) {
           // we may have hit the end of the chain - if so, set to event 0 and try again
           embed_reader->ReadEvent(0);
@@ -440,7 +442,8 @@ int main(int argc, char* argv[]) {
             return 1;
           }
         }
-        embed_centrality = embed_reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity();
+        
+        embed_centrality = centrality.Centrality9(embed_reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity());
         centrality_bin = embed_centrality;
         
         // if successful, load the embedding event
@@ -455,7 +458,7 @@ int main(int argc, char* argv[]) {
       TStarJetVectorContainer<TStarJetVector>* container = reader->GetOutputContainer();
       for (int i = 0; i < container->GetEntries(); ++i) {
         TStarJetVector* sv = container->Get(i);
-        
+      
         if (fabs(sv->Eta()) > 1.0)
           continue;
         
@@ -471,7 +474,7 @@ int main(int argc, char* argv[]) {
             continue;
           
           eff_ratio->Fill(sv->Pt(), sv->Eta(), ratio);
-          
+      
           double random_ = dis(gen);
           if (random_ > ratio)
             continue;
