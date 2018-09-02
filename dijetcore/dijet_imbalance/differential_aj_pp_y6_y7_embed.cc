@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
   TChain* embed_chain = nullptr;
   TStarJetPicoReader* embed_reader = nullptr;
   if (!FLAGS_embedInput.empty()) {
+    embed_reader = new TStarJetPicoReader();
     embed_chain = dijetcore::NewChainFromInput(FLAGS_embedInput);
     dijetcore::InitReaderWithDefaults(embed_reader, embed_chain, FLAGS_towList);
   }
