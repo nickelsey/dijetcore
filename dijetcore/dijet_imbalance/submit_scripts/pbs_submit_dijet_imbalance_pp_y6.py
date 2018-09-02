@@ -207,7 +207,7 @@ def main(args) :
       clargs = clargs + args.subConstPtMatch + ' --leadR=' + args.leadR + ' --subR=' + args.subR
       clargs = clargs + ' --leadJetPt=' + args.leadJetPt + ' --subJetPt=' + args.subJetPt
       clargs = clargs + ' --towerUnc=' + str(tow_sys) + ' --trackingUnc=' + str(track_sys)
-      clargs = clargs + ' --efficFile=' + args.efficiencyFile + ' --embedInput=' + args.embedFile
+      clargs = clargs + ' --efficiencyFile=' + args.efficiencyFile + ' --embedInput=' + args.embedFile
       
       qsub = 'qsub -V -p ' + str(args.priority) + ' -l mem=' + str(args.mem) + 'GB -l nodes=' + str(args.nodes)
       qsub = qsub + ':ppn=' + str(args.ppn) + ' -q ' + str(args.queue) + ' -o ' + outstream
