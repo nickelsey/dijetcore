@@ -16,30 +16,34 @@ namespace dijetcore {
   DijetWorker::DijetWorker(fastjet::JetAlgorithm jet_alg_in,
                            double lead_pt_in,
                            double lead_R_in,
+                           double lead_match_R_in,
                            double sub_pt_in,
                            double sub_R_in,
+                           double sub_match_R_in,
                            double const_lead_pt_init_in,
                            double const_lead_pt_match_in,
                            double const_sub_pt_init_in,
                            double const_sub_pt_match_in,
                            double eta_in) :
-  DijetMatrix(jet_alg_in, lead_pt_in, lead_R_in, sub_pt_in, sub_R_in,
-  const_lead_pt_init_in, const_lead_pt_match_in,
+  DijetMatrix(jet_alg_in, lead_pt_in, lead_R_in, lead_match_R_in, sub_pt_in, sub_R_in,
+              sub_match_R_in, const_lead_pt_init_in, const_lead_pt_match_in,
               const_sub_pt_init_in, const_sub_pt_match_in, eta_in) { };
   
   // set construction
   DijetWorker::DijetWorker(std::set<fastjet::JetAlgorithm> jet_alg_in,
                            std::set<double> lead_pt_in,
                            std::set<double> lead_R_in,
+                           std::set<double> lead_match_R_in,
                            std::set<double> sub_pt_in,
                            std::set<double> sub_R_in,
+                           std::set<double> sub_match_R_in,
                            std::set<double> const_lead_pt_init_in,
                            std::set<double> const_lead_pt_match_in,
                            std::set<double> const_sub_pt_init_in,
                            std::set<double> const_sub_pt_match_in,
                            std::set<double> eta_in) :
-  DijetMatrix(jet_alg_in, lead_pt_in, lead_R_in, sub_pt_in, sub_R_in,
-  const_lead_pt_init_in, const_lead_pt_match_in,
+  DijetMatrix(jet_alg_in, lead_pt_in, lead_R_in, lead_match_R_in, sub_pt_in, sub_R_in,
+              sub_match_R_in, const_lead_pt_init_in, const_lead_pt_match_in,
               const_sub_pt_init_in, const_sub_pt_match_in, eta_in) { };
   
   DijetWorker::DijetWorker(const DijetMatrix& rhs) :

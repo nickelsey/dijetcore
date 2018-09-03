@@ -44,8 +44,10 @@ namespace dijetcore {
     DijetMatrix(fastjet::JetAlgorithm jet_alg_in,
                 double lead_jet_pt_in = 20.0,
                 double lead_jet_R_in = 0.4,
+                double lead_jet_R_match_in = 0.4,
                 double sub_jet_pt_in = 10.0,
                 double sub_jet_R_in = 0.4,
+                double sub_jet_R_match_in = 0.4,
                 double const_lead_pt_init_in = 2.0,
                 double const_lead_pt_match_in = 0.2,
                 double const_sub_pt_init_in = 2.0,
@@ -57,8 +59,10 @@ namespace dijetcore {
     DijetMatrix(std::set<fastjet::JetAlgorithm> jet_alg_in,
                 std::set<double> lead_pt_in,
                 std::set<double> lead_R_in,
+                std::set<double> lead_R_match_in,
                 std::set<double> sub_pt_in,
                 std::set<double> sub_R_in,
+                std::set<double> sub_R_match_in,
                 std::set<double> const_lead_pt_init_in,
                 std::set<double> const_lead_pt_match_in,
                 std::set<double> const_sub_pt_init_in,
@@ -94,9 +98,15 @@ namespace dijetcore {
     
     
     // force leading and subleading jets to have equal constituent
-    // pt cuts or eta cuts
+    // pt cuts or eta cuts (default true)
     void ForceConstituentPtEquality(bool flag = true);
     void ForceConstituentEtaEquality(bool flag = true);
+    
+    // force jets to have same R for leading/subleading (default true)
+    void ForceJetResolutionEquality(bool flag = true);
+    
+    // force matched jets to have same R (default false)
+    void ForceMatchJetResolutionEquality(bool flag = true);
     
     // get the keys to the map
     const std::set<string>& Keys() const {return keys_;}
@@ -186,6 +196,9 @@ namespace dijetcore {
     // used during initialization
     std::vector<fastjet::JetDefinition> FillLeadJetDefinitions();
     std::vector<fastjet::JetDefinition> FillSubJetDefinitions();
+    std::vector<fastjet::JetDefinition> FillLeadMatchJetDefinitions();
+    std::vector<fastjet::JetDefinition> FillSubMatchJetDefinitions();
+
     
     std::set<double> const_eta_;
     std::set<double> const_lead_pt_init_;
@@ -198,13 +211,20 @@ namespace dijetcore {
     bool force_constituent_pt_equality_;
     bool force_constituent_eta_equality_;
     
+    // forces jet R to be similar either between leading/subleading or between
+    // initial/matched
+    bool force_jet_resolution_equality_;
+    bool force_match_jet_resolution_equality_;
+    
     // allow different radii for leading & subleading
     // jets, but do not allow different jet algorithms
     std::set<fastjet::JetAlgorithm> jet_algorithm_;
     std::set<double> lead_pt_;
     std::set<double> lead_R_;
+    std::set<double> lead_R_match_;
     std::set<double> sub_pt_;
     std::set<double> sub_R_;
+    std::set<double> sub_R_match_;
     
     // details of fastjet that one might want to change from default,
     // for one reason or another

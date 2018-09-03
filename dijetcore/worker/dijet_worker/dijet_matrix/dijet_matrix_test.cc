@@ -7,19 +7,22 @@
 #include "dijetcore/worker/dijet_worker/dijet_matrix/jet_def.h"
 #include "dijetcore/worker/dijet_worker/dijet_matrix/dijet_definition.h"
 #include "dijetcore/util/fastjet/selector_compare.h"
+#include "dijetcore/util/fastjet/dijet_key.h"
+#include "dijetcore/lib/logging.h"
+
 bool CheckDijetDefinition(dijetcore::DijetDefinition def, fastjet::JetAlgorithm lead_alg, fastjet::JetAlgorithm sub_alg,
-                          double lead_R, double sub_R, double lead_pt, double sub_pt, double lead_const_init_pt,
-                          double lead_const_match_pt, double sub_const_init_pt, double sub_const_match_pt,
+                          double lead_R, double lead_match_R, double sub_R, double sub_match_R, double lead_pt, double sub_pt,
+                          double lead_const_init_pt, double lead_const_match_pt, double sub_const_init_pt, double sub_const_match_pt,
                           double const_eta, fastjet::RecombinationScheme scheme, fastjet::Strategy strategy,
-                          fastjet::AreaType area_type, int ghost_repeat, double ghost_area, double grid_scatter,
-                          double pt_scatter, double mean_ghost_pt, fastjet::JetDefinition bkg_def,
-                          fastjet::AreaDefinition bkg_area_lead, fastjet::AreaDefinition bkg_area_sub) {
+                          fastjet::AreaType area_type, int ghost_repeat, double ghost_area, double grid_scatter, double pt_scatter,
+                          double mean_ghost_pt, fastjet::JetDefinition bkg_def, fastjet::AreaDefinition bkg_area_lead,
+                          fastjet::AreaDefinition bkg_area_sub) {
     dijetcore::MatchDef* lead = def.lead;
     dijetcore::MatchDef* sub = def.sub;
   
   // check the leading jet
   if (lead->InitialJetDef().R() != lead_R ||
-      lead->MatchedJetDef().R() != lead_R ||
+      lead->MatchedJetDef().R() != lead_match_R ||
       lead->InitialJetDef().jet_algorithm() != lead_alg ||
       lead->MatchedJetDef().jet_algorithm() != lead_alg ||
       dijetcore::ExtractDoubleFromSelector(lead->InitialJetDef().ConstituentSelector(), "pt >=") != lead_const_init_pt ||
@@ -70,7 +73,7 @@ bool CheckDijetDefinition(dijetcore::DijetDefinition def, fastjet::JetAlgorithm 
   
   // and check subleading jet
   if (sub->InitialJetDef().R() != sub_R ||
-      sub->MatchedJetDef().R() != sub_R ||
+      sub->MatchedJetDef().R() != sub_match_R ||
       sub->InitialJetDef().jet_algorithm() != sub_alg ||
       sub->MatchedJetDef().jet_algorithm() != sub_alg ||
       dijetcore::ExtractDoubleFromSelector(sub->InitialJetDef().ConstituentSelector(), "pt >=") != sub_const_init_pt ||
@@ -138,6 +141,7 @@ TEST(DijetMatrix, Initialization) {
     dijetcore::DijetMatrix matrix;
     matrix.ForceConstituentPtEquality(false);
     matrix.ForceConstituentEtaEquality(false);
+    matrix.ForceJetResolutionEquality(false);
     matrix.AddJetAlgorithm({fastjet::antikt_algorithm, fastjet::kt_algorithm});
     matrix.AddLeadJetR({0.4, 0.5});
     matrix.AddSubJetR({0.4, 0.5});
@@ -167,6 +171,7 @@ TEST(DijetMatrix, ForceConstistuentEta) {
     dijetcore::DijetMatrix matrix;
     matrix.AddConstituentEta({1.0, 1.5});
     matrix.ForceConstituentEtaEquality(true);
+    matrix.ForceJetResolutionEquality(false);
     matrix.Initialize();
     
     EXPECT_EQ(matrix.Size(), 2);
@@ -181,6 +186,7 @@ TEST(DijetMatrix, ForceConstituentPt) {
     dijetcore::DijetMatrix matrix;
 
     matrix.ForceConstituentPtEquality(true);
+    matrix.ForceJetResolutionEquality(false);
 
     matrix.AddConstituentLeadInitialPt(2.0);
     matrix.AddConstituentSubInitialPt(2.1);
@@ -223,9 +229,12 @@ TEST(DijetMatrix, SingleCaseFullTest) {
     dijetcore::DijetMatrix matrix;
     matrix.ForceConstituentPtEquality(true);
     matrix.ForceConstituentEtaEquality(true);
+    matrix.ForceJetResolutionEquality(false);
+    matrix.ForceMatchJetResolutionEquality(true);
     matrix.AddLeadJetPt(18);
     matrix.AddLeadJetR(0.4);
     matrix.AddLeadJetR(0.5);
+    matrix.AddSubJetR(0.4);
     matrix.AddSubJetR(0.6);
     matrix.AddSubJetPt(9);
     matrix.AddConstituentEta(1.0);
@@ -239,44 +248,52 @@ TEST(DijetMatrix, SingleCaseFullTest) {
 
     matrix.ForceConstituentPtEquality(false);
     matrix.ForceConstituentEtaEquality(false);
+    matrix.ForceMatchJetResolutionEquality(false);
     matrix.Initialize();
 
-    EXPECT_EQ(matrix.Size(), 2);
-
-    for (auto key : matrix.Keys()) {
-        double lead_R;
-        if ((key.find("INIT_R_0.4") != std::string::npos) &&
-            (key.find("MATCH_R_0.4") != std::string::npos)) {
-            lead_R = 0.4;
-        }
-        else if ((key.find("INIT_R_0.5") != std::string::npos) &&
-             (key.find("MATCH_R_0.5") != std::string::npos)) {
-            lead_R = 0.5;
-        }
-        else {
-            EXPECT_STREQ("bad key found in DijetMatrix", "");
-        }
-    
-        // build the background area def
+    EXPECT_EQ(matrix.Size(), 4);
   
-        fastjet::GhostedAreaSpec ghost_spec_lead(1.0 + 0.4, 1, 0.01, 1, 0.1, 1e-100);
-        fastjet::AreaDefinition bkg_area_def_lead(fastjet::active_area_explicit_ghosts, ghost_spec_lead);
+  std::vector<std::pair<double, double>> lead_jet_pairs{{0.4, 0.4}, {0.5, 0.4}};
+  std::vector<std::pair<double, double>> sub_jet_pairs{{0.4, 0.4}, {0.6, 0.4}};
+  
+  for (auto key : matrix.Keys()) {
+    dijetcore::DijetKey parsed_key = dijetcore::ParseStringToDijetKey(key);
     
-        fastjet::GhostedAreaSpec ghost_spec_sub(1.0 + 0.4, 1, 0.01, 1, 0.1, 1e-100);
-        fastjet::AreaDefinition bkg_area_def_sub(fastjet::active_area_explicit_ghosts, ghost_spec_sub);
-    
-        EXPECT_TRUE(CheckDijetDefinition(*matrix.DijetDefinitions()[key], fastjet::antikt_algorithm, fastjet::antikt_algorithm,
-                                      lead_R, 0.6, 18, 9, 2.5, 0.5, 2.3, 0.4, 1.0, fastjet::E_scheme, fastjet::Best,
-                                      fastjet::active_area_explicit_ghosts, 1, 0.01, 1, 0.1, 1e-100,
-                                      fastjet::JetDefinition(fastjet::kt_algorithm, 0.4), bkg_area_def_lead,
-                                      bkg_area_def_sub));
-
+    if (std::find(lead_jet_pairs.begin(), lead_jet_pairs.end(), std::pair<double, double>{parsed_key.lead_init_r, parsed_key.lead_match_r})
+        == lead_jet_pairs.end()) {
+      EXPECT_STREQ("Found bad DijetDefinition in DijetMatrix", "");
+      continue;
     }
+    double lead_R = parsed_key.lead_init_r;
+    double lead_match_R = parsed_key.lead_match_r;
+    
+    if (std::find(sub_jet_pairs.begin(), sub_jet_pairs.end(), std::pair<double, double>{parsed_key.sub_init_r, parsed_key.sub_match_r})
+        == sub_jet_pairs.end()) {
+      EXPECT_STREQ("Found bad DijetDefinition in DijetMatrix", "");
+      continue;
+    }
+    double sub_R = parsed_key.sub_init_r;
+    double sub_match_R = parsed_key.sub_match_r;
+    // build the background area def
+    
+    fastjet::GhostedAreaSpec ghost_spec_lead(1.0 + 0.4, 1, 0.01, 1, 0.1, 1e-100);
+    fastjet::AreaDefinition bkg_area_def_lead(fastjet::active_area_explicit_ghosts, ghost_spec_lead);
+    
+    fastjet::GhostedAreaSpec ghost_spec_sub(1.0 + 0.4, 1, 0.01, 1, 0.1, 1e-100);
+    fastjet::AreaDefinition bkg_area_def_sub(fastjet::active_area_explicit_ghosts, ghost_spec_sub);
+    
+    EXPECT_TRUE(CheckDijetDefinition(*matrix.DijetDefinitions()[key], fastjet::antikt_algorithm, fastjet::antikt_algorithm,
+                                     lead_R, lead_match_R, sub_R, sub_match_R, 18, 9, 2.5, 0.5, 2.3, 0.4, 1.0, fastjet::E_scheme,
+                                     fastjet::Best, fastjet::active_area_explicit_ghosts, 1, 0.01, 1, 0.1, 1e-100,
+                                     fastjet::JetDefinition(fastjet::kt_algorithm, 0.4), bkg_area_def_lead,
+                                     bkg_area_def_sub));
+    
+  }
 }
 
 TEST(DijetMatrix, TestClusterSequenceSets) {
     dijetcore::DijetMatrix matrix;
-
+    matrix.ForceJetResolutionEquality(false);
     matrix.AddLeadJetPt({20.0, 18.0});
     matrix.AddSubJetPt({10.0, 9.0});
     matrix.AddLeadJetR(0.4);

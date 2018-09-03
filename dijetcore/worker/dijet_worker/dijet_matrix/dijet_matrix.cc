@@ -10,6 +10,8 @@ namespace dijetcore {
   DijetMatrix::DijetMatrix() :
   force_constituent_pt_equality_(true),
   force_constituent_eta_equality_(true),
+  force_jet_resolution_equality_(true),
+  force_match_jet_resolution_equality_(false),
   strategy_(fastjet::Best),
   scheme_(fastjet::E_scheme),
   area_type_(fastjet::active_area_explicit_ghosts),
@@ -24,8 +26,10 @@ namespace dijetcore {
   DijetMatrix::DijetMatrix(fastjet::JetAlgorithm jet_alg_in,
                            double lead_pt_in,
                            double lead_R_in,
+                           double lead_R_match_in,
                            double sub_pt_in,
                            double sub_R_in,
+                           double sub_R_match_in,
                            double const_lead_pt_init_in,
                            double const_lead_pt_match_in,
                            double const_sub_pt_init_in,
@@ -39,10 +43,14 @@ namespace dijetcore {
   jet_algorithm_(std::set<fastjet::JetAlgorithm>{jet_alg_in}),
   lead_pt_(std::set<double>{lead_pt_in}),
   lead_R_(std::set<double>{lead_R_in}),
+  lead_R_match_(std::set<double>{lead_R_match_in}),
   sub_pt_(std::set<double>{sub_pt_in}),
   sub_R_(std::set<double>{sub_R_in}),
+  sub_R_match_(std::set<double>{sub_R_match_in}),
   force_constituent_pt_equality_(true),
   force_constituent_eta_equality_(true),
+  force_jet_resolution_equality_(true),
+  force_match_jet_resolution_equality_(false),
   strategy_(fastjet::Best),
   scheme_(fastjet::E_scheme),
   area_type_(fastjet::active_area_explicit_ghosts),
@@ -59,8 +67,10 @@ namespace dijetcore {
   DijetMatrix::DijetMatrix(std::set<fastjet::JetAlgorithm> jet_alg_in,
                            std::set<double> lead_pt_in,
                            std::set<double> lead_R_in,
+                           std::set<double> lead_R_match_in,
                            std::set<double> sub_pt_in,
                            std::set<double> sub_R_in,
+                           std::set<double> sub_R_match_in,
                            std::set<double> const_lead_pt_init_in,
                            std::set<double> const_lead_pt_match_in,
                            std::set<double> const_sub_pt_init_in,
@@ -74,10 +84,14 @@ namespace dijetcore {
   jet_algorithm_(jet_alg_in),
   lead_pt_(lead_pt_in),
   lead_R_(lead_R_in),
+  lead_R_match_(lead_R_match_in),
   sub_pt_(sub_pt_in),
   sub_R_(sub_R_in),
+  sub_R_match_(sub_R_match_in),
   force_constituent_pt_equality_(true),
   force_constituent_eta_equality_(true),
+  force_jet_resolution_equality_(true),
+  force_match_jet_resolution_equality_(false),
   strategy_(fastjet::Best),
   scheme_(fastjet::E_scheme),
   area_type_(fastjet::active_area_explicit_ghosts),
@@ -98,10 +112,14 @@ namespace dijetcore {
   jet_algorithm_(rhs.jet_algorithm_),
   lead_pt_(rhs.lead_pt_),
   lead_R_(rhs.lead_R_),
+  lead_R_match_(rhs.lead_R_match_),
   sub_pt_(rhs.sub_pt_),
   sub_R_(rhs.sub_R_),
+  sub_R_match_(rhs.sub_R_match_),
   force_constituent_pt_equality_(rhs.force_constituent_pt_equality_),
   force_constituent_eta_equality_(rhs.force_constituent_eta_equality_),
+  force_jet_resolution_equality_(rhs.force_jet_resolution_equality_),
+  force_match_jet_resolution_equality_(rhs.force_match_jet_resolution_equality_),
   strategy_(rhs.strategy_),
   scheme_(rhs.scheme_),
   area_type_(rhs.area_type_),
@@ -122,8 +140,10 @@ namespace dijetcore {
     jet_algorithm_.clear();
     lead_pt_.clear();
     lead_R_.clear();
+    lead_R_match_.clear();
     sub_pt_.clear();
     sub_R_.clear();
+    sub_R_match_.clear();
     
     ClearDijetDefs();
   }
@@ -144,6 +164,16 @@ namespace dijetcore {
   
   void DijetMatrix::ForceConstituentEtaEquality(bool flag) {
     force_constituent_eta_equality_ = flag;
+    CheckToUpdate();
+  }
+  
+  void DijetMatrix::ForceJetResolutionEquality(bool flag) {
+    force_jet_resolution_equality_ = flag;
+    CheckToUpdate();
+  }
+  
+  void DijetMatrix::ForceMatchJetResolutionEquality(bool flag) {
+    force_match_jet_resolution_equality_ = flag;
     CheckToUpdate();
   }
   
@@ -279,52 +309,66 @@ namespace dijetcore {
     
     // first step - get our leading & subleading jet definitions
     std::vector<fastjet::JetDefinition> lead_jet_defs = FillLeadJetDefinitions();
+    std::vector<fastjet::JetDefinition> lead_match_jet_defs = FillLeadMatchJetDefinitions();
     std::vector<fastjet::JetDefinition> sub_jet_defs = FillSubJetDefinitions();
+    std::vector<fastjet::JetDefinition> sub_match_jet_defs = FillSubMatchJetDefinitions();
     
     // start creating the leading jet MatchDefs
     for (auto& lead_fj_def : lead_jet_defs) {
-      for (auto& lead_jet_pt : lead_pt_) {
-        for (auto& lead_const_pt_init : const_lead_pt_init_) {
-          for (auto& lead_const_pt_match : const_lead_pt_match_) {
-            for (auto& lead_const_eta : const_eta_) {
-              
-              // get a few needed parameters
-              double R = lead_fj_def.R();
-              double bkg_R = bkg_definition_.R();
-              double jet_eta_max = lead_const_eta - R;
-              double bkg_jet_eta_max = lead_const_eta - bkg_R;
-              
-              // build constituent & jet selectors
-              fastjet::Selector init_const_selector = fastjet::SelectorAbsRapMax(lead_const_eta)
-              && fastjet::SelectorPtMin(lead_const_pt_init);
-              fastjet::Selector match_const_selector = fastjet::SelectorAbsRapMax(lead_const_eta)
-              && fastjet::SelectorPtMin(lead_const_pt_match);
-              fastjet::Selector init_jet_selector = fastjet::SelectorAbsRapMax(jet_eta_max)
-              && fastjet::SelectorPtMin(lead_jet_pt);
-              fastjet::Selector match_jet_selector = fastjet::SelectorIdentity();
-              
-              fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,
-                                                 grid_scatter_, pt_scatter_, mean_ghost_pt_);
-              fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
-                                               ghost_def);
-              
-              fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(lead_const_eta - bkg_R)
-              && (!fastjet::SelectorNHardest(2));
-              fastjet::GhostedAreaSpec bkg_ghost_def(bkg_jet_eta_max + 2 * bkg_R, ghost_repeat_, ghost_area_,
-                                                     grid_scatter_, pt_scatter_, mean_ghost_pt_);
-              fastjet::AreaDefinition bkg_area_def(fastjet::active_area_explicit_ghosts,
-                                                   bkg_ghost_def);
-              // create the initial JetDef & the
-              // matched JetDef def
-              JetDef init_def(lead_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-              init_def.SetConstituentSelector(init_const_selector);
-              init_def.SetJetSelector(init_jet_selector);
-              JetDef match_def(lead_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-              match_def.SetConstituentSelector(match_const_selector);
-              match_def.SetJetSelector(match_jet_selector);
-              
-              // create the MatchDef
-              lead_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
+      for(auto& lead_match_fj_def : lead_match_jet_defs) {
+        
+        // we always use the same algorithm - if they are different, then discard
+        if (lead_fj_def.jet_algorithm() != lead_match_fj_def.jet_algorithm())
+          continue;
+        
+        // if we are forcing matched jets to have similar R, check here
+        if (force_match_jet_resolution_equality_ &&
+            lead_fj_def.R() != lead_match_fj_def.R())
+          continue;
+        
+        for (auto& lead_jet_pt : lead_pt_) {
+          for (auto& lead_const_pt_init : const_lead_pt_init_) {
+            for (auto& lead_const_pt_match : const_lead_pt_match_) {
+              for (auto& lead_const_eta : const_eta_) {
+                
+                // get a few needed parameters
+                double R = lead_fj_def.R();
+                double bkg_R = bkg_definition_.R();
+                double jet_eta_max = lead_const_eta - R;
+                double bkg_jet_eta_max = lead_const_eta - bkg_R;
+                
+                // build constituent & jet selectors
+                fastjet::Selector init_const_selector = fastjet::SelectorAbsRapMax(lead_const_eta)
+                && fastjet::SelectorPtMin(lead_const_pt_init);
+                fastjet::Selector match_const_selector = fastjet::SelectorAbsRapMax(lead_const_eta)
+                && fastjet::SelectorPtMin(lead_const_pt_match);
+                fastjet::Selector init_jet_selector = fastjet::SelectorAbsRapMax(jet_eta_max)
+                && fastjet::SelectorPtMin(lead_jet_pt);
+                fastjet::Selector match_jet_selector = fastjet::SelectorIdentity();
+                
+                fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,
+                                                   grid_scatter_, pt_scatter_, mean_ghost_pt_);
+                fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
+                                                 ghost_def);
+                
+                fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(lead_const_eta - bkg_R)
+                && (!fastjet::SelectorNHardest(2));
+                fastjet::GhostedAreaSpec bkg_ghost_def(bkg_jet_eta_max + 2 * bkg_R, ghost_repeat_, ghost_area_,
+                                                       grid_scatter_, pt_scatter_, mean_ghost_pt_);
+                fastjet::AreaDefinition bkg_area_def(fastjet::active_area_explicit_ghosts,
+                                                     bkg_ghost_def);
+                // create the initial JetDef & the
+                // matched JetDef def
+                JetDef init_def(lead_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
+                init_def.SetConstituentSelector(init_const_selector);
+                init_def.SetJetSelector(init_jet_selector);
+                JetDef match_def(lead_match_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
+                match_def.SetConstituentSelector(match_const_selector);
+                match_def.SetJetSelector(match_jet_selector);
+                
+                // create the MatchDef
+                lead_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
+              }
             }
           }
         }
@@ -333,50 +377,62 @@ namespace dijetcore {
     
     // do the same for subleading
     for (auto& sub_fj_def : sub_jet_defs) {
-      for (auto& sub_jet_pt : sub_pt_) {
-        for (auto& sub_const_pt_init : const_sub_pt_init_) {
-          for (auto& sub_const_pt_match : const_sub_pt_match_) {
-            for (auto& sub_const_eta : const_eta_) {
-              
-              // get a few needed parameters
-              double R = sub_fj_def.R();
-              double bkg_R = bkg_definition_.R();
-              double jet_eta_max = sub_const_eta - R;
-              double bkg_jet_eta_max = sub_const_eta - bkg_R;
-              
-              // build constituent & jet selectors
-              fastjet::Selector init_const_selector = fastjet::SelectorAbsRapMax(sub_const_eta)
-              && fastjet::SelectorPtMin(sub_const_pt_init);
-              fastjet::Selector match_const_selector = fastjet::SelectorAbsRapMax(sub_const_eta)
-              && fastjet::SelectorPtMin(sub_const_pt_match);
-              fastjet::Selector init_jet_selector = fastjet::SelectorAbsRapMax(jet_eta_max)
-              && fastjet::SelectorPtMin(sub_jet_pt);
-              fastjet::Selector match_jet_selector = fastjet::SelectorIdentity();
-              fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(sub_const_eta - bkg_R)
-              && (!fastjet::SelectorNHardest(2));
-              
-              fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,
-                                                 grid_scatter_, pt_scatter_, mean_ghost_pt_);
-              fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
-                                               ghost_def);
-              
-              fastjet::GhostedAreaSpec bkg_ghost_def(bkg_jet_eta_max + 2 * bkg_R, ghost_repeat_, ghost_area_,
-                                                     grid_scatter_, pt_scatter_, mean_ghost_pt_);
-              fastjet::AreaDefinition bkg_area_def(fastjet::active_area_explicit_ghosts,
-                                                   bkg_ghost_def);
-              
-              // create the initial JetDef & the
-              // matched JetDef def
-              JetDef init_def(sub_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-              init_def.SetConstituentSelector(init_const_selector);
-              init_def.SetJetSelector(init_jet_selector);
-              JetDef match_def(sub_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-              match_def.SetConstituentSelector(match_const_selector);
-              match_def.SetJetSelector(match_jet_selector);
-              
-              // create the MatchDef
-              sub_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
-              
+      for(auto& sub_match_fj_def : sub_match_jet_defs) {
+        
+        // we always use the same algorithm - if they are different, then discard
+        if (sub_fj_def.jet_algorithm() != sub_match_fj_def.jet_algorithm())
+        continue;
+        
+        // if we are forcing matched jets to have similar R, check here
+        if (force_match_jet_resolution_equality_ &&
+            sub_fj_def.R() != sub_match_fj_def.R())
+        continue;
+        
+        for (auto& sub_jet_pt : sub_pt_) {
+          for (auto& sub_const_pt_init : const_sub_pt_init_) {
+            for (auto& sub_const_pt_match : const_sub_pt_match_) {
+              for (auto& sub_const_eta : const_eta_) {
+                
+                // get a few needed parameters
+                double R = sub_fj_def.R();
+                double bkg_R = bkg_definition_.R();
+                double jet_eta_max = sub_const_eta - R;
+                double bkg_jet_eta_max = sub_const_eta - bkg_R;
+                
+                // build constituent & jet selectors
+                fastjet::Selector init_const_selector = fastjet::SelectorAbsRapMax(sub_const_eta)
+                && fastjet::SelectorPtMin(sub_const_pt_init);
+                fastjet::Selector match_const_selector = fastjet::SelectorAbsRapMax(sub_const_eta)
+                && fastjet::SelectorPtMin(sub_const_pt_match);
+                fastjet::Selector init_jet_selector = fastjet::SelectorAbsRapMax(jet_eta_max)
+                && fastjet::SelectorPtMin(sub_jet_pt);
+                fastjet::Selector match_jet_selector = fastjet::SelectorIdentity();
+                fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(sub_const_eta - bkg_R)
+                && (!fastjet::SelectorNHardest(2));
+                
+                fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,
+                                                   grid_scatter_, pt_scatter_, mean_ghost_pt_);
+                fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
+                                                 ghost_def);
+                
+                fastjet::GhostedAreaSpec bkg_ghost_def(bkg_jet_eta_max + 2 * bkg_R, ghost_repeat_, ghost_area_,
+                                                       grid_scatter_, pt_scatter_, mean_ghost_pt_);
+                fastjet::AreaDefinition bkg_area_def(fastjet::active_area_explicit_ghosts,
+                                                     bkg_ghost_def);
+                
+                // create the initial JetDef & the
+                // matched JetDef def
+                JetDef init_def(sub_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
+                init_def.SetConstituentSelector(init_const_selector);
+                init_def.SetJetSelector(init_jet_selector);
+                JetDef match_def(sub_match_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
+                match_def.SetConstituentSelector(match_const_selector);
+                match_def.SetJetSelector(match_jet_selector);
+                
+                // create the MatchDef
+                sub_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
+                
+              }
             }
           }
         }
@@ -411,6 +467,14 @@ namespace dijetcore {
           double lead_eta = ExtractDoubleFromSelector(lead->InitialJetDef().ConstituentSelector(), "|rap| <=");
           double sub_eta = ExtractDoubleFromSelector(sub->InitialJetDef().ConstituentSelector(), "|rap| <=");
           if (lead_eta != sub_eta)
+            continue;
+        }
+        
+        // if the force_jet_resolution_equality_ is on, force
+        // R to be equal
+        if (force_jet_resolution_equality_) {
+          if (lead->InitialJetDef().R() != sub->InitialJetDef().R() ||
+              lead->MatchedJetDef().R() != sub->MatchedJetDef().R())
             continue;
         }
         
@@ -491,10 +555,14 @@ namespace dijetcore {
       lead_pt_.insert(20.0);
     if (lead_R_.empty())
       lead_R_.insert(0.4);
+    if (lead_R_match_.empty())
+      lead_R_match_.insert(0.4);
     if (sub_pt_.empty())
       sub_pt_.insert(10.0);
     if (sub_R_.empty())
       sub_R_.insert(0.4);
+    if (sub_R_match_.empty())
+      sub_R_match_.insert(0.4);
   }
   
   std::vector<fastjet::JetDefinition> DijetMatrix::FillLeadJetDefinitions() {
@@ -505,10 +573,26 @@ namespace dijetcore {
     return ret;
   }
   
+  std::vector<fastjet::JetDefinition> DijetMatrix::FillLeadMatchJetDefinitions() {
+    std::vector<fastjet::JetDefinition> ret;
+    for (auto& alg : jet_algorithm_)
+      for (auto& R : lead_R_match_)
+        ret.push_back(fastjet::JetDefinition(alg, R, scheme_, strategy_));
+    return ret;
+  }
+  
   std::vector<fastjet::JetDefinition> DijetMatrix::FillSubJetDefinitions() {
     std::vector<fastjet::JetDefinition> ret;
     for (auto& alg : jet_algorithm_)
       for (auto& R : sub_R_)
+        ret.push_back(fastjet::JetDefinition(alg, R, scheme_, strategy_));
+    return ret;
+  }
+  
+  std::vector<fastjet::JetDefinition> DijetMatrix::FillSubMatchJetDefinitions() {
+    std::vector<fastjet::JetDefinition> ret;
+    for (auto& alg : jet_algorithm_)
+      for (auto& R : sub_R_match_)
         ret.push_back(fastjet::JetDefinition(alg, R, scheme_, strategy_));
     return ret;
   }

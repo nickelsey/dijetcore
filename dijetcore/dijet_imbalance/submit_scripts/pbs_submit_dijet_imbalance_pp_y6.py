@@ -206,8 +206,25 @@ def main(args) :
       clargs = clargs + ' --leadConstPtMatch=' + args.leadConstPtMatch + ' --subConstPtMatch='
       clargs = clargs + args.subConstPtMatch + ' --leadR=' + args.leadR + ' --subR=' + args.subR
       clargs = clargs + ' --leadJetPt=' + args.leadJetPt + ' --subJetPt=' + args.subJetPt
+      clargs = clargs + ' --leadMatchR=' + args.leadMatchR + ' --subMatchR=' + args.subMatchR
       clargs = clargs + ' --towerUnc=' + str(tow_sys) + ' --trackingUnc=' + str(track_sys)
       clargs = clargs + ' --efficiencyFile=' + args.efficiencyFile + ' --embedInput=' + args.embedFile
+      if args.forceConstituentPtEquality :
+        clargs = clargs + ' --forceConstituentPtEquality=true'
+      else :
+        clargs = clargs + ' --forceConstituentPtEquality=false'
+      if args.forceConstituentEtaEquality :
+        clargs = clargs + ' --forceConstituentEtaEquality=true'
+      else :
+        clargs = clargs + ' --forceConstituentEtaEquality=false'
+      if args.forceJetResolutionEquality :
+        clargs = clargs + ' --forceJetResolutionEquality=true'
+      else :
+        clargs = clargs + ' --forceJetResolutionEquality=false'
+      if args.forceMatchJetResolutionEquality :
+        clargs = clargs + ' --forceMatchJetResolutionEquality=true'
+      else :
+        clargs = clargs + ' --forceMatchJetResolutionEquality=false'
       
       qsub = 'qsub -V -p ' + str(args.priority) + ' -l mem=' + str(args.mem) + 'GB -l nodes=' + str(args.nodes)
       qsub = qsub + ':ppn=' + str(args.ppn) + ' -q ' + str(args.queue) + ' -o ' + outstream
@@ -259,9 +276,15 @@ if __name__ == "__main__":
   parser.add_argument('--subConstPt', default='2.0', help='list of subleading hard jet constituent pt cuts to use during jetfinding')
   parser.add_argument('--subConstPtMatch', default='0.2', help='list of subleading matched jet constituent pt cuts to use during jetfinding')
   parser.add_argument('--leadR', default='0.4', help='list of jet radii to be used for leading jet')
+  parser.add_argument('--leadMatchR', default='0.4', help='list of jet radii to be used for leading matched jet')
   parser.add_argument('--leadJetPt', default='20.0', help='list of leading jet pt cuts to use during jetfinding')
   parser.add_argument('--subR', default='0.4', help='list of jet radii to be used for subleading jet')
+  parser.add_argument('--subMatchR', default='0.4', help='list of jet radii to be used for subleading matched jet')
   parser.add_argument('--subJetPt', default='10.0', help='list of subleading jet pt cuts to use during jetfinding')
+  parser.add_argument('--forceConstPtEquality', type=bool, default=True, "Only use DijetDefinitions where pT const is equal in leading/subleading jets")
+  parser.add_argument('--forceConstEtaEquality', type=bool, default=True, "Only use DijetDefinitions where eta const is equal in leading/subleading jets")
+  parser.add_argument('--forceJetResolutionEquality', type=bool, default=True, "Only use DijetDefinitions where leading/subleading R are equivalent")
+  parser.add_argument('--forceMatchJetResolutionEquality', type=bool, default=True, "Only use DijetDefinitions where initial/matched R are equivalent")
   args = parser.parse_args()
   main( args )
 

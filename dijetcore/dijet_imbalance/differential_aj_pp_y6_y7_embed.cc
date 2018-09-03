@@ -57,7 +57,9 @@ DIJETCORE_DEFINE_string(subConstPt, "2.0", "subleading constituent pT cut (comma
 DIJETCORE_DEFINE_string(leadConstPtMatch, "0.2", "matched leading constituent pT cut (comma separated)");
 DIJETCORE_DEFINE_string(subConstPtMatch, "0.2", "matched subleading constituent pT cut (comma separated)");
 DIJETCORE_DEFINE_string(leadR, "0.4", "leading jet R (comma separated");
+DIJETCORE_DEFINE_string(leadMatchR, "0.4", "leading matched jet R (comma separated");
 DIJETCORE_DEFINE_string(subR, "0.4", "subleading jet R (comma separated");
+DIJETCORE_DEFINE_string(subMatchR, "0.4", "subleading matched jet R (comma separated");
 DIJETCORE_DEFINE_string(leadJetPt, "20.0", "leading jet pT cut (comma separated)");
 DIJETCORE_DEFINE_string(subJetPt, "10.0", "subleading jet pT cut (comma separated)");
 DIJETCORE_DEFINE_int(towerUnc, 0, "tower scaling for systematic uncertainties");
@@ -65,6 +67,10 @@ DIJETCORE_DEFINE_int(trackingUnc, 0, "tracking efficiency ratio scaling for syst
 DIJETCORE_DEFINE_int(seed, 0, "seed for the random number generator, so that results can be reproducible");
 DIJETCORE_DEFINE_bool(useEfficiency, true, "flag to scale pp efficiency to be run 7 AuAu-like");
 DIJETCORE_DEFINE_int(minCentrality, 2, "minimum cutoff for embedding centrality - should not be greater than 2 if efficiency is on")
+DIJETCORE_DEFINE_bool(forceConstituentPtEquality, true, "Only use DijetDefinitions where pT const is equal in leading/subleading jets");
+DIJETCORE_DEFINE_bool(forceConstituentEtaEquality, true, "Only use DijetDefinitions where eta const is equal in leading/subleading jets");
+DIJETCORE_DEFINE_bool(forceJetResolutionEquality, true, "Only use DijetDefinitions where leading/subleading R are equivalent");
+DIJETCORE_DEFINE_bool(forceMatchJetResolutionEquality, false, "Only use DijetDefinitions where initial and matched R are equivalent");
 
 bool GetEmbedEvent(TStarJetPicoReader* reader, std::set<unsigned>& triggers, dijetcore::CentralityRun7& cent) {
   while(reader->NextEvent()) {
@@ -156,19 +162,25 @@ int main(int argc, char* argv[]) {
   std::set<double> lead_const_hard_pt     = dijetcore::ParseArgString<double>(FLAGS_leadConstPt);
   std::set<double> lead_const_match_pt    = dijetcore::ParseArgString<double>(FLAGS_leadConstPtMatch);
   std::set<double> lead_R                 = dijetcore::ParseArgString<double>(FLAGS_leadR);
+  std::set<double> lead_R_match           = dijetcore::ParseArgString<double>(FLAGS_leadMatchR);
   std::set<double> lead_hard_pt           = dijetcore::ParseArgString<double>(FLAGS_leadJetPt);
   
   // subleading jet
   std::set<double> sublead_const_hard_pt  = dijetcore::ParseArgString<double>(FLAGS_subConstPt);
   std::set<double> sublead_const_match_pt = dijetcore::ParseArgString<double>(FLAGS_subConstPtMatch);
   std::set<double> sublead_R              = dijetcore::ParseArgString<double>(FLAGS_subR);
+  std::set<double> sublead_R_match        = dijetcore::ParseArgString<double>(FLAGS_subMatchR);
   std::set<double> sublead_hard_pt        = dijetcore::ParseArgString<double>(FLAGS_subJetPt);
   
   // here we can initialize the worker
   LOG(INFO) << "initializing worker...";
-  dijetcore::DijetWorker worker(alg, lead_hard_pt, lead_R, sublead_hard_pt, sublead_R,
-                                lead_const_hard_pt, lead_const_match_pt, sublead_const_hard_pt,
-                                sublead_const_match_pt, const_eta);
+  dijetcore::DijetWorker worker(alg, lead_hard_pt, lead_R, lead_R_match, sublead_hard_pt, sublead_R,
+                                sublead_R_match, lead_const_hard_pt, lead_const_match_pt,
+                                sublead_const_hard_pt, sublead_const_match_pt, const_eta);
+  worker.ForceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
+  worker.ForceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
+  worker.ForceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
+  worker.ForceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
   worker.Initialize();
   
   LOG(INFO) << "worker initialized - number of dijet definitions: " << worker.Size();
