@@ -12,11 +12,11 @@ namespace dijetcore {
   }
   
   template<>
-  std::string MakeString(const std::string& s) {
+  string MakeString(const string& s) {
     return s;
   }
   
-  std::string MakeString(const char* chr) {
+  string MakeString(const char* chr) {
     return std::string(chr);
   }
   
@@ -28,23 +28,32 @@ namespace dijetcore {
     }
   }
   
-  bool Consume(std::string& arg, const std::string& seq) {
+  bool Consume(string& arg, const string& seq) {
     if (seq.size() > arg.size()) return false;
     if (arg.compare( 0, seq.length(), seq ) == 0) {
-      arg = std::string(arg.begin() + seq.length(), arg.end());
+      arg = string(arg.begin() + seq.length(), arg.end());
       return true;
     }
     return false;
   }
   
-  bool Consume(std::string& arg, char c) {
+  bool Consume(string& arg, char c) {
     if (arg.size() == 0)
       return false;
     if (arg[0] == c) {
-      arg = std::string(arg.begin()+1, arg.end());
+      arg = string(arg.begin()+1, arg.end());
       return true;
     }
     return false;
+  }
+  
+  string SplitOnNextOccurence(string& arg, const string& seq) {
+    size_t loc = arg.find(seq);
+    if (loc == string::npos)
+      return string();
+    string ret = string(arg.begin(), arg.begin() + loc);
+    arg = string(arg.begin() + loc + seq.size(), arg.end());
+    return ret;
   }
   
 } // namespace dijetcore

@@ -74,11 +74,14 @@ namespace dijetcore {
   
   // if a string begins with seq, removes seq in-place and returns true
   // otherwise returns false and does not modify arg
-  bool Consume(std::string& arg, const std::string& seq);
+  bool Consume(string& arg, const string& seq);
   
-  // if a string begins with c, removes seq in-place and returns true
+  // if a string begins with c, removes c in-place and returns true
   // otherwise returns false and does not modify arg
-  bool Consume(std::string& arg, char c);
+  bool Consume(string& arg, char c);
+  
+  // returns a string containing every character up till the next occurence of sec
+  string SplitOnNextOccurence(string& arg, const string& seq);
   
   // parses a comma separated string and casts to type T,
   // returning a set

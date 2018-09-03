@@ -61,3 +61,10 @@ TEST(StringUtils, ParseArgString) {
     EXPECT_EQ(set1, (std::set<float>{5.5, 5.2, 5.1}));
     EXPECT_EQ(set2, (std::set<string>{"hello", "there", "friend"}));
 }
+
+TEST(StringUtils, SplitOnNextOccurence) {
+  string test = "hello___I_AM_HERE";
+  string res = dijetcore::SplitOnNextOccurence(test, "___");
+  EXPECT_EQ(res, string("hello"));
+  EXPECT_EQ(test, string("I_AM_HERE"));
+}
