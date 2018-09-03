@@ -209,11 +209,11 @@ def main(args) :
       clargs = clargs + ' --leadMatchR=' + args.leadMatchR + ' --subMatchR=' + args.subMatchR
       clargs = clargs + ' --towerUnc=' + str(tow_sys) + ' --trackingUnc=' + str(track_sys)
       clargs = clargs + ' --efficiencyFile=' + args.efficiencyFile + ' --embedInput=' + args.embedFile
-      if args.forceConstituentPtEquality :
+      if args.forceConstPtEquality :
         clargs = clargs + ' --forceConstituentPtEquality=true'
       else :
         clargs = clargs + ' --forceConstituentPtEquality=false'
-      if args.forceConstituentEtaEquality :
+      if args.forceConstEtaEquality :
         clargs = clargs + ' --forceConstituentEtaEquality=true'
       else :
         clargs = clargs + ' --forceConstituentEtaEquality=false'
