@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) {
   }
   
   for (auto key : keys) {
-    std::shared_ptr<TTree> tmp = std::make_shared<TTree>(key.c_str(), key.c_str());
+    dijetcore::unique_ptr<TTree> tmp = dijetcore::make_unique<TTree>(key.c_str(), key.c_str());
     // create branches for the tree
     tmp->Branch("runid", &run_id_dict[key]);
     tmp->Branch("eventid", &event_id_dict[key]);
@@ -314,24 +314,27 @@ int main(int argc, char* argv[]) {
     tmp->Branch("jsoarho", &sublead_off_axis_rho_dict[key]);
     tmp->Branch("jsoasig", &sublead_off_axis_sigma_dict[key]);
     
-    trees.insert({key, tmp});
+    trees[key] = std::move(tmp);
+    trees[key]->SetDirectory(0);
   }
   
   // histograms
   // ----------
   
-  std::unordered_map<string, TH1D*> lead_jet_count_dict;
-  std::unordered_map<string, TH1D*> sublead_jet_count_dict;
+  std::unordered_map<string, dijetcore::unique_ptr<TH1D>> lead_jet_count_dict;
+  std::unordered_map<string, dijetcore::unique_ptr<TH1D>> sublead_jet_count_dict;
   
   for (auto key : keys) {
     // create a unique histogram name for each key
     string lead_name = key + "_lead_count";
     string sublead_name = key + "_sublead_count";
-    TH1D* lead_tmp = new TH1D(lead_name.c_str(), "count lead jets", 800, 0.5, 800.5);
-    TH1D* sublead_tmp = new TH1D(sublead_name.c_str(), "count sublead jets", 800, 0.5, 800.5);
+    dijetcore::unique_ptr<TH1D> lead_tmp = dijetcore::make_unique<TH1D>(lead_name.c_str(), "count lead jets", 800, 0.5, 800.5);
+    dijetcore::unique_ptr<TH1D> sublead_tmp = dijetcore::make_unique<TH1D>(sublead_name.c_str(), "count sublead jets", 800, 0.5, 800.5);
     
-    lead_jet_count_dict.insert({key, lead_tmp});
-    sublead_jet_count_dict.insert({key, sublead_tmp});
+    lead_jet_count_dict[key] = std::move(lead_tmp);
+    sublead_jet_count_dict[key] = std::move(sublead_tmp);
+    lead_jet_count_dict[key]->SetDirectory(0);
+    sublead_jet_count_dict[key]->SetDirectory(0);
   }
   
   // define a selector to reject low momentum tracks
@@ -522,7 +525,10 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
   }
   
-  out.Write();
+  out.cd();
+  for (auto& entry : trees) {
+    entry.second->Write();
+  }
   out.Close();
   
   gflags::ShutDownCommandLineFlags();
