@@ -115,7 +115,7 @@ TGraphErrors* GetSystematic(TH1D* nom, TH1D* var1_a, TH1D* var1_b, TH1D* var2_a,
     double diff_var_1_b = fabs(nom->GetBinContent(i+1)  - var1_b->GetBinContent(i+1));
     double diff_var_2_a = fabs(nom->GetBinContent(i+1)  - var2_a->GetBinContent(i+1));
     double diff_var_2_b = fabs(nom->GetBinContent(i+1)  - var2_b->GetBinContent(i+1));
-    double max_var_1 = (diff_var_1_a > diff_var_1_b ? diff_var_1_a : diff_var_1_a);
+    double max_var_1 = (diff_var_1_a > diff_var_1_b ? diff_var_1_a : diff_var_1_b);
     double max_var_2 = (diff_var_2_a > diff_var_2_b ? diff_var_2_a : diff_var_2_b);
     y_err_[i] = sqrt(max_var_1 * max_var_1 + max_var_2 * max_var_2);
   }
@@ -233,9 +233,7 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_match_aj;
   std::unordered_map<string, TH2D*> pp_dphi;
   std::unordered_map<string, TH2D*> pp_hard_lead_rp;
-  std::unordered_map<string, TH2D*> pp_off_axis_lead_pt;
-  std::unordered_map<string, TH2D*> pp_off_axis_sub_pt;
-  std::unordered_map<string, TH2D*> pp_off_axis_aj;
+  
   
   std::unordered_map<string, TH2D*> auau_hard_lead_const;
   std::unordered_map<string, TH2D*> auau_hard_sub_const;
@@ -248,8 +246,6 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_hard_sub_const;
   std::unordered_map<string, TH2D*> pp_match_lead_const;
   std::unordered_map<string, TH2D*> pp_match_sub_const;
-  std::unordered_map<string, TH2D*> pp_off_axis_lead_const;
-  std::unordered_map<string, TH2D*> pp_off_axis_sub_const;
   
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_pt_cent;
@@ -267,9 +263,6 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_aj_cent;
   
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_const_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_const_cent;
@@ -282,8 +275,6 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_const_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_const_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_lead_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_sub_const_cent;
   
   std::unordered_map<string, TH2D*> auau_hard_lead_rho;
   std::unordered_map<string, TH2D*> auau_hard_sub_rho;
@@ -359,6 +350,9 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_p_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_m_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_m_cent;
+  
+  std::unordered_map<string, std::vector<TGraphErrors*>> systematic_errors_hard;
+  std::unordered_map<string, std::vector<TGraphErrors*>> systematic_errors_match;
   
   // create our histogram and canvas options
   dijetcore::histogramOpts hopts;
@@ -801,7 +795,7 @@ int main(int argc, char* argv[]) {
       
       pp_hard_aj_tow_p[key]->Fill(cent_bin,
                             fabs((*tow_p_jl).Pt() - (*tow_p_js).Pt()) / ((*tow_p_jl).Pt() + (*tow_p_js).Pt()));
-      pp_hard_aj_tow_p[key]->Fill(cent_bin,
+      pp_match_aj_tow_p[key]->Fill(cent_bin,
                              fabs((*tow_p_jlm).Pt() - (*tow_p_jsm).Pt()) / ((*tow_p_jlm).Pt() + (*tow_p_jsm).Pt()));
     }
     
@@ -935,6 +929,7 @@ int main(int argc, char* argv[]) {
     pp_match_aj_tow_p_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_p[key]);
     pp_hard_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_m[key]);
     pp_match_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_m[key]);
+    
     pp_hard_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_p[key]);
     pp_match_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_p[key]);
     pp_hard_aj_track_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_m[key]);
@@ -982,8 +977,6 @@ int main(int argc, char* argv[]) {
     Overlay1D(pp_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_aj",
               "", "A_{J}", "fraction", "Centrality");
     Overlay1D(pp_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_aj",
-              "", "A_{J}", "fraction", "Centrality");
-    Overlay1D(pp_off_axis_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_off_axis_aj",
               "", "A_{J}", "fraction", "Centrality");
     Overlay1D(pp_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_pt",
               "", "p_{T}", "fraction", "Centrality");
@@ -1061,10 +1054,44 @@ int main(int argc, char* argv[]) {
     Overlay1D(auau_off_axis_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_sig",
               "", "#sigma", "fraction");
     
-    
-    
+    for (int i = 0; i < auau_hard_aj_cent[key].size(); ++i) {
+      std::vector<string> cent_name{"AuAu", "pp"};
+      std::vector<string> cent_name_match{"AuAu", "pp", "hard-core embed"};
+      std::vector<TH1D*> cent_list{auau_hard_aj_cent[key][i], pp_hard_aj_cent[key][i]};
+      std::vector<TH1D*> cent_list_match{auau_match_aj_cent[key][i], pp_match_aj_cent[key][i], auau_off_axis_aj_cent[key][i]};
+      
+      string out_loc_cent = FLAGS_outputDir + "/" + key + "/" + "cent_" + std::to_string(i);
+      boost::filesystem::path dir(out_loc_cent.c_str());
+      boost::filesystem::create_directories(dir);
+      
+      //Overlay1D(cent_list, cent_name, hopts, copts, out_loc_cent, "hard_aj", "", "A_{J}", "fraction");
+      //Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj", "", "A_{J}", "fraction");
+      
+      Overlay1D(pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "tow",
+                "", "AJ", "fraction");
+      Overlay1D(pp_hard_aj_track_p_cent[key][i], pp_hard_aj_track_m_cent[key][i], "pp track_p", "pp track_m", hopts, copts, out_loc_cent, "track",
+                "", "AJ", "fraction");
+      Overlay1D(pp_match_aj_tow_p_cent[key][i], pp_match_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "towmatch",
+                "", "AJ", "fraction");
+      Overlay1D(pp_match_aj_track_p_cent[key][i], pp_match_aj_track_m_cent[key][i], "pp track_p", "pp track_m", hopts, copts, out_loc_cent, "trackmatch",
+                "", "AJ", "fraction");
+      
+      systematic_errors_hard[key].push_back( GetSystematic(pp_hard_aj_cent[key][i], pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i],
+                                             pp_hard_aj_track_p_cent[key][i], pp_hard_aj_track_m_cent[key][i]));
+      systematic_errors_match[key].push_back( GetSystematic(pp_match_aj_cent[key][i], pp_match_aj_tow_p_cent[key][i], pp_match_aj_tow_m_cent[key][i],
+                                              pp_match_aj_track_p_cent[key][i], pp_match_aj_track_m_cent[key][i]));
+      
+      Overlay1D(auau_hard_aj_cent[key][i], pp_hard_aj_cent[key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, "AuAu hard A_{J}", "PP hard A_{J}",
+                "", hopts, copts, out_loc_cent, "aj_hard", "", "A_{J}", "fraction");
+      Overlay1D(auau_match_aj_cent[key][i], pp_match_aj_cent[key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, "AuAu matched A_{J}", "PP matched A_{J}",
+                "systematics", hopts, copts, out_loc_cent, "aj_match", "", "A_{J}", "fraction");
+      
+      
+    }
   }
   
+  // make a directory for our radius outputs
+  string out_loc = FLAGS_outputDir + "/change_radii";
   
   
   return 0;

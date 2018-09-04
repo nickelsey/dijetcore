@@ -352,7 +352,7 @@ namespace dijetcore {
                                                  ghost_def);
                 
                 fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(lead_const_eta - bkg_R)
-                && (!fastjet::SelectorNHardest(2));
+                * (!fastjet::SelectorNHardest(2));
                 fastjet::GhostedAreaSpec bkg_ghost_def(bkg_jet_eta_max + 2 * bkg_R, ghost_repeat_, ghost_area_,
                                                        grid_scatter_, pt_scatter_, mean_ghost_pt_);
                 fastjet::AreaDefinition bkg_area_def(fastjet::active_area_explicit_ghosts,
@@ -408,7 +408,7 @@ namespace dijetcore {
                 && fastjet::SelectorPtMin(sub_jet_pt);
                 fastjet::Selector match_jet_selector = fastjet::SelectorIdentity();
                 fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(sub_const_eta - bkg_R)
-                && (!fastjet::SelectorNHardest(2));
+                * (!fastjet::SelectorNHardest(2));
                 
                 fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,
                                                    grid_scatter_, pt_scatter_, mean_ghost_pt_);
