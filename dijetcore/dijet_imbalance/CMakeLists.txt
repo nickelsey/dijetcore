@@ -29,6 +29,7 @@ install(FILES ${DC_HDRS} DESTINATION include/dijetcore/dijet_imbalance)
 
 ## add subdirectories
 add_subdirectory(submit_scripts)
+add_subdirectory(print)
 
 
 ## export file lists to parent scope

@@ -139,7 +139,7 @@ def main(args) :
       clargs = clargs + args.subConstPtMatch + ' --leadR=' + args.leadR + ' --subR=' + args.subR
       clargs = clargs + ' --leadJetPt=' + args.leadJetPt + ' --subJetPt=' + args.subJetPt
       clargs = clargs + ' --leadMatchR=' + args.leadMatchR + ' --subMatchR=' + args.subMatchR
-      clargs = clargs + ' --offAxisInput=' + args.offAxisData
+      clargs = clargs + ' --offAxisInput=' + args.offAxisData + ' --logtostderr'
       if args.forceConstPtEquality :
         clargs = clargs + ' --forceConstituentPtEquality=true'
       else :
