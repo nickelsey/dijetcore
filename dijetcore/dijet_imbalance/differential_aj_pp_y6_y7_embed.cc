@@ -117,10 +117,6 @@ int main(int argc, char* argv[]) {
   boost::filesystem::path dir(FLAGS_outputDir.c_str());
   boost::filesystem::create_directories(dir);
   
-  // create output file from the given directory, name & id
-  string outfile_name = FLAGS_outputDir + "/" + FLAGS_name + dijetcore::MakeString(FLAGS_id) + ".root";
-  TFile out(outfile_name.c_str(), "RECREATE");
-  
   // initialize the reader
   TStarJetPicoReader* reader = new TStarJetPicoReader();
   dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList);
@@ -188,6 +184,35 @@ int main(int argc, char* argv[]) {
   std::set<std::string> keys = worker.Keys();
   for (auto key : keys)
     LOG(INFO) << key;
+  
+  // initialize efficiency curves
+  dijetcore::Run7Eff* efficiency;
+  if (FLAGS_efficiencyFile.empty())
+  efficiency = new dijetcore::Run7Eff();
+  else
+  efficiency = new dijetcore::Run7Eff(FLAGS_efficiencyFile);
+  
+  switch(FLAGS_trackingUnc) {
+    case 0 :
+      efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NONE);
+      break;
+    case 1 :
+      efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::POSITIVE);
+      break;
+    case -1 :
+      efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NEGATIVE);
+      break;
+    default:
+      LOG(ERROR) << "undefined tracking efficiency setting, exiting";
+      return 1;
+  }
+  
+  // initialize Run 7 centrality
+  dijetcore::CentralityRun7 centrality;
+  
+  // create output file from the given directory, name & id
+  string outfile_name = FLAGS_outputDir + "/" + FLAGS_name + dijetcore::MakeString(FLAGS_id) + ".root";
+  TFile out(outfile_name.c_str(), "RECREATE");
   
   // create an output tree for each definition
   // -----------------------------------------
@@ -366,31 +391,6 @@ int main(int argc, char* argv[]) {
     sublead_jet_count_dict.insert({key, sublead_tmp});
   }
   
-  // initialize efficiency curves
-  dijetcore::Run7Eff* efficiency;
-  if (FLAGS_efficiencyFile.empty())
-    efficiency = new dijetcore::Run7Eff();
-  else
-    efficiency = new dijetcore::Run7Eff(FLAGS_efficiencyFile);
-  
-  switch(FLAGS_trackingUnc) {
-    case 0 :
-    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NONE);
-    break;
-    case 1 :
-    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::POSITIVE);
-    break;
-    case -1 :
-    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NEGATIVE);
-    break;
-    default:
-    LOG(ERROR) << "undefined tracking efficiency setting, exiting";
-    return 1;
-  }
-  
-  // initialize Run 7 centrality
-  dijetcore::CentralityRun7 centrality;
-  
   // define our tower uncertainty scaling as well
   const double tower_scale_percent = 0.02;
   if (abs(FLAGS_towerUnc) > 1) {
@@ -432,7 +432,7 @@ int main(int argc, char* argv[]) {
         if (!use_event)
           continue;
       }
-      LOG(INFO) << "accepting event";
+      
       int refmult = header->GetReferenceMultiplicity();
       double refmultcorr = refmult;
       int centrality_bin = -1;
@@ -507,10 +507,10 @@ int main(int argc, char* argv[]) {
       
       // select tracks above the minimum pt threshold
       particles = track_pt_min_selector(particles);
-      LOG(INFO) << "number of tracks: " << particles.size();
+      
       // run the worker
       auto& worker_out = worker.Run(particles);
-      LOG(INFO) << "number of successful clusters: " << worker_out.size();
+      
       // process any found di-jet pairs
       for (auto& result : worker_out) {
         std::string key = result.first;
@@ -536,7 +536,7 @@ int main(int argc, char* argv[]) {
           reactionplane_dict[key] = header->GetReactionPlaneAngle();
           nglobal_dict[key] = header->GetNGlobalTracks();
           npart_dict[key] = primary_particles.size();
-          LOG(INFO) << "found a match";
+          
           // if embedding is being done
           if (embed_reader != nullptr) {
             embed_runid_dict[key] = embed_header->GetRunId();
@@ -593,11 +593,9 @@ int main(int argc, char* argv[]) {
   } catch(std::exception& e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
   }
-  LOG(INFO) << "writing";
+  
   out.Write();
   out.Close();
-  
-  
   
   return 0;
 }
