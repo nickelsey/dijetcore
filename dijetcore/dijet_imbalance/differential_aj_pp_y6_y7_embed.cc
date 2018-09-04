@@ -342,28 +342,32 @@ int main(int argc, char* argv[]) {
     }
     
     trees[key] = std::move(tmp);
+    trees[key]->SetDirectory(0);
   }
   
   // histograms
   // ----------
   
-  std::unordered_map<string, TH1D*> lead_jet_count_dict;
-  std::unordered_map<string, TH1D*> sublead_jet_count_dict;
+  std::unordered_map<string, dijetcore::unique_ptr<TH1D>> lead_jet_count_dict;
+  std::unordered_map<string, dijetcore::unique_ptr<TH1D>> sublead_jet_count_dict;
   
-  TProfile2D* eff_ratio  = new TProfile2D("pp_eff_ratio",
+  dijetcore::unique_ptr<TProfile2D> eff_ratio  = dijetcore::make_unique<TProfile2D>("pp_eff_ratio",
                                           "average pp efficiency ratio;p_{T};#eta;ratio",
                                           200, 0, 5, 10, -1.0, 1.0);
+  eff_ratio->SetDirectory(0);
   
   
   for (auto key : keys) {
     // create a unique histogram name for each key
     string lead_name = key + "_lead_count";
     string sublead_name = key + "_sublead_count";
-    TH1D* lead_tmp = new TH1D(lead_name.c_str(), "count lead jets", 800, 0.5, 800.5);
-    TH1D* sublead_tmp = new TH1D(sublead_name.c_str(), "count sublead jets", 800, 0.5, 800.5);
+    dijetcore::unique_ptr<TH1D> lead_tmp = dijetcore::make_unique<TH1D>(lead_name.c_str(), "count lead jets", 800, 0.5, 800.5);
+    dijetcore::unique_ptr<TH1D> sublead_tmp = dijetcore::make_unique<TH1D>(sublead_name.c_str(), "count sublead jets", 800, 0.5, 800.5);
     
-    lead_jet_count_dict.insert({key, lead_tmp});
-    sublead_jet_count_dict.insert({key, sublead_tmp});
+    lead_jet_count_dict[key] = std::move(lead_tmp);
+    sublead_jet_count_dict[key] = std::move(sublead_tmp);
+    lead_jet_count_dict[key]->SetDirectory(0);
+    sublead_jet_count_dict[key]->SetDirectory(0);
   }
   
   // initialize efficiency curves
@@ -594,7 +598,10 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
   }
   
-  out.Write();
+  out.cd();
+  for (auto& entry : trees) {
+    entry.second->Write();
+  }
   out.Close();
   
   return 0;
