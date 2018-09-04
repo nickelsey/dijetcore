@@ -484,8 +484,8 @@ int main(int argc, char* argv[]) {
           // if the track is charged and we are using efficiencies,
           // then we get the efficiency ratio, and use that as the probability
           // to keep the track
-          double ratio = efficiency->ratio(sv->Pt(), sv->Eta(), centrality_bin);
-          
+          //double ratio = efficiency->ratio(sv->Pt(), sv->Eta(), centrality_bin);
+          double ratio = efficiency->ratio020Avg(sv->Pt(), sv->Eta());
           if (!std::isfinite(ratio))
             continue;
           
