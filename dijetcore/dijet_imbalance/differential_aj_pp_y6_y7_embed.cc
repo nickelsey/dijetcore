@@ -432,7 +432,7 @@ int main(int argc, char* argv[]) {
         if (!use_event)
           continue;
       }
-      
+      LOG(INFO) << "accepting event";
       int refmult = header->GetReferenceMultiplicity();
       double refmultcorr = refmult;
       int centrality_bin = -1;
@@ -507,10 +507,10 @@ int main(int argc, char* argv[]) {
       
       // select tracks above the minimum pt threshold
       particles = track_pt_min_selector(particles);
-      
+      LOG(INFO) << "number of tracks: " << particles.size();
       // run the worker
       auto& worker_out = worker.Run(particles);
-      
+      LOG(INFO) << "number of successful clusters: " << worker_out.size();
       // process any found di-jet pairs
       for (auto& result : worker_out) {
         std::string key = result.first;
@@ -536,7 +536,7 @@ int main(int argc, char* argv[]) {
           reactionplane_dict[key] = header->GetReactionPlaneAngle();
           nglobal_dict[key] = header->GetNGlobalTracks();
           npart_dict[key] = primary_particles.size();
-          
+          LOG(INFO) << "found a match";
           // if embedding is being done
           if (embed_reader != nullptr) {
             embed_runid_dict[key] = embed_header->GetRunId();
@@ -593,7 +593,7 @@ int main(int argc, char* argv[]) {
   } catch(std::exception& e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
   }
-  
+  LOG(INFO) << "writing";
   out.Write();
   out.Close();
   

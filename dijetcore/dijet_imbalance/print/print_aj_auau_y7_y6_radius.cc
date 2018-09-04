@@ -57,10 +57,10 @@ void GetTreesFromFile(const TFile& file, std::unordered_map<string, TTree*>& map
   }
 }
 
-std::vector<TH1D*> SplitByCentrality(TH2D* h, int bins = 9) {
+std::vector<TH1D*> SplitByCentrality(TH2D* h) {
   
   std::vector<TH1D*> ret;
-  for (int i = 1; i <= bins; ++i) {
+  for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
     TH1D* tmp = h->ProjectionY(name.c_str(), i, i);
     ret.push_back(tmp);
@@ -71,7 +71,7 @@ std::vector<TH1D*> SplitByCentrality(TH2D* h, int bins = 9) {
 std::vector<TH1D*> SplitByCentralityNormalized(TH2D* h, int bins = 9) {
   
   std::vector<TH1D*> ret;
-  for (int i = 1; i <= bins; ++i) {
+  for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
     TH1D* tmp = h->ProjectionY(name.c_str(), i, i);
     if (tmp->Integral() > 0)
@@ -335,11 +335,6 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_sig_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_sig_cent;
   
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_lead_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_sub_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_lead_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_off_axis_sub_sig_cent;
-  
   std::unordered_map<string, TH2D*> auau_npart;
   std::unordered_map<string, TH2D*> pp_npart;
   
@@ -355,6 +350,15 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_match_aj_track_p;
   std::unordered_map<string, TH2D*> pp_hard_aj_track_m;
   std::unordered_map<string, TH2D*> pp_match_aj_track_m;
+  
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_p_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_tow_p_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_m_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_tow_m_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_p_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_p_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_m_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_m_cent;
   
   // create our histogram and canvas options
   dijetcore::histogramOpts hopts;
@@ -867,8 +871,9 @@ int main(int argc, char* argv[]) {
     
     
     
-    // extract nPart in centrality bins
+    // split by centrality
     auau_npart_cent[key] = SplitByCentralityNormalized(auau_npart[key]);
+    pp_npart_cent[key] = SplitByCentralityNormalized(pp_npart[key]);
     
     auau_hard_lead_pt_cent[key] = SplitByCentralityNormalized(auau_hard_lead_pt[key]);
     auau_hard_sub_pt_cent[key] = SplitByCentralityNormalized(auau_hard_sub_pt[key]);
@@ -880,6 +885,13 @@ int main(int argc, char* argv[]) {
     auau_off_axis_sub_pt_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_pt[key]);
     auau_off_axis_aj_cent[key] = SplitByCentralityNormalized(auau_off_axis_aj[key]);
     
+    pp_hard_lead_pt_cent[key] = SplitByCentralityNormalized(pp_hard_lead_pt[key]);
+    pp_hard_sub_pt_cent[key] = SplitByCentralityNormalized(pp_hard_sub_pt[key]);
+    pp_match_lead_pt_cent[key] = SplitByCentralityNormalized(pp_match_lead_pt[key]);
+    pp_match_sub_pt_cent[key] = SplitByCentralityNormalized(pp_match_sub_pt[key]);
+    pp_hard_aj_cent[key] = SplitByCentralityNormalized(pp_hard_aj[key]);
+    pp_match_aj_cent[key] = SplitByCentralityNormalized(pp_match_aj[key]);
+    
     auau_hard_lead_const_cent[key] = SplitByCentralityNormalized(auau_hard_lead_const[key]);
     auau_hard_sub_const_cent[key] = SplitByCentralityNormalized(auau_hard_sub_const[key]);
     auau_match_lead_const_cent[key] = SplitByCentralityNormalized(auau_match_lead_const[key]);
@@ -887,25 +899,61 @@ int main(int argc, char* argv[]) {
     auau_off_axis_lead_const_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_const[key]);
     auau_off_axis_sub_const_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_const[key]);
     
+    pp_hard_lead_const_cent[key] = SplitByCentralityNormalized(pp_hard_lead_const[key]);
+    pp_hard_sub_const_cent[key] = SplitByCentralityNormalized(pp_hard_sub_const[key]);
+    pp_match_lead_const_cent[key] = SplitByCentralityNormalized(pp_match_lead_const[key]);
+    pp_match_sub_const_cent[key] = SplitByCentralityNormalized(pp_match_sub_const[key]);
+    
     auau_hard_lead_rho_cent[key] = SplitByCentralityNormalized(auau_hard_lead_rho[key]);
     auau_hard_sub_rho_cent[key] = SplitByCentralityNormalized(auau_hard_sub_rho[key]);
     auau_match_lead_rho_cent[key] = SplitByCentralityNormalized(auau_match_lead_rho[key]);
     auau_match_sub_rho_cent[key] = SplitByCentralityNormalized(auau_match_sub_rho[key]);
+    
+    pp_hard_lead_rho_cent[key] = SplitByCentralityNormalized(pp_hard_lead_rho[key]);
+    pp_hard_sub_rho_cent[key] = SplitByCentralityNormalized(pp_hard_sub_rho[key]);
+    pp_match_lead_rho_cent[key] = SplitByCentralityNormalized(pp_match_lead_rho[key]);
+    pp_match_sub_rho_cent[key] = SplitByCentralityNormalized(pp_match_sub_rho[key]);
     
     auau_hard_lead_sig_cent[key] = SplitByCentralityNormalized(auau_hard_lead_sig[key]);
     auau_hard_sub_sig_cent[key] = SplitByCentralityNormalized(auau_hard_sub_sig[key]);
     auau_match_lead_sig_cent[key] = SplitByCentralityNormalized(auau_match_lead_sig[key]);
     auau_match_sub_sig_cent[key] = SplitByCentralityNormalized(auau_match_sub_sig[key]);
     
+    pp_hard_lead_sig_cent[key] = SplitByCentralityNormalized(pp_hard_lead_sig[key]);
+    pp_hard_sub_sig_cent[key] = SplitByCentralityNormalized(pp_hard_sub_sig[key]);
+    pp_match_lead_sig_cent[key] = SplitByCentralityNormalized(pp_match_lead_sig[key]);
+    pp_match_sub_sig_cent[key] = SplitByCentralityNormalized(pp_match_sub_sig[key]);
+    
     auau_off_axis_lead_rho_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_rho[key]);
     auau_off_axis_sub_rho_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_rho[key]);
     auau_off_axis_lead_sig_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_sig[key]);
     auau_off_axis_sub_sig_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_sig[key]);
     
+    // now for the systematics
+    
+    pp_hard_aj_tow_p_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_p[key]);
+    pp_match_aj_tow_p_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_p[key]);
+    pp_hard_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_m[key]);
+    pp_match_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_m[key]);
+    pp_hard_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_p[key]);
+    pp_match_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_p[key]);
+    pp_hard_aj_track_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_m[key]);
+    pp_match_aj_track_m_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_m[key]);
+    
     for (int i = 0; i < auau_hard_aj_cent[key].size(); ++i) {
       auau_hard_aj_cent[key][i]->RebinX(2);
       auau_match_aj_cent[key][i]->RebinX(2);
       auau_off_axis_aj_cent[key][i]->RebinX(2);
+      pp_hard_aj_cent[key][i]->RebinX(2);
+      pp_match_aj_cent[key][i]->RebinX(2);
+      pp_hard_aj_tow_p_cent[key][i]->RebinX(2);
+      pp_match_aj_tow_p_cent[key][i]->RebinX(2);
+      pp_hard_aj_tow_m_cent[key][i]->RebinX(2);
+      pp_match_aj_tow_m_cent[key][i]->RebinX(2);
+      pp_hard_aj_track_p_cent[key][i]->RebinX(2);
+      pp_match_aj_track_p_cent[key][i]->RebinX(2);
+      pp_hard_aj_track_m_cent[key][i]->RebinX(2);
+      pp_match_aj_track_m_cent[key][i]->RebinX(2);
     }
     
     Overlay1D(auau_npart_cent[key], refcent_string, hopts, copts, out_loc, "auau_npart_cent",
