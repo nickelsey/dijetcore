@@ -185,31 +185,6 @@ int main(int argc, char* argv[]) {
   for (auto key : keys)
     LOG(INFO) << key;
   
-  // initialize efficiency curves
-  dijetcore::Run7Eff* efficiency;
-  if (FLAGS_efficiencyFile.empty())
-  efficiency = new dijetcore::Run7Eff();
-  else
-  efficiency = new dijetcore::Run7Eff(FLAGS_efficiencyFile);
-  
-  switch(FLAGS_trackingUnc) {
-    case 0 :
-      efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NONE);
-      break;
-    case 1 :
-      efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::POSITIVE);
-      break;
-    case -1 :
-      efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NEGATIVE);
-      break;
-    default:
-      LOG(ERROR) << "undefined tracking efficiency setting, exiting";
-      return 1;
-  }
-  
-  // initialize Run 7 centrality
-  dijetcore::CentralityRun7 centrality;
-  
   // create output file from the given directory, name & id
   string outfile_name = FLAGS_outputDir + "/" + FLAGS_name + dijetcore::MakeString(FLAGS_id) + ".root";
   TFile out(outfile_name.c_str(), "RECREATE");
@@ -390,6 +365,31 @@ int main(int argc, char* argv[]) {
     lead_jet_count_dict.insert({key, lead_tmp});
     sublead_jet_count_dict.insert({key, sublead_tmp});
   }
+  
+  // initialize efficiency curves
+  dijetcore::Run7Eff* efficiency;
+  if (FLAGS_efficiencyFile.empty())
+    efficiency = new dijetcore::Run7Eff();
+  else
+    efficiency = new dijetcore::Run7Eff(FLAGS_efficiencyFile);
+  
+  switch(FLAGS_trackingUnc) {
+    case 0 :
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NONE);
+    break;
+    case 1 :
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::POSITIVE);
+    break;
+    case -1 :
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NEGATIVE);
+    break;
+    default:
+    LOG(ERROR) << "undefined tracking efficiency setting, exiting";
+    return 1;
+  }
+  
+  // initialize Run 7 centrality
+  dijetcore::CentralityRun7 centrality;
   
   // define our tower uncertainty scaling as well
   const double tower_scale_percent = 0.02;
