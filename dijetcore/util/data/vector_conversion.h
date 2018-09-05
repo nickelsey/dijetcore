@@ -29,7 +29,7 @@ namespace dijetcore {
       tmpPJ.set_user_index(sv->GetCharge());
       particles[offset + i] = tmpPJ;
     }
-  } 
+  }
  
 } // dijetcore
 

@@ -209,7 +209,7 @@ def main(args) :
       clargs = clargs + ' --leadMatchR=' + args.leadMatchR + ' --subMatchR=' + args.subMatchR
       clargs = clargs + ' --towerUnc=' + str(tow_sys) + ' --trackingUnc=' + str(track_sys)
       clargs = clargs + ' --efficiencyFile=' + args.efficiencyFile + ' --embedInput=' + args.embedFile
-      clargs = clargs + ' --logtostderr'
+      clargs = clargs + ' --logtostderr' + ' --nEmbed=' + str(args.NEmbeddingEvents)
       if args.forceConstPtEquality :
         clargs = clargs + ' --forceConstituentPtEquality=true'
       else :
@@ -266,6 +266,7 @@ if __name__ == "__main__":
   parser.add_argument('--systematics', type=bool, default=True, help=' will run 4 systematic variations for error estimation')
   parser.add_argument('--output', default='out/post/tmp', help=' directory for output root files' )
   parser.add_argument('--embedFile', default='resources/data_lists/y7_mb_file_list.txt', help=' file containing list of root files for embedding events')
+  parser.add_argument('--NEmbeddingEvents', type=int, default=5, help='number of times to reuse a p+p event by embedding into different MB events')
   parser.add_argument('--efficiencyFile', default='resources/efficiencies/y7_effic.root', help=' root file containing run 14 efficiency curves')
   parser.add_argument('--badRuns', default='', help=' csv file containing runs to mask')
   parser.add_argument('--badTowers', default='resources/bad_tower_lists/y7_y6_bad_tower.txt', help=' csv file containing towers to mask')

@@ -102,7 +102,7 @@ namespace dijetcore {
     fastjet::JetMedianBackgroundEstimator bkg_est(def->MatchedJetDef().BackgroundSelector(),
                                                   def->MatchedJetDef().BackgroundJetDef(),
                                                   def->MatchedJetDef().BackgroundAreaDef());
-    bkg_est.set_particles(def->MatchedJetDef().ConstituentSelector()(input));
+    bkg_est.set_particles(def->MatchedJetDef().ConstituentSelector()(max_pt_sel(input)));
     fastjet::Subtractor bkgdSubtractor(&bkg_est);
     std::vector<fastjet::PseudoJet> subtracted_jets = fastjet::sorted_by_pt(bkgdSubtractor(jets));
   
