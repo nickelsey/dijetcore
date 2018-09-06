@@ -2,6 +2,7 @@
 
 #include "dijetcore/util/data/vector_conversion.h"
 #include "dijetcore/util/fastjet/selector_compare.h"
+#include "dijetcore/lib/logging.h"
 
 #include "TStarJetPicoEvent.h"
 #include "TStarJetPicoEventHeader.h"
@@ -46,7 +47,7 @@ namespace dijetcore {
       
       if (!dijet.second->found_match)
         continue;
-      
+      LOG(INFO) << "running clustering";
       auto& key = dijet.first;
       auto& def = dijet.second->dijet_def;
       auto& lead_hard_jet = dijet.second->lead_hard;
@@ -55,11 +56,22 @@ namespace dijetcore {
       // build our new input list
       std::vector<fastjet::PseudoJet> primary_particles;
       dijetcore::ConvertTStarJetVector(GetOutputContainer(), primary_particles);
-      primary_particles.push_back(lead_hard_jet);
-      primary_particles.push_back(sub_hard_jet);
       
-      auto lead_matched_jet = RunCluster(def->lead, primary_particles, lead_hard_jet);
-      auto sub_matched_jet = RunCluster(def->sub, primary_particles, sub_hard_jet);
+      // have to remove bkg contribution from input tracks that are in the same kinematic window as the reference jet
+      double max_pt_lead = ExtractDoubleFromSelector(def->lead->InitialJetDef().ConstituentSelector(), "pt >=");
+      double max_pt_sub = ExtractDoubleFromSelector(def->sub->InitialJetDef().ConstituentSelector(), "pt >=");
+      fastjet::Selector max_pt_sel_lead = fastjet::SelectorPtMax(max_pt_lead);
+      fastjet::Selector max_pt_sel_sub = fastjet::SelectorPtMax(max_pt_sub);
+      
+      std::vector<fastjet::PseudoJet> lead_particles = max_pt_sel_lead(primary_particles);
+      lead_particles.push_back(lead_hard_jet);
+      lead_particles.push_back(sub_hard_jet);
+      std::vector<fastjet::PseudoJet> sub_particles = max_pt_sel_sub(primary_particles);
+      sub_particles.push_back(lead_hard_jet);
+      sub_particles.push_back(sub_hard_jet);
+      
+      auto lead_matched_jet = RunCluster(def->lead, lead_particles, lead_hard_jet);
+      auto sub_matched_jet = RunCluster(def->sub, sub_particles, sub_hard_jet);
       
       unique_ptr<OffAxisOutput> res = make_unique<OffAxisOutput>(lead_matched_jet.first, sub_matched_jet.first);
       res->lead_jet_rho = lead_matched_jet.second.first;
@@ -87,12 +99,8 @@ namespace dijetcore {
   std::pair<fastjet::PseudoJet, std::pair<double, double>>
   OffAxisWorker::RunCluster(MatchDef* def, const std::vector<fastjet::PseudoJet>& input, const fastjet::PseudoJet& reference) {
   
-    // have to remove bkg contribution from input tracks that are in the same kinematic window as the reference jet
-    double max_pt = ExtractDoubleFromSelector(def->InitialJetDef().ConstituentSelector(), "pt >=");
-    fastjet::Selector max_pt_sel = fastjet::SelectorPtMax(max_pt);
-    
     std::unique_ptr<fastjet::ClusterSequenceArea>
-    cluster = make_unique<fastjet::ClusterSequenceArea>(def->MatchedJetDef().ConstituentSelector()(max_pt_sel(input)),
+    cluster = make_unique<fastjet::ClusterSequenceArea>(def->MatchedJetDef().ConstituentSelector()(input),
                                                         def->MatchedJetDef(),
                                                         def->MatchedJetDef().AreaDefinition());
     
@@ -102,7 +110,7 @@ namespace dijetcore {
     fastjet::JetMedianBackgroundEstimator bkg_est(def->MatchedJetDef().BackgroundSelector(),
                                                   def->MatchedJetDef().BackgroundJetDef(),
                                                   def->MatchedJetDef().BackgroundAreaDef());
-    bkg_est.set_particles(def->MatchedJetDef().ConstituentSelector()(max_pt_sel(input)));
+    bkg_est.set_particles(def->MatchedJetDef().ConstituentSelector()(input));
     fastjet::Subtractor bkgdSubtractor(&bkg_est);
     std::vector<fastjet::PseudoJet> subtracted_jets = fastjet::sorted_by_pt(bkgdSubtractor(jets));
   
