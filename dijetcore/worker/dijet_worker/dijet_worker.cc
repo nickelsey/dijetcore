@@ -381,8 +381,9 @@ namespace dijetcore {
                                                   jet_def.BackgroundJetDef(),
                                                   jet_def.BackgroundAreaDef());
     bkg_est.set_particles(jet_def.ConstituentSelector()(input));
-    bkg_est.set_particles(jet_def.ConstituentSelector()(input));
     fastjet::Subtractor bkgdSubtractor(&bkg_est);
+    bkgdSubtractor.set_use_rho_m(true);
+    bkgdSubtractor.set_safe_mass(true);
     subtracted_jets = fastjet::sorted_by_pt(bkgdSubtractor(jets));
     
     return {bkg_est.rho(), bkg_est.sigma()};
