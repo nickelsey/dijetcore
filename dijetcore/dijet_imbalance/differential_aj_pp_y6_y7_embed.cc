@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   TStarJetPicoReader* embed_reader = new TStarJetPicoReader();
-  TChain* embed_chain = dijetcore::NewChainFromInput(FLAGS_embedInput);
+  TChain* embed_chain = dijetcore::NewChainFromInput(FLAGS_embedInput, FLAGS_id);
   dijetcore::InitReaderWithDefaults(embed_reader, embed_chain, FLAGS_towList);
                                       
   // get the trigger IDs that will be used

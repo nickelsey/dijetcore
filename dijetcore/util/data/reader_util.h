@@ -18,6 +18,9 @@
 
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/lib/assert.h"
+#include "dijetcore/lib/logging.h"
+
+#include "boost/filesystem.hpp"
 
 namespace dijetcore {
   
@@ -50,7 +53,7 @@ namespace dijetcore {
   // TStarJetPicoReader, if unknown input format,
   // returns nullptr
   // supports .root, .list, and .txt
-  TChain* NewChainFromInput(std::string str) {
+  TChain* NewChainFromInput(std::string str, int seed = 0) {
     TChain* chain = nullptr;
     
     if (str.empty())
@@ -61,7 +64,30 @@ namespace dijetcore {
       chain->Add(str.c_str());
     }
     else if (HasEnding(str, ".list") || HasEnding(str, ".txt")) {
-      chain = TStarJetPicoUtils::BuildChainFromFileList(str.c_str());
+      
+      std::vector<std::string> files;
+      // first we will read in each line and make sure its a valid file
+      std::ifstream stream(str);
+      if (stream.is_open()) {
+        std::string line;
+        while (std::getline(stream, line)) {
+          if (boost::filesystem::exists(line))
+            files.push_back(line);
+          else {
+            LOG(ERROR) << "input file: " << line << "does not exist, skipping";
+          }
+        }
+        
+        // now shuffle the files and add to the chain
+        chain = new TChain("JetTree");
+        std::mt19937 g(seed);
+        std::shuffle(files.begin(), files.end(), g);
+        for (auto& file : files) {
+          LOG(INFO) << "Adding file: " << file << " to chain";
+          chain->Add(file.c_str());
+        }
+      }
+      
     }
     return chain;
   }
