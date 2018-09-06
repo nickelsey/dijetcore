@@ -93,57 +93,57 @@ namespace dijetcore {
         if (!RunClustering(input, *dijet_def.second, dijet_set_key, min_pt_lead, min_pt_sub)) {
           break;
         }
-        
+
         // load proper cluster sequence
         auto cl_sequences = LoadProperClusterSequence(dijet_set_key);
         bool fail = false;
         for (auto& e : cl_sequences)
           if (e == nullptr)
             fail = true;
-        
+
         if (fail) {
           LOG(ERROR) << "failed to load cluster sequences: " << key;
           continue;
         }
-        
+
         fastjet::ClusterSequenceArea* cl_lead_hard = cl_sequences[0];
         fastjet::ClusterSequenceArea* cl_lead_match = cl_sequences[2];
         fastjet::ClusterSequenceArea* cl_sub_hard = cl_sequences[1];
         fastjet::ClusterSequenceArea* cl_sub_match = cl_sequences[3];
-        
+
         // now we can decide if we have hard core jets that satisfy our dijet criteria
         // get output jets, and make sure neither are zero length
         std::vector<fastjet::PseudoJet> lead_hard_jets = fastjet::sorted_by_pt(lead->InitialJetDef().JetSelector()(cl_lead_hard->inclusive_jets()));
         std::vector<fastjet::PseudoJet> sublead_hard_jets = fastjet::sorted_by_pt(sub->InitialJetDef().JetSelector()(cl_sub_hard->inclusive_jets()));
-        
+
         if (lead_hard_jets.size() == 0)
           continue;
-        
+
         // select our trigger jet & recoil jet
         fastjet::PseudoJet leading_hard_jet = SelectLeadingHardJet(lead_hard_jets);
         fastjet::PseudoJet subleading_hard_jet = SelectSubLeadingHardJet(leading_hard_jet,
                                                                          sublead_hard_jets,
                                                                          dijet_def.second->dPhi);
-      
+
         // we have a trigger jet at least
         dijet_container->found_lead = true;
         dijet_container->lead_hard = leading_hard_jet;
-        
+
         // make sure the subleading hard jet isn't a failed match
         if (!subleading_hard_jet.has_associated_cluster_sequence()) {
           cluster_result[key] = std::move(dijet_container);
           continue;
         }
-        
+
         // fill in the subleading jet
         dijet_container->found_sublead = true;
         dijet_container->sublead_hard = subleading_hard_jet;
-        
+
         // we at least have hard jets so we will estimate background contribution now
         std::pair<double, double> lead_bkg = EstimateBackgroundDensity(input, lead->InitialJetDef());
         dijet_container->lead_hard_rho = lead_bkg.first;
         dijet_container->lead_hard_sigma = lead_bkg.second;
-        
+
         // if they are equivalent cluster sequences, we can re-use the leading jet computation
         if (EquivalentBkgEstimationInput(lead->InitialJetDef(), sub->InitialJetDef())) {
           dijet_container->sublead_hard_rho = lead_bkg.first;
@@ -154,47 +154,47 @@ namespace dijetcore {
           dijet_container->sublead_hard_rho = sub_bkg.first;
           dijet_container->sublead_hard_sigma = sub_bkg.second;
         }
-        
+
         // Now for matched jets
         // get the resulting jets and make sure neither are zero length
         std::vector<fastjet::PseudoJet> lead_match_jets = fastjet::sorted_by_pt(cl_lead_match->inclusive_jets());
         std::vector<fastjet::PseudoJet> sublead_match_jets = fastjet::sorted_by_pt(cl_sub_match->inclusive_jets());
-        
+
         // if there are no jets (should not happen) then continue
         if (lead_match_jets.size() == 0 || sublead_match_jets.size() == 0) {
           cluster_result[key] = std::move(dijet_container);
           continue;
         }
-        
+
         // do background estimation & subtraction for the matched jets
         std::vector<fastjet::PseudoJet> lead_subtracted_matched;
         std::vector<fastjet::PseudoJet> sub_subtracted_matched;
-        
+
         std::pair<double, double> lead_match_bkg = SubtractBackgroundFromJets(input, lead->MatchedJetDef(),
                                                                               lead_match_jets, lead_subtracted_matched);
         std::pair<double, double> sub_match_bkg = SubtractBackgroundFromJets(input, sub->MatchedJetDef(),
                                                                              sublead_match_jets, sub_subtracted_matched);
-        
+
         // get the resulting jets and make sure neither are zero length
         lead_subtracted_matched = fastjet::sorted_by_pt(lead->MatchedJetDef().JetSelector()(lead_subtracted_matched));
         sub_subtracted_matched = fastjet::sorted_by_pt(sub->MatchedJetDef().JetSelector()(sub_subtracted_matched));
-        
+
         if (lead_subtracted_matched.size() == 0 ||
             sub_subtracted_matched.size() == 0) {
           cluster_result[key] = std::move(dijet_container);
           continue;
         }
-        
+
         // now we perform matching
         fastjet::PseudoJet leading_matched_jet = MatchJets(leading_hard_jet, *lead, lead_subtracted_matched);
         fastjet::PseudoJet subleading_matched_jet = MatchJets(subleading_hard_jet, *sub, sub_subtracted_matched);
-        
+
         if (!leading_matched_jet.has_associated_cluster_sequence() ||
             !subleading_matched_jet.has_associated_cluster_sequence()) {
           cluster_result[key] = std::move(dijet_container);
           continue;
         }
-        
+
         // success - fill in the rest of the ClusterOutput
         dijet_container->found_match = true;
         dijet_container->lead_match = leading_matched_jet;

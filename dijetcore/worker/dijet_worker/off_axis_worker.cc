@@ -13,29 +13,67 @@
 namespace dijetcore {
   
   OffAxisWorker::OffAxisWorker() {
-    
+    cent_min_ = 0;
+    cent_max_ = 8;
   }
   
   OffAxisWorker::~OffAxisWorker() {
     
   }
   
-  std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& OffAxisWorker::Run(DijetWorker& worker, int centrality) {
+  void OffAxisWorker::SetCentralityRange(int centLow, int centHigh) {
+    LOG(INFO) << "Initializing centrality range for OffAxisWorker";
+    if (centLow >= 0 && centLow < 9)
+      centLow = centLow;
+    else
+      centLow = 0;
+    if (centHigh < 0 || centHigh >= 9)
+      centHigh = 8;
+    if (centHigh < centLow) {
+      LOG(ERROR) << "centrality high bound is less than centrality low bound: exiting";
+      return;
+    }
     
+    cent_min_ = centLow;
+    cent_max_ = centHigh;
+    int nbins = centHigh - centLow + 1;
+    pre_selected_events_ = std::vector<std::vector<unsigned>>(nbins, std::vector<unsigned>());
+    current_event_ = std::vector<unsigned>(nbins, 0);
+    
+    ReadEvent(0);
+    int centrality = GetCentrality();
+    if (centrality >= cent_min_ && centrality <= cent_max_) {
+      int idx =  centrality - cent_min_;
+      pre_selected_events_[idx].push_back(GetNOfCurrentEvent());
+    }
+    while (NextEvent()) {
+      int centrality = GetCentrality();
+      if (centrality >= cent_min_ && centrality <= cent_max_) {
+        int idx =  centrality - cent_min_;
+        pre_selected_events_[idx].push_back(GetNOfCurrentEvent());
+      }
+    }
+  }
+  
+  std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& OffAxisWorker::Run(DijetWorker& worker, int centrality) {
+
     // clear our output
     off_axis_result_.clear();
     cluster_sequence_.clear();
     
-    // find an event with the proper centrality
-    if (!NextEvent())
-      ReadEvent(0);
+    // see if we need to do anything at all -
+    // if there was no match in the Dijetworker, we exit out
+    bool found_match = false;
+    for (auto& result : worker.Dijets())
+      if (result.second->found_match)
+        found_match = true;
     
-    int cent_bin = GetCentrality();
-    
-    while (cent_bin != centrality) {
-      if (!NextEvent())
-        ReadEvent(0);
-      cent_bin = GetCentrality();
+    if (found_match == false)
+      return off_axis_result_;
+
+    if (!LoadNextEvent(centrality)) {
+      LOG(ERROR) << "OffAxisWorker could not find an event that satisfies all event cuts";
+      return off_axis_result_;
     }
     
     // load an event in the proper centrality class
@@ -47,7 +85,7 @@ namespace dijetcore {
       
       if (!dijet.second->found_match)
         continue;
-      LOG(INFO) << "running clustering";
+      
       auto& key = dijet.first;
       auto& def = dijet.second->dijet_def;
       auto& lead_hard_jet = dijet.second->lead_hard;
@@ -130,6 +168,45 @@ namespace dijetcore {
     else
       return {fastjet::PseudoJet(), bkg_stats};
     
+  }
+  
+  bool OffAxisWorker::LoadNextEvent(int centrality) {
+    if (pre_selected_events_.size() == 0) {
+      while (NextEvent()) {
+        if (GetCentrality() == centrality)
+          return true;
+      }
+      ReadEvent(0);
+      if (GetCentrality() == centrality)
+        return true;
+      while (NextEvent()) {
+        if (GetCentrality() == centrality)
+          return true;
+      }
+      return false;
+    }
+    
+    
+    if (centrality < cent_min_ || centrality > cent_max_) {
+      LOG(ERROR) << "submitted event outside of specified centrality range: exiting";
+      return false;
+    }
+    int cent_bin = centrality - cent_min_;
+    auto& events = pre_selected_events_.at(cent_bin);
+    
+    if (events.size() == 0) {
+      LOG(ERROR) << "Do not have any events in specified centrality bin: exiting";
+      return false;
+    }
+    
+    unsigned& current_idx = current_event_.at(cent_bin);
+    
+    if (current_idx == events.size())
+      current_idx = 0;
+    
+    ReadEvent(current_idx);
+    current_idx++;
+    return true;
   }
   
 } // namespace dijetcore

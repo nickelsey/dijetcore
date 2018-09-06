@@ -104,6 +104,7 @@ int main(int argc, char* argv[]) {
   if (off_axis_chain != nullptr) {
     off_axis_worker = new dijetcore::OffAxisWorker();
     dijetcore::InitReaderWithDefaults(dynamic_cast<TStarJetPicoReader*>(off_axis_worker), off_axis_chain, FLAGS_towList);
+    
   }
   
   // get the trigger IDs that will be used
@@ -203,6 +204,7 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, double> sublead_match_rho_dict;
   std::unordered_map<std::string, double> sublead_match_sigma_dict;
   std::unordered_map<std::string, double> sublead_match_area_dict;
+  std::unordered_map<std::string, int> off_axis_centrality;
   std::unordered_map<std::string, TLorentzVector> lead_off_axis_jet_dict;
   std::unordered_map<std::string, int> lead_off_axis_nconst_dict;
   std::unordered_map<std::string, double> lead_off_axis_rho_dict;
@@ -262,6 +264,8 @@ int main(int argc, char* argv[]) {
     sublead_match_rho_dict.insert({key, 0});
     sublead_match_sigma_dict.insert({key, 0});
     sublead_match_area_dict.insert({key, 0});
+    
+    off_axis_centrality.insert({key, 0});
     lead_off_axis_jet_dict.insert({key, TLorentzVector()});
     lead_off_axis_rho_dict.insert({key, 0});
     lead_off_axis_sigma_dict.insert({key, 0});
@@ -307,6 +311,7 @@ int main(int argc, char* argv[]) {
     tmp->Branch("jsmrho", &sublead_match_rho_dict[key]);
     tmp->Branch("jsmsig", &sublead_match_sigma_dict[key]);
     tmp->Branch("jsmarea", &sublead_match_area_dict[key]);
+    tmp->Branch("oacent", &off_axis_centrality[key]);
     tmp->Branch("jloaconst", &lead_off_axis_nconst_dict[key]);
     tmp->Branch("jloarho", &lead_off_axis_rho_dict[key]);
     tmp->Branch("jloasig", &lead_off_axis_sigma_dict[key]);
@@ -380,21 +385,21 @@ int main(int argc, char* argv[]) {
       std::unordered_map<std::string, dijetcore::unique_ptr<dijetcore::OffAxisOutput>> off_axis_worker_out;
       if (off_axis_worker)
         off_axis_worker_out = std::move(off_axis_worker->Run(worker, centrality_bin));
-      
+
       // process any found di-jet pairs
-      
+
       for (auto& result : worker_out) {
         std::string key = result.first;
         dijetcore::ClusterOutput& out = *result.second.get();
-        
+
         if (out.found_lead)
           lead_jet_count_dict[key]->Fill(header->GetReferenceMultiplicity());
         if (out.found_sublead)
           sublead_jet_count_dict[key]->Fill(header->GetReferenceMultiplicity());
-  
+
         // now fill dijet results
         if (out.found_match) {
-          
+
           // fill all branches for that key
           run_id_dict[key] = header->GetRunId();
           event_id_dict[key] = header->GetEventId();
@@ -408,7 +413,7 @@ int main(int argc, char* argv[]) {
           reactionplane_dict[key] = header->GetReactionPlaneAngle();
           nglobal_dict[key] = header->GetNGlobalTracks();
           npart_dict[key] = primary_particles.size();
-          
+
           // set the four jets
           lead_hard_jet_dict[key] = TLorentzVector(out.lead_hard.px(),
                                                    out.lead_hard.py(),
@@ -474,12 +479,14 @@ int main(int argc, char* argv[]) {
           sublead_match_rho_dict[key] = out.sublead_match_rho;
           sublead_match_sigma_dict[key] = out.sublead_match_sigma;
           sublead_match_area_dict[key] = out.sublead_match.area();
-          
+
           if (off_axis_worker != nullptr &&
               off_axis_worker_out.find(key) != off_axis_worker_out.end() &&
               off_axis_worker_out[key]->lead_jet.has_constituents() &&
               off_axis_worker_out[key]->sub_jet.has_constituents()) {
             
+            off_axis_centrality[key] = off_axis_worker->GetCentrality();
+
             auto& off_axis_out = *off_axis_worker_out[key].get();
             lead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.lead_jet.px(),
                                                          off_axis_out.lead_jet.py(),
@@ -507,6 +514,7 @@ int main(int argc, char* argv[]) {
             sublead_off_axis_sigma_dict[key] = off_axis_out.sub_jet_sigma;
           }
           else {
+            off_axis_centrality[key] = 0;
             lead_off_axis_jet_dict[key] = TLorentzVector();
             lead_off_axis_nconst_dict[key] = 0;
             lead_off_axis_rho_dict[key] = 0;
@@ -516,7 +524,7 @@ int main(int argc, char* argv[]) {
             sublead_off_axis_rho_dict[key] = 0;
             sublead_off_axis_sigma_dict[key] = 0;
           }
-          
+
           trees[key]->Fill();
         }
       }
