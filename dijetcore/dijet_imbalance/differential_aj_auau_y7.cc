@@ -82,8 +82,9 @@ int main(int argc, char* argv[]) {
   
   // and a chain for the off axis worker if it exists
   TChain* off_axis_chain = nullptr;
-  if (boost::filesystem::exists(FLAGS_offAxisInput))
-    off_axis_chain = dijetcore::NewChainFromInput(FLAGS_offAxisInput);
+  if (boost::filesystem::exists(FLAGS_offAxisInput)) {
+    off_axis_chain = dijetcore::NewChainFromInput(FLAGS_offAxisInput, FLAGS_id);
+  }
   
   // build output directory if it doesn't exist, using boost::filesystem
   if (FLAGS_outputDir.empty())
