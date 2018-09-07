@@ -208,7 +208,7 @@ if __name__ == "__main__":
   parser.add_argument('--subR', default='0.4', help='list of jet radii to be used for subleading jet')
   parser.add_argument('--subMatchR', default='0.4', help='list of jet radii to be used for subleading matched jet')
   parser.add_argument('--subJetPt', default='10.0', help='list of subleading jet pt cuts to use during jetfinding')
-  parser.add_argument('--offAxisData', default='', help='data file/list for estimating the effect of background on the dijet imbalance')
+  parser.add_argument('--offAxisData', default='resources/data_lists/y7_mb_file_list.txt', help='data file/list for estimating the effect of background on the dijet imbalance')
   parser.add_argument('--forceConstPtEquality', type=bool, default=True, help="Only use DijetDefinitions where pT const is equal in leading/subleading jets")
   parser.add_argument('--forceConstEtaEquality', type=bool, default=True, help="Only use DijetDefinitions where eta const is equal in leading/subleading jets")
   parser.add_argument('--forceJetResolutionEquality', type=bool, default=True, help="Only use DijetDefinitions where leading/subleading R are equivalent")
