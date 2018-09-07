@@ -112,6 +112,61 @@ void GetGoodEvents(TStarJetPicoReader* reader, dijetcore::CentralityRun7& centra
   reader->ReadEvent(0);
 }
 
+std::array<fastjet::PseudoJet, 4> ClusterPP(std::vector<fastjet::PseudoJet>& input,
+                                            const dijetcore::DijetDefinition& def,
+                                            const fastjet::PseudoJet& lead_jet,
+                                            const fastjet::PseudoJet& sublead_jet) {
+  std::array<fastjet::PseudoJet, 4> ret;
+  bool finish = true;
+  
+  // first, cluster with initial jet definitions (no area estimation necessary)
+  fastjet::ClusterSequence seq_lead(def.lead->InitialJetDef().ConstituentSelector()(input),
+                                    def.lead->InitialJetDef());
+  fastjet::Selector circle_lead = fastjet::SelectorCircle(def.lead->InitialJetDef().R());
+  circle_lead.set_reference(lead_jet);
+  std::vector<fastjet::PseudoJet> matched_lead = fastjet::sorted_by_pt(circle_lead(seq_lead.inclusive_jets()));
+  if (matched_lead.size() != 0)
+    ret[0] = matched_lead[0];
+  else
+    finish = false;
+  
+  // now do the same for subleading jet
+  fastjet::ClusterSequence seq_sub(def.sub->InitialJetDef().ConstituentSelector()(input),
+                                   def.sub->InitialJetDef());
+  fastjet::Selector circle_sub = fastjet::SelectorCircle(def.sub->InitialJetDef().R());
+  fastjet::Selector recoil_selector = !fastjet::SelectorRectangle(2.1, TMath::Pi() - def.dPhi);
+  circle_sub.set_reference(sublead_jet);
+  fastjet::Selector sub_selector = circle_sub && recoil_selector;
+  std::vector<fastjet::PseudoJet> matched_sub = fastjet::sorted_by_pt(circle_sub(seq_sub.inclusive_jets()));
+  if (matched_sub.size() != 0)
+      ret[1] = matched_sub[0];
+  else
+    finish = false;
+  
+  // if we have two dijets we will do matching as well - still, no background
+  if (finish == false)
+    return ret;
+  
+  fastjet::ClusterSequence seq_lead_match(def.lead->MatchedJetDef().ConstituentSelector()(input),
+                                          def.lead->MatchedJetDef());
+  fastjet::ClusterSequence seq_sub_match(def.lead->MatchedJetDef().ConstituentSelector()(input),
+                                          def.lead->MatchedJetDef());
+  fastjet::Selector circle_lead_match = fastjet::SelectorCircle(def.lead->MatchedJetDef().R());
+  circle_lead_match.set_reference(ret[0]);
+  fastjet::Selector circle_sub_match = fastjet::SelectorCircle(def.sub->MatchedJetDef().R());
+  circle_sub_match.set_reference(ret[1]);
+  
+  std::vector<fastjet::PseudoJet> matched_lead_pp = fastjet::sorted_by_pt(circle_lead_match(seq_lead_match.inclusive_jets()));
+  std::vector<fastjet::PseudoJet> matched_sub_pp = fastjet::sorted_by_pt(circle_sub_match(seq_sub_match.inclusive_jets()));
+  if (matched_lead_pp.size() > 0 &&
+      matched_sub_pp.size() > 0) {
+    ret[2] = matched_lead_pp[0];
+    ret[3] = matched_sub_pp[0];
+  }
+  
+  return ret;
+}
+
 int main(int argc, char* argv[]) {
   
   string usage = "Run 6 embedded pp differential di-jet imbalance analysis routine";
@@ -228,16 +283,6 @@ int main(int argc, char* argv[]) {
   worker.ForceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
   worker.Initialize();
   
-  // worker for clustering only p+p
-  dijetcore::DijetWorker pp_worker(alg, lead_hard_pt, lead_R, lead_R_match, sublead_hard_pt, sublead_R,
-                                   sublead_R_match, lead_const_hard_pt, lead_const_match_pt,
-                                   sublead_const_hard_pt, sublead_const_match_pt, const_eta);
-  pp_worker.ForceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
-  pp_worker.ForceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
-  pp_worker.ForceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
-  pp_worker.ForceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
-  pp_worker.Initialize();
-  
   LOG(INFO) << "worker initialized - number of dijet definitions: " << worker.Size();
   
   std::set<std::string> keys = worker.Keys();
@@ -302,25 +347,9 @@ int main(int argc, char* argv[]) {
   // pp w/o embedding
   std::unordered_map<std::string, bool> found_jet_pp_dict;
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_pp_dict;
-  std::unordered_map<std::string, int> lead_hard_jet_nconst_pp_dict;
-  std::unordered_map<std::string, double> lead_hard_rho_pp_dict;
-  std::unordered_map<std::string, double> lead_hard_sigma_pp_dict;
-  std::unordered_map<std::string, double> lead_hard_area_pp_dict;
   std::unordered_map<std::string, TLorentzVector> lead_match_jet_pp_dict;
-  std::unordered_map<std::string, int> lead_match_jet_nconst_pp_dict;
-  std::unordered_map<std::string, double> lead_match_rho_pp_dict;
-  std::unordered_map<std::string, double> lead_match_sigma_pp_dict;
-  std::unordered_map<std::string, double> lead_match_area_pp_dict;
   std::unordered_map<std::string, TLorentzVector> sublead_hard_jet_pp_dict;
-  std::unordered_map<std::string, int> sublead_hard_jet_nconst_pp_dict;
-  std::unordered_map<std::string, double> sublead_hard_rho_pp_dict;
-  std::unordered_map<std::string, double> sublead_hard_sigma_pp_dict;
-  std::unordered_map<std::string, double> sublead_hard_area_pp_dict;
   std::unordered_map<std::string, TLorentzVector> sublead_match_jet_pp_dict;
-  std::unordered_map<std::string, int> sublead_match_jet_nconst_pp_dict;
-  std::unordered_map<std::string, double> sublead_match_rho_pp_dict;
-  std::unordered_map<std::string, double> sublead_match_sigma_pp_dict;
-  std::unordered_map<std::string, double> sublead_match_area_pp_dict;
   
   // fill the maps first, so that they don't decide to resize/move themselves
   // after branch creation...
@@ -372,25 +401,9 @@ int main(int argc, char* argv[]) {
     
     found_jet_pp_dict.insert({key, false});
     lead_hard_jet_pp_dict.insert({key, TLorentzVector()});
-    lead_hard_jet_nconst_pp_dict.insert({key, 0});
-    lead_hard_rho_pp_dict.insert({key, 0});
-    lead_hard_sigma_pp_dict.insert({key, 0});
-    lead_hard_area_pp_dict.insert({key, 0});
     lead_match_jet_pp_dict.insert({key, TLorentzVector()});
-    lead_match_jet_nconst_pp_dict.insert({key, 0});
-    lead_match_rho_pp_dict.insert({key, 0});
-    lead_match_sigma_pp_dict.insert({key, 0});
-    lead_match_area_pp_dict.insert({key, 0});
     sublead_hard_jet_pp_dict.insert({key, TLorentzVector()});
-    sublead_hard_jet_nconst_pp_dict.insert({key, 0});
-    sublead_hard_rho_pp_dict.insert({key, 0});
-    sublead_hard_sigma_pp_dict.insert({key, 0});
-    sublead_hard_area_pp_dict.insert({key, 0});
     sublead_match_jet_pp_dict.insert({key, TLorentzVector()});
-    sublead_match_jet_nconst_pp_dict.insert({key, 0});
-    sublead_match_rho_pp_dict.insert({key, 0});
-    sublead_match_sigma_pp_dict.insert({key, 0});
-    sublead_match_area_pp_dict.insert({key, 0});
   
   }
   
@@ -447,22 +460,6 @@ int main(int argc, char* argv[]) {
     tmp->Branch("ppjs", &sublead_hard_jet_pp_dict[key]);
     tmp->Branch("ppjlm", &lead_match_jet_pp_dict[key]);
     tmp->Branch("ppjsm", &sublead_match_jet_pp_dict[key]);
-    tmp->Branch("ppjlconst", &lead_hard_jet_nconst_pp_dict[key]);
-    tmp->Branch("ppjlrho", &lead_hard_rho_pp_dict[key]);
-    tmp->Branch("ppjlsig", &lead_hard_sigma_pp_dict[key]);
-    tmp->Branch("ppjlarea", &lead_hard_area_pp_dict[key]);
-    tmp->Branch("ppjlmconst", &lead_match_jet_nconst_pp_dict[key]);
-    tmp->Branch("ppjlmrho", &lead_match_rho_pp_dict[key]);
-    tmp->Branch("ppjlmsig", &lead_match_sigma_pp_dict[key]);
-    tmp->Branch("ppjlmarea", &lead_match_area_pp_dict[key]);
-    tmp->Branch("ppjsconst", &sublead_hard_jet_nconst_pp_dict[key]);
-    tmp->Branch("ppjsrho", &sublead_hard_rho_pp_dict[key]);
-    tmp->Branch("ppjssig", &sublead_hard_sigma_pp_dict[key]);
-    tmp->Branch("ppjsarea", &sublead_hard_area_pp_dict[key]);
-    tmp->Branch("ppjsmconst", &sublead_match_jet_nconst_pp_dict[key]);
-    tmp->Branch("ppjsmrho", &sublead_match_rho_pp_dict[key]);
-    tmp->Branch("ppjsmsig", &sublead_match_sigma_pp_dict[key]);
-    tmp->Branch("ppjsmarea", &sublead_match_area_pp_dict[key]);
     
     trees[key] = std::move(tmp);
     trees[key]->SetDirectory(0);
@@ -607,7 +604,6 @@ int main(int argc, char* argv[]) {
         
         // run the worker
         auto& worker_out = worker.Run(particles);
-        auto& pp_worker_out = pp_worker.Run(primary_particles);
         
         // process any found di-jet pairs
         for (auto& result : worker_out) {
@@ -681,66 +677,26 @@ int main(int argc, char* argv[]) {
             sublead_match_sigma_dict[key] = out.sublead_match_sigma;
             sublead_match_area_dict[key] = out.sublead_match.area();
             
+            // now run clustering on only the pp
+            auto pp_result = ClusterPP(primary_particles, *out.dijet_def,
+                                       out.lead_hard, out.sublead_hard);
+            lead_hard_jet_pp_dict[key] = TLorentzVector(pp_result[0].px(),
+                                                        pp_result[0].py(),
+                                                        pp_result[0].pz(),
+                                                        pp_result[0].E());
+            lead_match_jet_pp_dict[key] = TLorentzVector(pp_result[2].px(),
+                                                         pp_result[2].py(),
+                                                         pp_result[2].pz(),
+                                                         pp_result[2].E());
+            sublead_hard_jet_pp_dict[key] = TLorentzVector(pp_result[1].px(),
+                                                           pp_result[1].py(),
+                                                           pp_result[1].pz(),
+                                                           pp_result[1].E());
+            sublead_match_jet_pp_dict[key] = TLorentzVector(pp_result[3].px(),
+                                                            pp_result[3].py(),
+                                                            pp_result[3].pz(),
+                                                            pp_result[3].E());
             
-            if (pp_worker_out.find(key) != pp_worker_out.end() && pp_worker_out[key]->found_match) {
-              auto& pp_out = *pp_worker_out[key];
-              found_jet_pp_dict[key] = true;
-              lead_hard_jet_pp_dict[key] = TLorentzVector(pp_out.lead_hard.px(),
-                                                          pp_out.lead_hard.py(),
-                                                          pp_out.lead_hard.pz(),
-                                                          pp_out.lead_hard.E());
-              lead_hard_jet_nconst_pp_dict[key] = pp_out.lead_hard.constituents().size();
-              lead_hard_rho_pp_dict[key] = pp_out.lead_hard_rho;
-              lead_hard_sigma_pp_dict[key] = pp_out.lead_hard_sigma;
-              lead_hard_area_pp_dict[key] = pp_out.lead_hard.area();
-              lead_match_jet_pp_dict[key] = TLorentzVector(pp_out.lead_match.px(),
-                                                           pp_out.lead_match.py(),
-                                                           pp_out.lead_match.pz(),
-                                                           pp_out.lead_match.E());
-              lead_match_jet_nconst_pp_dict[key] = pp_out.lead_match.constituents().size();
-              lead_match_rho_pp_dict[key] = pp_out.lead_match_rho;
-              lead_match_sigma_pp_dict[key] = pp_out.lead_match_sigma;
-              lead_match_area_pp_dict[key] = pp_out.lead_match.area();
-              sublead_hard_jet_pp_dict[key] = TLorentzVector(pp_out.sublead_hard.px(),
-                                                             pp_out.sublead_hard.py(),
-                                                             pp_out.sublead_hard.pz(),
-                                                             pp_out.sublead_hard.E());
-              sublead_hard_jet_nconst_pp_dict[key] = pp_out.sublead_hard.constituents().size();
-              sublead_hard_rho_pp_dict[key] = pp_out.sublead_hard_rho;
-              sublead_hard_sigma_pp_dict[key] = pp_out.sublead_hard_sigma;
-              sublead_hard_area_pp_dict[key] = pp_out.sublead_hard.area();
-              sublead_match_jet_pp_dict[key] = TLorentzVector(pp_out.sublead_match.px(),
-                                                              pp_out.sublead_match.py(),
-                                                              pp_out.sublead_match.pz(),
-                                                              pp_out.sublead_match.E());
-              sublead_match_jet_nconst_pp_dict[key] = pp_out.sublead_match.constituents().size();
-              sublead_match_rho_pp_dict[key] = pp_out.sublead_match_rho;
-              sublead_match_sigma_pp_dict[key] = pp_out.sublead_match_sigma;
-              sublead_match_area_pp_dict[key] = pp_out.sublead_match.area();
-            }
-            else {
-              found_jet_pp_dict[key] = false;
-              lead_hard_jet_pp_dict[key] = TLorentzVector();
-              lead_hard_jet_nconst_pp_dict[key] = 0;
-              lead_hard_rho_pp_dict[key] = 0;
-              lead_hard_sigma_pp_dict[key] = 0;
-              lead_hard_area_pp_dict[key] = 0;
-              lead_match_jet_pp_dict[key] = TLorentzVector();
-              lead_match_jet_nconst_pp_dict[key] = 0;
-              lead_match_rho_pp_dict[key] = 0;
-              lead_match_sigma_pp_dict[key] = 0;
-              lead_match_area_pp_dict[key] = 0;
-              sublead_hard_jet_pp_dict[key] = TLorentzVector();
-              sublead_hard_jet_nconst_pp_dict[key] = 0;
-              sublead_hard_rho_pp_dict[key] = 0;
-              sublead_hard_sigma_pp_dict[key] = 0;
-              sublead_hard_area_pp_dict[key] = 0;
-              sublead_match_jet_pp_dict[key] = TLorentzVector();
-              sublead_match_jet_nconst_pp_dict[key] = 0;
-              sublead_match_rho_pp_dict[key] = 0;
-              sublead_match_sigma_pp_dict[key] = 0;
-              sublead_match_area_pp_dict[key] = 0;
-            }
             trees[key]->Fill();
           }
           

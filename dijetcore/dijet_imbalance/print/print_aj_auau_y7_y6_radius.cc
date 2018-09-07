@@ -123,6 +123,25 @@ TGraphErrors* GetSystematic(TH1D* nom, TH1D* var1_a, TH1D* var1_b, TH1D* var2_a,
   return ret;
 }
 
+template<class T>
+TH1D* GetSystematicFractional(T* nom, TGraphErrors* errors) {
+  
+  if (nom->GetXaxis()->GetNbins() != errors->GetN()) {
+    LOG(ERROR) << "bin mismatch: exiting";
+    return nullptr;
+  }
+  
+  string name = nom->GetName() + "errfrac";
+  TH1D* ret = new TH1D(name.c_str(), "", nom->GetXaxis()->GetXbins(),
+                       nom->GetXaxis()->GetXmin(), nom->GetXaxis()->GetXmax());
+  for (int i = 1; i < nom->GetXaxis()->GetXbins(); ++i) {
+    double bin_content = nom->GetBinContent(i);
+    double bin_error = errors->GetErrorY(i-1);
+    ret->SetBinContent(i, bin_error / bin_content);
+  }
+  return ret;
+}
+
 int main(int argc, char* argv[]) {
   
   string usage = "Run 7 differential di-jet imbalance print routine";
@@ -1064,8 +1083,7 @@ int main(int argc, char* argv[]) {
       boost::filesystem::path dir(out_loc_cent.c_str());
       boost::filesystem::create_directories(dir);
       
-      //Overlay1D(cent_list, cent_name, hopts, copts, out_loc_cent, "hard_aj", "", "A_{J}", "fraction");
-      //Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj", "", "A_{J}", "fraction");
+      Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj_with_off_axis", "", "A_{J}", "fraction");
       
       Overlay1D(pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "tow",
                 "", "AJ", "fraction");
