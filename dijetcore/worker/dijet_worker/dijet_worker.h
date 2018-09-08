@@ -9,6 +9,7 @@
 
 #include "fastjet/ClusterSequenceArea.hh"
 #include "fastjet/tools/JetMedianBackgroundEstimator.hh"
+#include "fastjet/tools/Subtractor.hh"
 
 namespace dijetcore {
   
@@ -128,6 +129,12 @@ namespace dijetcore {
                                                          const JetDef& jet_def,
                                                          const std::vector<fastjet::PseudoJet>& jets,
                                                          std::vector<fastjet::PseudoJet>& subtracted_jets);
+    
+    // or get the background subtractor itself
+    std::pair<unique_ptr<fastjet::JetMedianBackgroundEstimator>,
+              unique_ptr<fastjet::Subtractor>> GetBackgroundSubtractor(const std::vector<fastjet::PseudoJet>& input,
+                                                                       const JetDef& jet_def);
+    
     
     // matches a reclustered jet to the selected leading/subleading hard jet
     fastjet::PseudoJet MatchJets(const fastjet::PseudoJet& target,

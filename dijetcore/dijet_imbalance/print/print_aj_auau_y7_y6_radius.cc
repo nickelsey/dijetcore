@@ -26,11 +26,7 @@
 using std::string;
 
 DIJETCORE_DEFINE_string(auau, "", "input file for Au+Au");
-DIJETCORE_DEFINE_string(pp, "", "input file for p+p");
-DIJETCORE_DEFINE_string(towHigh, "", "systematic scale tower+");
-DIJETCORE_DEFINE_string(towLow, "", "systematic scale tower-");
-DIJETCORE_DEFINE_string(trackHigh, "", "systematic scale tracking+");
-DIJETCORE_DEFINE_string(trackLow, "", "systematic scale tracking-");
+DIJETCORE_DEFINE_string(ppDir, "", "input directory for p+p");
 DIJETCORE_DEFINE_string(outputDir, "results", "directory for output");
 DIJETCORE_DEFINE_bool(useSingleCentrality, true, "do things in 3 centrality bins or 1");
 
@@ -159,8 +155,7 @@ int main(int argc, char* argv[]) {
   gStyle->SetHatchesLineWidth(2);
   
   // check to make sure we have valid inputs
-  std::vector<string> inputs{FLAGS_auau, FLAGS_pp, FLAGS_towLow, FLAGS_towHigh,
-    FLAGS_trackLow, FLAGS_trackHigh};
+  std::vector<string> inputs{FLAGS_auau, FLAGS_ppDir + "/nom.root"};
   for (auto& file : inputs) {
     if (!boost::filesystem::exists(file)) {
       std::cout << "input file " << file;
@@ -177,11 +172,11 @@ int main(int argc, char* argv[]) {
   
   // read in the file
   TFile auau_file(FLAGS_auau.c_str(), "READ");
-  TFile pp_file(FLAGS_pp.c_str(), "READ");
-  TFile tow_p_file(FLAGS_towHigh.c_str(), "READ");
-  TFile tow_m_file(FLAGS_towLow.c_str(), "READ");
-  TFile track_p_file(FLAGS_trackHigh.c_str(), "READ");
-  TFile track_m_file(FLAGS_trackLow.c_str(), "READ");
+  TFile pp_file((FLAGS_ppDir + "/nom.root").c_str(), "READ");
+  TFile tow_p_file((FLAGS_ppDir + "/tow_p.root").c_str(), "READ");
+  TFile tow_m_file((FLAGS_ppDir + "/tow_m.root").c_str(), "READ");
+  TFile track_p_file((FLAGS_ppDir + "/track_p.root").c_str(), "READ");
+  TFile track_m_file((FLAGS_ppDir + "/track_m.root").c_str(), "READ");
 
   // define centralities
   std::vector<unsigned> cent_boundaries;
@@ -253,6 +248,22 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_dphi;
   std::unordered_map<string, TH2D*> pp_hard_lead_rp;
   
+  std::unordered_map<string, TH2D*> pp_only_hard_lead_pt;
+  std::unordered_map<string, TH2D*> pp_only_hard_sub_pt;
+  std::unordered_map<string, TH2D*> pp_only_match_lead_pt;
+  std::unordered_map<string, TH2D*> pp_only_match_sub_pt;
+  std::unordered_map<string, TH2D*> pp_only_hard_aj;
+  std::unordered_map<string, TH2D*> pp_only_match_aj;
+  
+  std::unordered_map<string, TH2D*> pp_hard_lead_dpt;
+  std::unordered_map<string, TH2D*> pp_hard_sub_dpt;
+  std::unordered_map<string, TH2D*> pp_match_lead_dpt;
+  std::unordered_map<string, TH2D*> pp_match_sub_dpt;
+  
+  std::unordered_map<string, TH2D*> pp_hard_lead_dpt_frac;
+  std::unordered_map<string, TH2D*> pp_hard_sub_dpt_frac;
+  std::unordered_map<string, TH2D*> pp_match_lead_dpt_frac;
+  std::unordered_map<string, TH2D*> pp_match_sub_dpt_frac;
   
   std::unordered_map<string, TH2D*> auau_hard_lead_const;
   std::unordered_map<string, TH2D*> auau_hard_sub_const;
@@ -282,6 +293,23 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_cent;
+  
+  std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_lead_pt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_sub_pt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_only_match_lead_pt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_only_match_sub_pt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_aj_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_only_match_aj_cent;
+  
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_dpt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_dpt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_dpt_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_dpt_cent;
+  
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_dpt_frac_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_dpt_frac_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_dpt_frac_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_dpt_frac_cent;
   
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_const_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_const_cent;
@@ -491,6 +519,11 @@ int main(int argc, char* argv[]) {
     TTreeReaderValue<TLorentzVector> pp_js(pp_reader, "js");
     TTreeReaderValue<TLorentzVector> pp_jlm(pp_reader, "jlm");
     TTreeReaderValue<TLorentzVector> pp_jsm(pp_reader, "jsm");
+    TTreeReaderValue<bool> pp_only_found_match(pp_reader, "foundpp");
+    TTreeReaderValue<TLorentzVector> pp_only_jl(pp_reader, "ppjl");
+    TTreeReaderValue<TLorentzVector> pp_only_js(pp_reader, "ppjs");
+    TTreeReaderValue<TLorentzVector> pp_only_jlm(pp_reader, "ppjlm");
+    TTreeReaderValue<TLorentzVector> pp_only_jsm(pp_reader, "ppjsm");
     TTreeReaderValue<int> pp_jlconst(pp_reader, "jlconst");
     TTreeReaderValue<double> pp_jlrho(pp_reader, "jlrho");
     TTreeReaderValue<double> pp_jlsig(pp_reader, "jlsig");
@@ -576,6 +609,37 @@ int main(int argc, char* argv[]) {
                                   "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     pp_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdphi").c_str(),
                               "d#phi", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 2*TMath::Pi());
+    
+    pp_only_hard_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlyhardleadpt").c_str(), "",
+                                    cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
+    pp_only_hard_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlyhardsubpt").c_str(), "",
+                                   cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
+    pp_only_match_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchleadpt").c_str(), "",
+                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
+    pp_only_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchsubpt").c_str(), "",
+                                    cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
+    pp_only_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlyhardaj").c_str(),
+                               "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+    pp_only_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchaj").c_str(),
+                                "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+    
+    pp_hard_lead_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhard").c_str(),
+                                   "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+    pp_hard_sub_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhard").c_str(),
+                               "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+    pp_match_lead_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadmatch").c_str(),
+                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+    pp_match_sub_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatch").c_str(),
+                                "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+    
+    pp_hard_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhardfrac").c_str(),
+                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
+    pp_hard_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhardfrac").c_str(),
+                                    "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
+    pp_match_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadmatchfrac").c_str(),
+                                      "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
+    pp_match_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatchfrac").c_str(),
+                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
     
     auau_off_axis_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadpt").c_str(),
                                           "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
@@ -794,6 +858,27 @@ int main(int argc, char* argv[]) {
       
       // and grefmult/npart
       pp_npart[key]->Fill(cent_bin, *pp_nprt);
+      
+      // pp only now
+      if ((*pp_only_jl).Pt() > 0) {
+        pp_only_hard_lead_pt[key]->Fill(cent_bin, (*pp_only_jl).Pt());
+        pp_only_hard_sub_pt[key]->Fill(cent_bin, (*pp_only_js).Pt());
+        pp_only_match_lead_pt[key]->Fill(cent_bin, (*pp_only_jlm).Pt());
+        pp_only_match_sub_pt[key]->Fill(cent_bin, (*pp_only_jsm).Pt());
+        pp_only_hard_aj[key]->Fill(cent_bin,
+                                   fabs((*pp_only_jl).Pt() - (*pp_only_js).Pt()) / ((*pp_only_jl).Pt() + (*pp_only_js).Pt()));
+        pp_only_match_aj[key]->Fill(cent_bin,
+                                   fabs((*pp_only_jlm).Pt() - (*pp_only_jsm).Pt()) / ((*pp_only_jlm).Pt() + (*pp_only_jsm).Pt()));
+        pp_hard_lead_dpt[key]->Fill(cent_bin, (*pp_jl).Pt() - (*pp_only_jl).Pt());
+        pp_hard_sub_dpt[key]->Fill(cent_bin, (*pp_js).Pt() - (*pp_only_js).Pt());
+        pp_match_lead_dpt[key]->Fill(cent_bin, (*pp_jlm).Pt() - (*pp_only_jlm).Pt());
+        pp_match_sub_dpt[key]->Fill(cent_bin, (*pp_jsm).Pt() - (*pp_only_jsm).Pt());
+        pp_hard_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jl).Pt() - (*pp_only_jl).Pt()) / (*pp_jl).Pt());
+        pp_hard_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_js).Pt() - (*pp_only_js).Pt()) / (*pp_js).Pt());
+        pp_match_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jlm).Pt() - (*pp_only_jlm).Pt()) / (*pp_jlm).Pt());
+        pp_match_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_jsm).Pt() - (*pp_only_jsm).Pt()) / (*pp_jsm).Pt());
+        
+      }
     }
     
     // now for the systematics
@@ -904,6 +989,23 @@ int main(int argc, char* argv[]) {
     pp_match_sub_pt_cent[key] = SplitByCentralityNormalized(pp_match_sub_pt[key]);
     pp_hard_aj_cent[key] = SplitByCentralityNormalized(pp_hard_aj[key]);
     pp_match_aj_cent[key] = SplitByCentralityNormalized(pp_match_aj[key]);
+    
+    pp_only_hard_lead_pt_cent[key] = SplitByCentralityNormalized(pp_only_hard_lead_pt[key]);
+    pp_only_hard_sub_pt_cent[key] = SplitByCentralityNormalized(pp_only_hard_sub_pt[key]);
+    pp_only_match_lead_pt_cent[key] = SplitByCentralityNormalized(pp_only_match_lead_pt[key]);
+    pp_only_match_sub_pt_cent[key] = SplitByCentralityNormalized(pp_only_match_sub_pt[key]);
+    pp_only_hard_aj_cent[key] = SplitByCentralityNormalized(pp_only_hard_aj[key]);
+    pp_only_match_aj_cent[key] = SplitByCentralityNormalized(pp_only_match_aj[key]);
+    
+    pp_hard_lead_dpt_cent[key] = SplitByCentralityNormalized(pp_hard_lead_dpt[key]);
+    pp_hard_sub_dpt_cent[key] = SplitByCentralityNormalized(pp_hard_sub_dpt[key]);
+    pp_match_lead_dpt_cent[key] = SplitByCentralityNormalized(pp_match_lead_dpt[key]);
+    pp_match_sub_dpt_cent[key] = SplitByCentralityNormalized(pp_match_sub_dpt[key]);
+    
+    pp_hard_lead_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_lead_dpt_frac[key]);
+    pp_hard_sub_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_sub_dpt_frac[key]);
+    pp_match_lead_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_match_lead_dpt_frac[key]);
+    pp_match_sub_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_match_sub_dpt_frac[key]);
     
     auau_hard_lead_const_cent[key] = SplitByCentralityNormalized(auau_hard_lead_const[key]);
     auau_hard_sub_const_cent[key] = SplitByCentralityNormalized(auau_hard_sub_const[key]);
@@ -1104,12 +1206,18 @@ int main(int argc, char* argv[]) {
       Overlay1D(auau_match_aj_cent[key][i], pp_match_aj_cent[key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, "AuAu matched A_{J}", "PP matched A_{J}",
                 "systematics", hopts, copts, out_loc_cent, "aj_match", "", "A_{J}", "fraction");
       
+      Overlay1D(pp_hard_lead_dpt_cent[key][i], pp_hard_sub_dpt_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt",
+                "", "dp_{T}", "fraction");
+      Overlay1D(pp_hard_lead_dpt_frac_cent[key][i], pp_hard_sub_dpt_frac_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt_frac",
+                "", "dp_{T}/p_{T}", "fraction");
+      
       
     }
   }
   
   // make a directory for our radius outputs
   string out_loc = FLAGS_outputDir + "/change_radii";
+  
   
   
   return 0;

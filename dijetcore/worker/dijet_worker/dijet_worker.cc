@@ -1,8 +1,6 @@
 #include "dijetcore/worker/dijet_worker/dijet_worker.h"
 #include "dijetcore/lib/logging.h"
 
-#include "fastjet/tools/Subtractor.hh"
-
 #include "TMath.h"
 
 #include <iostream>
@@ -115,14 +113,42 @@ namespace dijetcore {
         // get output jets, and make sure neither are zero length
         std::vector<fastjet::PseudoJet> lead_hard_jets = fastjet::sorted_by_pt(lead->InitialJetDef().JetSelector()(cl_lead_hard->inclusive_jets()));
         std::vector<fastjet::PseudoJet> sublead_hard_jets = fastjet::sorted_by_pt(sub->InitialJetDef().JetSelector()(cl_sub_hard->inclusive_jets()));
-
+        
         if (lead_hard_jets.size() == 0)
           continue;
-
+        
+        // now do background subtraction for these jets
+        std::vector<fastjet::PseudoJet> lead_subtracted_hard;
+        std::vector<fastjet::PseudoJet> sub_subtracted_hard;
+        
+        if (EquivalentBkgEstimationInput(lead->InitialJetDef(), sub->InitialJetDef())) {
+          auto bkg_subtractor = GetBackgroundSubtractor(input, lead->InitialJetDef());
+          lead_subtracted_hard = lead->InitialJetDef().JetSelector()((*bkg_subtractor.second)(lead_hard_jets));
+          sublead_hard_jets = sub->InitialJetDef().JetSelector()((*bkg_subtractor.second)(sublead_hard_jets));
+          dijet_container->lead_hard_rho = bkg_subtractor.first->rho();
+          dijet_container->sublead_hard_rho = bkg_subtractor.first->rho();
+          dijet_container->lead_hard_sigma = bkg_subtractor.first->sigma();
+          dijet_container->sublead_hard_sigma = bkg_subtractor.first->sigma();
+        }
+        else {
+          auto bkg_subtractor_lead = GetBackgroundSubtractor(input, lead->InitialJetDef());
+          auto bkg_subtractor_sub = GetBackgroundSubtractor(input, sub->InitialJetDef());
+          lead_subtracted_hard = lead->InitialJetDef().JetSelector()((*bkg_subtractor_lead.second)(lead_hard_jets));
+          sublead_hard_jets = sub->InitialJetDef().JetSelector()((*bkg_subtractor_sub.second)(sublead_hard_jets));
+          dijet_container->lead_hard_rho = bkg_subtractor_lead.first->rho();
+          dijet_container->sublead_hard_rho = bkg_subtractor_sub.first->rho();
+          dijet_container->lead_hard_sigma = bkg_subtractor_lead.first->sigma();
+          dijet_container->sublead_hard_sigma = bkg_subtractor_sub.first->sigma();
+        }
+        
+        // check to make sure we still have a leading jet
+        if (lead_subtracted_hard.size() == 0)
+          continue;
+        
         // select our trigger jet & recoil jet
-        fastjet::PseudoJet leading_hard_jet = SelectLeadingHardJet(lead_hard_jets);
+        fastjet::PseudoJet leading_hard_jet = SelectLeadingHardJet(lead_subtracted_hard);
         fastjet::PseudoJet subleading_hard_jet = SelectSubLeadingHardJet(leading_hard_jet,
-                                                                         sublead_hard_jets,
+                                                                         sub_subtracted_hard,
                                                                          dijet_def.second->dPhi);
 
         // we have a trigger jet at least
@@ -138,22 +164,6 @@ namespace dijetcore {
         // fill in the subleading jet
         dijet_container->found_sublead = true;
         dijet_container->sublead_hard = subleading_hard_jet;
-
-        // we at least have hard jets so we will estimate background contribution now
-        std::pair<double, double> lead_bkg = EstimateBackgroundDensity(input, lead->InitialJetDef());
-        dijet_container->lead_hard_rho = lead_bkg.first;
-        dijet_container->lead_hard_sigma = lead_bkg.second;
-
-        // if they are equivalent cluster sequences, we can re-use the leading jet computation
-        if (EquivalentBkgEstimationInput(lead->InitialJetDef(), sub->InitialJetDef())) {
-          dijet_container->sublead_hard_rho = lead_bkg.first;
-          dijet_container->sublead_hard_sigma = lead_bkg.second;
-        }
-        else {
-          std::pair<double, double> sub_bkg = EstimateBackgroundDensity(input, sub->InitialJetDef());
-          dijet_container->sublead_hard_rho = sub_bkg.first;
-          dijet_container->sublead_hard_sigma = sub_bkg.second;
-        }
 
         // Now for matched jets
         // get the resulting jets and make sure neither are zero length
@@ -384,9 +394,23 @@ namespace dijetcore {
     fastjet::Subtractor bkgdSubtractor(&bkg_est);
     bkgdSubtractor.set_use_rho_m(true);
     bkgdSubtractor.set_safe_mass(true);
-    subtracted_jets = fastjet::sorted_by_pt(bkgdSubtractor(jets));
+    subtracted_jets = fastjet::sorted_by_pt(jet_def.JetSelector()(bkgdSubtractor(jets)));
     
     return {bkg_est.rho(), bkg_est.sigma()};
+  }
+  
+  std::pair<unique_ptr<fastjet::JetMedianBackgroundEstimator>,
+  unique_ptr<fastjet::Subtractor>> DijetWorker::GetBackgroundSubtractor(const std::vector<fastjet::PseudoJet>& input,
+                                                                        const JetDef& jet_def) {
+    unique_ptr<fastjet::JetMedianBackgroundEstimator> bkg_est =
+    make_unique<fastjet::JetMedianBackgroundEstimator>(jet_def.BackgroundSelector(),
+                                                       jet_def.BackgroundJetDef(),
+                                                       jet_def.BackgroundAreaDef());
+    bkg_est->set_particles(jet_def.ConstituentSelector()(input));
+    unique_ptr<fastjet::Subtractor> bkgdSubtractor = make_unique<fastjet::Subtractor>(bkg_est.get());
+    bkgdSubtractor->set_use_rho_m(true);
+    bkgdSubtractor->set_safe_mass(true);
+    return {std::move(bkg_est), std::move(bkgdSubtractor)};
   }
   
   fastjet::PseudoJet DijetWorker::MatchJets(const fastjet::PseudoJet& target,
