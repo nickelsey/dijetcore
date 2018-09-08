@@ -124,7 +124,7 @@ namespace dijetcore {
         if (EquivalentBkgEstimationInput(lead->InitialJetDef(), sub->InitialJetDef())) {
           auto bkg_subtractor = GetBackgroundSubtractor(input, lead->InitialJetDef());
           lead_subtracted_hard = lead->InitialJetDef().JetSelector()((*bkg_subtractor.second)(lead_hard_jets));
-          sublead_hard_jets = sub->InitialJetDef().JetSelector()((*bkg_subtractor.second)(sublead_hard_jets));
+          sub_subtracted_hard = sub->InitialJetDef().JetSelector()((*bkg_subtractor.second)(sublead_hard_jets));
           dijet_container->lead_hard_rho = bkg_subtractor.first->rho();
           dijet_container->sublead_hard_rho = bkg_subtractor.first->rho();
           dijet_container->lead_hard_sigma = bkg_subtractor.first->sigma();
