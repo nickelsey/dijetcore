@@ -680,22 +680,32 @@ int main(int argc, char* argv[]) {
             // now run clustering on only the pp
             auto pp_result = ClusterPP(primary_particles, *out.dijet_def,
                                        out.lead_hard, out.sublead_hard);
-            lead_hard_jet_pp_dict[key] = TLorentzVector(pp_result[0].px(),
-                                                        pp_result[0].py(),
-                                                        pp_result[0].pz(),
-                                                        pp_result[0].E());
-            lead_match_jet_pp_dict[key] = TLorentzVector(pp_result[2].px(),
-                                                         pp_result[2].py(),
-                                                         pp_result[2].pz(),
-                                                         pp_result[2].E());
-            sublead_hard_jet_pp_dict[key] = TLorentzVector(pp_result[1].px(),
-                                                           pp_result[1].py(),
-                                                           pp_result[1].pz(),
-                                                           pp_result[1].E());
-            sublead_match_jet_pp_dict[key] = TLorentzVector(pp_result[3].px(),
-                                                            pp_result[3].py(),
-                                                            pp_result[3].pz(),
-                                                            pp_result[3].E());
+            if (pp_result[0].pt() > 0 && pp_result[1].pt() > 0) {
+              found_jet_pp_dict[key] = true;
+              lead_hard_jet_pp_dict[key] = TLorentzVector(pp_result[0].px(),
+                                                          pp_result[0].py(),
+                                                          pp_result[0].pz(),
+                                                          pp_result[0].E());
+              lead_match_jet_pp_dict[key] = TLorentzVector(pp_result[2].px(),
+                                                           pp_result[2].py(),
+                                                           pp_result[2].pz(),
+                                                           pp_result[2].E());
+              sublead_hard_jet_pp_dict[key] = TLorentzVector(pp_result[1].px(),
+                                                             pp_result[1].py(),
+                                                             pp_result[1].pz(),
+                                                             pp_result[1].E());
+              sublead_match_jet_pp_dict[key] = TLorentzVector(pp_result[3].px(),
+                                                              pp_result[3].py(),
+                                                              pp_result[3].pz(),
+                                                              pp_result[3].E());
+            }
+            else {
+              found_jet_pp_dict[key] = false;
+              lead_hard_jet_pp_dict[key] = TLorentzVector();
+              lead_match_jet_pp_dict[key] = TLorentzVector();
+              sublead_hard_jet_pp_dict[key] = TLorentzVector();
+              sublead_match_jet_pp_dict[key] = TLorentzVector();
+            }
             
             trees[key]->Fill();
           }
