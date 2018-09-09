@@ -680,7 +680,7 @@ int main(int argc, char* argv[]) {
             // now run clustering on only the pp
             auto pp_result = ClusterPP(primary_particles, *out.dijet_def,
                                        out.lead_hard, out.sublead_hard);
-            if (pp_result[0].pt() > 0 && pp_result[1].pt() > 0) {
+            if (pp_result[0].pt() > 0) {
               found_jet_pp_dict[key] = true;
               lead_hard_jet_pp_dict[key] = TLorentzVector(pp_result[0].px(),
                                                           pp_result[0].py(),

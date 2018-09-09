@@ -64,6 +64,19 @@ std::vector<TH1D*> SplitByCentrality(TH2D* h) {
   return ret;
 }
 
+std::vector<TH2D*> SplitByCentrality3D(TH3D* h) {
+  
+  std::vector<TH2D*> ret;
+  for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
+    string name = string(h->GetName()) + std::to_string(i);
+    h->GetXaxis()->SetRange(i, i);
+    TH2D* tmp = (TH2D*) h->Project3D("zy");
+    tmp->SetName(name.c_str());
+    ret.push_back(tmp);
+  }
+  return ret;
+}
+
 std::vector<TH1D*> SplitByCentralityNormalized(TH2D* h, int bins = 9) {
   
   std::vector<TH1D*> ret;
@@ -265,6 +278,11 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_match_lead_dpt_frac;
   std::unordered_map<string, TH2D*> pp_match_sub_dpt_frac;
   
+  std::unordered_map<string, TH3D*> pp_hard_lead_pp_3d;
+  std::unordered_map<string, TH3D*> pp_hard_sub_pp_3d;
+  std::unordered_map<string, TH3D*> pp_match_lead_pp_3d;
+  std::unordered_map<string, TH3D*> pp_match_sub_pp_3d;
+  
   std::unordered_map<string, TH2D*> auau_hard_lead_const;
   std::unordered_map<string, TH2D*> auau_hard_sub_const;
   std::unordered_map<string, TH2D*> auau_match_lead_const;
@@ -310,6 +328,11 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_dpt_frac_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_dpt_frac_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_dpt_frac_cent;
+  
+  std::unordered_map<string, std::vector<TH2D*>> pp_hard_lead_pp_3d_cent;
+  std::unordered_map<string, std::vector<TH2D*>> pp_hard_sub_pp_3d_cent;
+  std::unordered_map<string, std::vector<TH2D*>> pp_match_lead_pp_3d_cent;
+  std::unordered_map<string, std::vector<TH2D*>> pp_match_sub_pp_3d_cent;
   
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_const_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_const_cent;
@@ -632,14 +655,29 @@ int main(int argc, char* argv[]) {
     pp_match_sub_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatch").c_str(),
                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
     
+    pp_hard_lead_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppleadhardpt3d").c_str(), "",
+                                       cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                       50, 0, 50, 50, 0, 50);
+    pp_hard_sub_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppsubhardpt3d").c_str(), "",
+                                      cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                      50, 0, 50, 50, 0, 50);
+    pp_match_lead_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppleadmatchpt3d").c_str(), "",
+                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                        50, 0, 50, 50, 0, 50);
+    pp_match_sub_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppsubmatchpt3d").c_str(), "",
+                                       cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                       50, 0, 50, 50, 0, 50);
+    
     pp_hard_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhardfrac").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
+                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     pp_hard_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhardfrac").c_str(),
-                                    "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
+                                    "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     pp_match_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadmatchfrac").c_str(),
-                                      "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
+                                      "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     pp_match_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatchfrac").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.0);
+                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
+    
+    
     
     auau_off_axis_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadpt").c_str(),
                                           "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
@@ -878,6 +916,11 @@ int main(int argc, char* argv[]) {
         pp_match_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jlm).Pt() - (*pp_only_jlm).Pt()) / (*pp_jlm).Pt());
         pp_match_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_jsm).Pt() - (*pp_only_jsm).Pt()) / (*pp_jsm).Pt());
         
+        pp_hard_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jl).Pt(), (*pp_jl).Pt());
+        pp_hard_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_js).Pt(), (*pp_js).Pt());
+        pp_match_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jlm).Pt(), (*pp_jlm).Pt());
+        pp_match_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_jsm).Pt(), (*pp_jsm).Pt());
+        
       }
     }
     
@@ -1001,6 +1044,11 @@ int main(int argc, char* argv[]) {
     pp_hard_sub_dpt_cent[key] = SplitByCentralityNormalized(pp_hard_sub_dpt[key]);
     pp_match_lead_dpt_cent[key] = SplitByCentralityNormalized(pp_match_lead_dpt[key]);
     pp_match_sub_dpt_cent[key] = SplitByCentralityNormalized(pp_match_sub_dpt[key]);
+    
+    pp_hard_lead_pp_3d_cent[key] = SplitByCentrality3D(pp_hard_lead_pp_3d[key]);
+    pp_hard_sub_pp_3d_cent[key] = SplitByCentrality3D(pp_hard_sub_pp_3d[key]);
+    pp_match_lead_pp_3d_cent[key] = SplitByCentrality3D(pp_match_lead_pp_3d[key]);
+    pp_match_sub_pp_3d_cent[key] = SplitByCentrality3D(pp_match_sub_pp_3d[key]);
     
     pp_hard_lead_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_lead_dpt_frac[key]);
     pp_hard_sub_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_sub_dpt_frac[key]);
@@ -1185,6 +1233,11 @@ int main(int argc, char* argv[]) {
       boost::filesystem::path dir(out_loc_cent.c_str());
       boost::filesystem::create_directories(dir);
       
+      Print2DSimple(pp_hard_lead_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppleadhardpt2d", "", "pp p_{T}", "embedded pp p_{T}");
+      Print2DSimple(pp_hard_sub_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppsubhardpt2d", "", "pp p_{T}", "embedded pp p_{T}");
+      Print2DSimple(pp_match_lead_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppleadmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
+      Print2DSimple(pp_match_sub_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppsubmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
+      
       Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj_with_off_axis", "", "A_{J}", "fraction");
       
       Overlay1D(pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "tow",
@@ -1222,5 +1275,14 @@ int main(int argc, char* argv[]) {
   
   return 0;
 }
-  
+
+//    void Print2DSimple(H* h,
+//                       histogramOpts hopts,
+//                       canvasOpts copts,
+//                       std::string output_loc,
+//                       std::string output_name,
+//                       std::string canvas_title,
+//                       std::string x_axis_label,
+//                       std::string y_axis_label,
+//                       std::string opt = "COLZ") {
   
