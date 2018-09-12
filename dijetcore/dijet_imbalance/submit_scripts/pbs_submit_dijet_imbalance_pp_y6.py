@@ -31,30 +31,30 @@ def activejobs(jobstatus) :
 def updatestatus(jobstatus, outdir, name) :
   print("Updating job status")
   print("Total: " + str(len(jobstatus)))
-  
+
   ## get the qstat job listing
   proccommand = 'qstat | grep dx5412'
   proc = subprocess.Popen( proccommand, stdout=subprocess.PIPE, shell=True)
   qstat_result = proc.stdout.read()
-  
+
   for key in jobstatus :
-    
+
     index = jobstatus[key][0]
-    
+
     ## if job is completed, we don't need to check again
     if jobstatus[key][1] == 2 :
       continue
-    
+
     ## check if the job is still underway
     jobinprocess = qstat_result.find(name + str(index) + ' ')
     if jobinprocess >= 0 :
       jobstatus[key][1] = 1
       continue
-    
+
     ## if the job is not still underway,
     ## check to see if the job has completed properly
     ## if not, mark to resubmit
-    
+
     outDirMod = ''
     if key[1] == 'mtrack' :
       outDirMod = 'tow_0_track_-1'
@@ -66,13 +66,13 @@ def updatestatus(jobstatus, outdir, name) :
       outDirMod = 'tow_1_track_0'
     if key[1] == 'nom' :
       outDirMod = 'tow_0_track_0'
-    
-    
+
+
     if outdir.startswith('/') :
       filename = outdir + '/' + outDirMod + '/' + name + str(index) + '.root'
     else :
       filename = os.getcwd() + '/' + outdir + '/' + outDirMod + '/' + name + str(index) + '.root'
-    
+
     if os.path.isfile(filename) :
       outputfile = ROOT.TFile(filename, "READ")
       if outputfile.IsZombie() :
@@ -99,7 +99,7 @@ def main(args) :
   files = args.strings
   if files is None :
     return
-  
+
   ## get max number of jobs to be submitted to pbs
   ## at a time
   maxjobs = args.maxjobs
@@ -108,13 +108,13 @@ def main(args) :
   embedTrig = ''
   if args.embedTriggers is not None :
     embedTrig = args.embedTriggers
-  
+
   ## some paths
   execpath = os.getcwd()
   executable = './bin/differential_aj_pp_y6_y7_embed'
   ## find the qwrap file
   qwrap = execpath + '/submit/qwrap.sh'
-  
+
   ## we need to do our own book keeping
   ## for when  job is active and when it
   ## has completed successfully
@@ -135,16 +135,16 @@ def main(args) :
     for variation in systematic_variations :
       jobstatus[(file, variation)] = [counter, 0]
       counter = counter + 1
-  
+
   ## count the number of qsub submission failures
   qsubfail = 0
 
-  
+
   while checkstatus(jobstatus) :
-    
+
     ## update status of all jobs & output
     jobstatus = updatestatus(jobstatus, args.output, args.name)
-    
+
     ## if we have completed all jobs, exit
     completed = 0
     for key in jobstatus :
@@ -152,7 +152,7 @@ def main(args) :
         completed = completed + 1
     if len(jobstatus) == completed :
       break
-    
+
     ## find the number of jobs still running via qstat
     ## if its at the maximum set jobsactive or jobsqueue,
     ## then pause
@@ -162,10 +162,10 @@ def main(args) :
       time.sleep(30)
       jobstatus = updatestatus(jobstatus, args.output, args.name)
       jobsactive = activejobs(jobstatus)
-  
+
     ## now submit jobs up to maxjobs - jobsqueued
     njobs = maxjobs - jobsactive
-    
+
     for key in jobstatus :
       if njobs == 0 :
         break
@@ -196,7 +196,7 @@ def main(args) :
         outDir = outDir + '/tow_1_track_0'
       if key[1] == 'nom' :
         outDir = outDir + '/tow_0_track_0'
-      
+
       ## build our qsub execution string
       clargs = '--outputDir=' + outDir + ' --input=' + key[0] + ' --id=' + str(index)
       clargs = clargs + ' --name=' + args.name
@@ -226,7 +226,7 @@ def main(args) :
         clargs = clargs + ' --forceMatchJetResolutionEquality=true'
       else :
         clargs = clargs + ' --forceMatchJetResolutionEquality=false'
-      
+
       qsub = 'qsub -V -p ' + str(args.priority) + ' -l mem=' + str(args.mem) + 'GB -l nodes=' + str(args.nodes)
       qsub = qsub + ':ppn=' + str(args.ppn) + ' -q ' + str(args.queue) + ' -o ' + outstream
       qsub = qsub + ' -e ' + errstream + ' -N ' + args.name + str(index) + ' -- '
@@ -241,15 +241,15 @@ def main(args) :
         print("warning: qsub submission failed")
         qsubfail = qsubfail + 1
       njobs = njobs - 1
-        
+
     if qsubfail > args.max_failures :
       print("qsub failure too many times - exiting")
       return
-  
+
     ## wait one minute before rechecking
     print("finished round of submissions: pausing")
     time.sleep(30)
-  
+
   print("all jobs completed: exiting")
 
 if __name__ == "__main__":
@@ -266,7 +266,7 @@ if __name__ == "__main__":
   parser.add_argument('--systematics', type=bool, default=True, help=' will run 4 systematic variations for error estimation')
   parser.add_argument('--output', default='out/post/tmp', help=' directory for output root files' )
   parser.add_argument('--embedFile', default='resources/data_lists/y7_mb_file_list.txt', help=' file containing list of root files for embedding events')
-  parser.add_argument('--NEmbeddingEvents', type=int, default=5, help='number of times to reuse a p+p event by embedding into different MB events')
+  parser.add_argument('--NEmbeddingEvents', type=int, default=15, help='number of times to reuse a p+p event by embedding into different MB events')
   parser.add_argument('--efficiencyFile', default='resources/efficiencies/y7_effic.root', help=' root file containing run 14 efficiency curves')
   parser.add_argument('--badRuns', default='', help=' csv file containing runs to mask')
   parser.add_argument('--badTowers', default='resources/bad_tower_lists/y7_y6_bad_tower.txt', help=' csv file containing towers to mask')

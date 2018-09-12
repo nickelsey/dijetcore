@@ -208,13 +208,13 @@ int main(int argc, char* argv[]) {
   }
   
   // and the radii we want to use
-  std::vector<double> radii{2.0, 3.0, 4.0};
+  std::vector<double> radii{2.0, 2.5, 3.0, 3.5, 4.0};
   
   // now we'll get the trees from the files, ignoring any objects
   // in the file that don't conform to the naming conventions from
   // the DijetWorker. There are also coincidence histograms to save
   std::vector<string> keys;
-  std::vector<dijetcore::DijetKey> parsed_keys;
+  std::unordered_map<std::string, dijetcore::DijetKey> parsed_keys;
   std::unordered_map<std::string, TTree*> auau_trees;
   std::unordered_map<std::string, TTree*> pp_trees;
   std::unordered_map<std::string, TTree*> tow_p_trees;
@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
   for (auto entry : auau_trees) {
     if (pp_trees.find(entry.first) != pp_trees.end()) {
       keys.push_back(entry.first);
-      parsed_keys.push_back(dijetcore::ParseStringToDijetKey(entry.first));
+      parsed_keys[key] = dijetcore::ParseStringToDijetKey(entry.first);
     }
   }
   
@@ -272,6 +272,9 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_hard_sub_dpt;
   std::unordered_map<string, TH2D*> pp_match_lead_dpt;
   std::unordered_map<string, TH2D*> pp_match_sub_dpt;
+  
+  std::unordered_map<string, TH2D*> pp_lead_hard_match_fraction;
+  std::unordered_map<string, TH2D*> pp_sub_hard_match_fraction;
   
   std::unordered_map<string, TH2D*> pp_hard_lead_dpt_frac;
   std::unordered_map<string, TH2D*> pp_hard_sub_dpt_frac;
@@ -323,6 +326,9 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_dpt_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_dpt_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_dpt_cent;
+  
+  std::unordered_map<string, std::vector<TH1D*>> pp_lead_hard_match_fraction_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_sub_hard_match_fraction_cent;
   
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_dpt_frac_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_dpt_frac_cent;
@@ -668,6 +674,13 @@ int main(int argc, char* argv[]) {
                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
                                        50, 0, 50, 50, 0, 50);
     
+    pp_lead_hard_match_fraction[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppleadhardmatchfrac").c_str(),
+                                                "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                2, -0.5, 1.5);
+    pp_sub_hard_match_fraction[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppsubhardmatchfrac").c_str(),
+                                               "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               2, -0.5, 1.5);
+    
     pp_hard_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhardfrac").c_str(),
                                      "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     pp_hard_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhardfrac").c_str(),
@@ -899,28 +912,37 @@ int main(int argc, char* argv[]) {
       
       // pp only now
       if ((*pp_only_jl).Pt() > 0) {
-        pp_only_hard_lead_pt[key]->Fill(cent_bin, (*pp_only_jl).Pt());
-        pp_only_hard_sub_pt[key]->Fill(cent_bin, (*pp_only_js).Pt());
-        pp_only_match_lead_pt[key]->Fill(cent_bin, (*pp_only_jlm).Pt());
-        pp_only_match_sub_pt[key]->Fill(cent_bin, (*pp_only_jsm).Pt());
-        pp_only_hard_aj[key]->Fill(cent_bin,
-                                   fabs((*pp_only_jl).Pt() - (*pp_only_js).Pt()) / ((*pp_only_jl).Pt() + (*pp_only_js).Pt()));
-        pp_only_match_aj[key]->Fill(cent_bin,
-                                   fabs((*pp_only_jlm).Pt() - (*pp_only_jsm).Pt()) / ((*pp_only_jlm).Pt() + (*pp_only_jsm).Pt()));
-        pp_hard_lead_dpt[key]->Fill(cent_bin, (*pp_jl).Pt() - (*pp_only_jl).Pt());
-        pp_hard_sub_dpt[key]->Fill(cent_bin, (*pp_js).Pt() - (*pp_only_js).Pt());
-        pp_match_lead_dpt[key]->Fill(cent_bin, (*pp_jlm).Pt() - (*pp_only_jlm).Pt());
-        pp_match_sub_dpt[key]->Fill(cent_bin, (*pp_jsm).Pt() - (*pp_only_jsm).Pt());
-        pp_hard_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jl).Pt() - (*pp_only_jl).Pt()) / (*pp_jl).Pt());
-        pp_hard_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_js).Pt() - (*pp_only_js).Pt()) / (*pp_js).Pt());
-        pp_match_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jlm).Pt() - (*pp_only_jlm).Pt()) / (*pp_jlm).Pt());
-        pp_match_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_jsm).Pt() - (*pp_only_jsm).Pt()) / (*pp_jsm).Pt());
-        
-        pp_hard_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jl).Pt(), (*pp_jl).Pt());
-        pp_hard_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_js).Pt(), (*pp_js).Pt());
-        pp_match_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jlm).Pt(), (*pp_jlm).Pt());
-        pp_match_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_jsm).Pt(), (*pp_jsm).Pt());
-        
+        pp_lead_hard_match_fraction[key]->Fill(cent_bin, 1);
+        if ((*pp_only_js).Pt() > 0) {
+          pp_sub_hard_match_fraction[key]->Fill(cent_bin, 1);
+          pp_only_hard_lead_pt[key]->Fill(cent_bin, (*pp_only_jl).Pt());
+          pp_only_hard_sub_pt[key]->Fill(cent_bin, (*pp_only_js).Pt());
+          pp_only_match_lead_pt[key]->Fill(cent_bin, (*pp_only_jlm).Pt());
+          pp_only_match_sub_pt[key]->Fill(cent_bin, (*pp_only_jsm).Pt());
+          pp_only_hard_aj[key]->Fill(cent_bin,
+                                     fabs((*pp_only_jl).Pt() - (*pp_only_js).Pt()) / ((*pp_only_jl).Pt() + (*pp_only_js).Pt()));
+          pp_only_match_aj[key]->Fill(cent_bin,
+                                      fabs((*pp_only_jlm).Pt() - (*pp_only_jsm).Pt()) / ((*pp_only_jlm).Pt() + (*pp_only_jsm).Pt()));
+          pp_hard_lead_dpt[key]->Fill(cent_bin, (*pp_jl).Pt() - (*pp_only_jl).Pt());
+          pp_hard_sub_dpt[key]->Fill(cent_bin, (*pp_js).Pt() - (*pp_only_js).Pt());
+          pp_match_lead_dpt[key]->Fill(cent_bin, (*pp_jlm).Pt() - (*pp_only_jlm).Pt());
+          pp_match_sub_dpt[key]->Fill(cent_bin, (*pp_jsm).Pt() - (*pp_only_jsm).Pt());
+          pp_hard_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jl).Pt() - (*pp_only_jl).Pt()) / (*pp_jl).Pt());
+          pp_hard_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_js).Pt() - (*pp_only_js).Pt()) / (*pp_js).Pt());
+          pp_match_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jlm).Pt() - (*pp_only_jlm).Pt()) / (*pp_jlm).Pt());
+          pp_match_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_jsm).Pt() - (*pp_only_jsm).Pt()) / (*pp_jsm).Pt());
+          
+          pp_hard_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jl).Pt(), (*pp_jl).Pt());
+          pp_hard_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_js).Pt(), (*pp_js).Pt());
+          pp_match_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jlm).Pt(), (*pp_jlm).Pt());
+          pp_match_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_jsm).Pt(), (*pp_jsm).Pt());
+        }
+        else {
+          pp_sub_hard_match_fraction[key]->Fill(cent_bin, 0);
+        }
+      }
+      else {
+        pp_lead_hard_match_fraction[key]->Fill(cent_bin, 0);
       }
     }
     
@@ -1049,6 +1071,9 @@ int main(int argc, char* argv[]) {
     pp_hard_sub_pp_3d_cent[key] = SplitByCentrality3D(pp_hard_sub_pp_3d[key]);
     pp_match_lead_pp_3d_cent[key] = SplitByCentrality3D(pp_match_lead_pp_3d[key]);
     pp_match_sub_pp_3d_cent[key] = SplitByCentrality3D(pp_match_sub_pp_3d[key]);
+    
+    pp_lead_hard_match_fraction_cent[key] = SplitByCentralityNormalized(pp_lead_hard_match_fraction[key]);
+    pp_sub_hard_match_fraction_cent[key] = SplitByCentralityNormalized(pp_sub_hard_match_fraction[key]);
     
     pp_hard_lead_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_lead_dpt_frac[key]);
     pp_hard_sub_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_sub_dpt_frac[key]);
@@ -1264,25 +1289,62 @@ int main(int argc, char* argv[]) {
       Overlay1D(pp_hard_lead_dpt_frac_cent[key][i], pp_hard_sub_dpt_frac_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt_frac",
                 "", "dp_{T}/p_{T}", "fraction");
       
-      
+      // print the fractions of successfully matched jets from embedded pp -> pp
+      PrettyPrint1D(pp_lead_hard_match_fraction_cent[key][i], hopts, copts, "", out_loc_cent, "leadhardmatchingfraction", "no match / match",
+                    "fraction", "");
+      PrettyPrint1D(pp_sub_hard_match_fraction_cent[key][i], hopts, copts, "", out_loc_cent, "leadsubmatchingfraction", "no match / match",
+                    "fraction", "");
     }
   }
   
   // make a directory for our radius outputs
   string out_loc = FLAGS_outputDir + "/change_radii";
   
+  // now we have to find the correct keys given our chosen radii
+  std::vector<string> radius_keys;
+  for (auto& rad : radii) {
+    for (auto& entry: parsed_keys) {
+      if (entry.second.lead_init_r == rad &&
+          entry.second.sub_init_r == rad) {
+        radius_keys.push_back(entry.first);
+      }
+    }
+  }
+  if (radius_keys.size() != radii.size()) {
+    LOG(ERROR) << "could not find jets matching the radii requested, exiting";
+    return 1;
+  }
   
+  // now make histograms
+  TH1D* p_value = new TH1D("pvalue", ";R;p-value", radii.size(), 0, radii.size());
+  TH1D* k_value = new TH1D("kvalue", ";R;KS", radii.size(), 0, radii.size());
+  TH1D* mean = new TH1D("mean", ";R;<A_{J}>", radii.size(), 0, radii.size());
+  TH1D* sigma = new TH1D("sigma", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
+  TH1D* skewness = new TH1D("skewness", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
+  TH1D* kurtosis = new TH1D("kurtosis", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
+  
+  TH1D* mean_pp = new TH1D("meanpp", ";R;<A_{J}>", radii.size(), 0, radii.size());
+  TH1D* sigma_pp = new TH1D("sigmapp", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
+  TH1D* skewness_pp = new TH1D("skewnesspp", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
+  TH1D* kurtosis_pp = new TH1D("kurtosispp", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
+  
+  TH1D* p_value_m = new TH1D("pvaluem", ";R;p-value", radii.size(), 0, radii.size());
+  TH1D* k_value_m = new TH1D("kvaluem", ";R;KS", radii.size(), 0, radii.size());
+  TH1D* mean_m = new TH1D("meanm", ";R;<A_{J}>", radii.size(), 0, radii.size());
+  TH1D* sigma_m = new TH1D("sigmam", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
+  TH1D* skewness_m = new TH1D("skewnessm", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
+  TH1D* kurtosis_m = new TH1D("kurtosism", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
+  
+  TH1D* mean_pp_m = new TH1D("meanppm", ";R;<A_{J}>", radii.size(), 0, radii.size());
+  TH1D* sigma_pp_m = new TH1D("sigmappm", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
+  TH1D* skewness_pp_m = new TH1D("skewnessppm", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
+  TH1D* kurtosis_pp_m = new TH1D("kurtosisppm", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
+  
+  for (int i = 0; i < radii.size(); ++i) {
+    double radius = radii[i];
+    string key = radius_keys[i];
+    dijetcore::DijetKey key_value = parsed_keys[key];
+  }
   
   return 0;
 }
-
-//    void Print2DSimple(H* h,
-//                       histogramOpts hopts,
-//                       canvasOpts copts,
-//                       std::string output_loc,
-//                       std::string output_name,
-//                       std::string canvas_title,
-//                       std::string x_axis_label,
-//                       std::string y_axis_label,
-//                       std::string opt = "COLZ") {
-  
