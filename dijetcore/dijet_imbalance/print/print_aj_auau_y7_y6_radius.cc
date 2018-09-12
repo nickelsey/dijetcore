@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
   for (auto entry : auau_trees) {
     if (pp_trees.find(entry.first) != pp_trees.end()) {
       keys.push_back(entry.first);
-      parsed_keys[key] = dijetcore::ParseStringToDijetKey(entry.first);
+      parsed_keys[entry.first] = dijetcore::ParseStringToDijetKey(entry.first);
     }
   }
   
