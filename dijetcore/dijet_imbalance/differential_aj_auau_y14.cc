@@ -95,11 +95,6 @@ int main(int argc, char* argv[]) {
   // initialize the reader
   TStarJetPicoReader* reader = new TStarJetPicoReader();
   dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList, FLAGS_runList);
-  reader->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
-  reader->GetTrackCuts()->SetMinNFitPointsCut(20);       // minimum fit points in track reco
-  reader->GetTrackCuts()->SetFitOverMaxPointsCut(0.0);  // minimum ratio of fit points used over possible
-  reader->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
-  
   
   // and a chain for the off axis worker if it exists
   TChain* off_axis_chain = nullptr;
@@ -112,10 +107,6 @@ int main(int argc, char* argv[]) {
   if (off_axis_chain != nullptr) {
     off_axis_worker = new dijetcore::OffAxisWorker();
     dijetcore::InitReaderWithDefaults(dynamic_cast<TStarJetPicoReader*>(off_axis_worker), off_axis_chain, FLAGS_towList);
-    off_axis_worker->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
-    off_axis_worker->GetTrackCuts()->SetMinNFitPointsCut(20);       // minimum fit points in track reco
-    off_axis_worker->GetTrackCuts()->SetFitOverMaxPointsCut(0.0);  // minimum ratio of fit points used over possible
-    off_axis_worker->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
   }
   
   // get the trigger IDs that will be used

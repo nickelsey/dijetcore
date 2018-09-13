@@ -48,15 +48,14 @@ namespace dijetcore {
     
     private:
     
-    double GetScalar(double pt, int cent);
+    double GetScalar(int cent);
     
     void loadCurves(int nBinsZDC = 3, int nBinsCent = 16);
-    void loadScalars(int nBinsScalar = 3);
     
     std::shared_ptr<TFile> file;
     
     std::vector<std::vector<TH2D*>> curves;
-    std::vector<TH1D*> scalars;
+    std::vector<double> scalars;
     std::shared_ptr<TF2> effY06; // Run 6 parameterization
     
     double max_pt_;

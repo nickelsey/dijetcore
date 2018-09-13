@@ -268,7 +268,7 @@ if __name__ == "__main__":
   parser.add_argument('--output', default='out/post/tmp', help=' directory for output root files' )
   parser.add_argument('--embedFile', default='resources/data_lists/y14_mb_file_list.txt', help=' file containing list of root files for embedding events')
   parser.add_argument('--NEmbeddingEvents', type=int, default=15, help='number of times to reuse a p+p event by embedding into different MB events')
-  parser.add_argument('--efficiencyFile', default='resources/efficiencies/y14_effic_dca3_nhit20_scaled.root', help=' root file containing run 14 efficiency curves')
+  parser.add_argument('--efficiencyFile', default='resources/efficiencies/y14_effic_dca1.root', help=' root file containing run 14 efficiency curves')
   parser.add_argument('--badTowers', default='resources/bad_tower_lists/y14_y6_bad_tower.txt', help=' csv file containing towers to mask')
   parser.add_argument('--badRuns', default='resources/bad_run_lists/y14_bad_run.txt', help=' csv file containing runs to mask')
   parser.add_argument('--triggers', default='y6ppht', help=' event triggers to consider: [y7, y10, y11, y14, y6pp, y9pp, y12pp] + [HT, MB, HT2, HT3, VPDMB30, VPDMB5, MBMON, ALL] (default "ALL": accept all events)')

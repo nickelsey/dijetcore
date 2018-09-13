@@ -189,11 +189,6 @@ int main(int argc, char* argv[]) {
   TStarJetPicoReader* embed_reader = new TStarJetPicoReader();
   TChain* embed_chain = dijetcore::NewChainFromInput(FLAGS_embedInput, FLAGS_id, chain->GetEntries() * FLAGS_nEmbed);
   dijetcore::InitReaderWithDefaults(embed_reader, embed_chain, FLAGS_towList);
-  embed_reader->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
-  embed_reader->GetTrackCuts()->SetMinNFitPointsCut(20);       // minimum fit points in track reco
-  embed_reader->GetTrackCuts()->SetFitOverMaxPointsCut(0.0);  // minimum ratio of fit points used over possible
-  embed_reader->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
-  
                                       
   // get the trigger IDs that will be used
   std::set<unsigned> triggers;

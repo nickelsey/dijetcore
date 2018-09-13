@@ -6,6 +6,7 @@ namespace dijetcore {
   auau_u_(0.05), pp_u_(0.03), cent_u_(0.00) {
     if (!filename.empty())
     loadFile(filename);
+    scalars = {1.263, 1.316, 1.319};
   }
   
   Run14EffScaled::~Run14EffScaled() {
@@ -33,7 +34,7 @@ namespace dijetcore {
     
     int bin = curves.at(zdcBin).at(cent)->FindBin(pt, eta);
     double eff = curves.at(zdcBin).at(cent)->GetBinContent(bin);
-    double scalar = GetScalar(pt, cent);
+    double scalar = GetScalar(cent);
     return eff / scalar;
   }
   
@@ -85,10 +86,7 @@ namespace dijetcore {
     return zdcBin;
   }
   
-  double Run14EffScaled::GetScalar(double pt, int cent) {
-    if (pt > max_pt_)
-      pt = max_pt_;
-    
+  double Run14EffScaled::GetScalar(int cent) {
     int scalar_cent_bin = -1;
     double scalar = 1.0;
     if (curves.size() > 0) {
@@ -105,10 +103,7 @@ namespace dijetcore {
     if (scalar_cent_bin >= scalars.size())
       scalar = 1.0;
     else
-      scalar = scalars[scalar_cent_bin]->GetBinContent(scalars[scalar_cent_bin]->FindBin(pt));
-    
-    if (scalar > 1.0 || scalar < 0.0)
-      scalar = 1.0;
+      scalar = scalars[scalar_cent_bin];
     
     return scalar;
   }
@@ -122,14 +117,6 @@ namespace dijetcore {
         + "_cent_" + std::to_string(j);
         curves[i].push_back((TH2D*) file->Get(name.c_str()));
       }
-    }
-  }
-  
-  void Run14EffScaled::loadScalars(int nBinsScalar) {
-    scalars.clear();
-    for (int i = 0; i < nBinsScalar; ++i) {
-      std::string name = "eff_ratio_" + std::to_string(i);
-      scalars.push_back((TH1D*) file->Get(name.c_str()));
     }
   }
   
