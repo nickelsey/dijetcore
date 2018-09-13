@@ -28,6 +28,8 @@ using std::string;
 DIJETCORE_DEFINE_string(auau, "", "input file for Au+Au");
 DIJETCORE_DEFINE_string(ppDir, "", "input directory for p+p");
 DIJETCORE_DEFINE_string(outputDir, "results", "directory for output");
+DIJETCORE_DEFINE_string(radii, "0.2,0.25,0.3,0.35,0.4", "radii to put in grid");
+DIJETCORE_DEFINE_string(constPt, "1.0,1.5,2.0,2.5,3.0", "radii to put in grid");
 DIJETCORE_DEFINE_bool(useSingleCentrality, true, "do things in 3 centrality bins or 1");
 
 // adds to the map all TTrees that conform to
@@ -167,6 +169,9 @@ int main(int argc, char* argv[]) {
   gStyle->SetHatchesSpacing(1.0);
   gStyle->SetHatchesLineWidth(2);
   
+  // turn off print messages
+  gErrorIgnoreLevel = kInfo+1;
+  
   // check to make sure we have valid inputs
   std::vector<string> inputs{FLAGS_auau, FLAGS_ppDir + "/nom.root"};
   for (auto& file : inputs) {
@@ -179,7 +184,7 @@ int main(int argc, char* argv[]) {
   
   // build output directory if it doesn't exist, using boost::filesystem
   if (FLAGS_outputDir.empty())
-  FLAGS_outputDir = "tmp";
+    FLAGS_outputDir = "tmp";
   boost::filesystem::path dir(FLAGS_outputDir.c_str());
   boost::filesystem::create_directories(dir);
   
@@ -208,7 +213,19 @@ int main(int argc, char* argv[]) {
   }
   
   // and the radii we want to use
-  std::vector<double> radii{2.0, 2.5, 3.0, 3.5, 4.0};
+  std::vector<double> radii = dijetcore::ParseArgStringToVec<double>(FLAGS_radii);
+  std::sort(radii.begin(), radii.end());
+  std::vector<string> radii_string;
+  for (auto& val : radii)
+    radii_string.push_back(std::to_string(val));
+  std::vector<double> constpt = dijetcore::ParseArgStringToVec<double>(FLAGS_constPt);
+  std::sort(constpt.begin(), constpt.end());
+  std::vector<string> constpt_string;
+  for (auto& val : constpt)
+    constpt_string.push_back(std::to_string(val));
+  LOG(INFO) << "R x const Pt matrix selected";
+  LOG(INFO) << "R: " << radii_string;
+  LOG(INFO) << "constPt: " << constpt_string;
   
   // now we'll get the trees from the files, ignoring any objects
   // in the file that don't conform to the naming conventions from
@@ -238,6 +255,39 @@ int main(int argc, char* argv[]) {
     }
   }
   
+  LOG(INFO) << "number of matched keys found: " << keys.size();
+  
+  // now sort the keys into their grid spots
+  std::vector<std::vector<string>> grid_keys;
+  std::vector<std::vector<dijetcore::DijetKey>> grid_key_params;
+  for (int rad = 0; rad < radii.size(); ++rad) {
+    grid_keys.push_back(std::vector<string>());
+    grid_key_params.push_back(std::vector<dijetcore::DijetKey>());
+    for (int pt = 0; pt < constpt.size(); ++pt) {
+      for (int key_index = 0; key_index < keys.size(); ++key_index) {
+        string key_string = keys[key_index];
+        dijetcore::DijetKey& key = parsed_keys[key_string];
+        if (key.lead_init_r == radii[rad] &&
+            key.sub_init_r == radii[rad] &&
+            key.lead_match_r == radii[rad] &&
+            key.sub_match_r == radii[rad] &&
+            key.lead_init_const_pt == constpt[pt] &&
+            key.sub_init_const_pt == constpt[pt]) {
+          grid_keys[rad].push_back(keys[key_index]);
+          grid_key_params[rad].push_back(key);
+        }
+      }
+      if (grid_keys[rad].size() < pt + 1) {
+        LOG(INFO) << "could not find a key for R=" << radii[rad] << " const Pt=" << constpt[pt];
+        return 1;
+      }
+      if (grid_keys[rad].size() > pt + 1) {
+        LOG(INFO) << "found multiple keys for R=" << radii[rad] << " const Pt=" << constpt[pt];
+        return 1;
+      }
+    }
+  }
+
   // save all histograms so we can do comparisons
   // between different keys if we want
   std::unordered_map<string, TH2D*> auau_hard_lead_pt;
@@ -246,6 +296,8 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> auau_match_sub_pt;
   std::unordered_map<string, TH2D*> auau_hard_aj;
   std::unordered_map<string, TH2D*> auau_match_aj;
+  std::unordered_map<string, TH2D*> auau_hard_aj_test;
+  std::unordered_map<string, TH2D*> auau_match_aj_test;
   std::unordered_map<string, TH2D*> auau_dphi;
   std::unordered_map<string, TH2D*> auau_hard_lead_rp;
   std::unordered_map<string, TH2D*> auau_off_axis_lead_pt;
@@ -258,6 +310,8 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_match_sub_pt;
   std::unordered_map<string, TH2D*> pp_hard_aj;
   std::unordered_map<string, TH2D*> pp_match_aj;
+  std::unordered_map<string, TH2D*> pp_hard_aj_test;
+  std::unordered_map<string, TH2D*> pp_match_aj_test;
   std::unordered_map<string, TH2D*> pp_dphi;
   std::unordered_map<string, TH2D*> pp_hard_lead_rp;
   
@@ -304,6 +358,8 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_hard_aj_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_match_aj_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_hard_aj_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> auau_match_aj_test_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_aj_cent;
@@ -314,6 +370,8 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_test_cent;
   
   std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_lead_pt_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_sub_pt_cent;
@@ -418,6 +476,15 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH2D*> pp_hard_aj_track_m;
   std::unordered_map<string, TH2D*> pp_match_aj_track_m;
   
+  std::unordered_map<string, TH2D*> pp_hard_aj_tow_p_test;
+  std::unordered_map<string, TH2D*> pp_match_aj_tow_p_test;
+  std::unordered_map<string, TH2D*> pp_hard_aj_tow_m_test;
+  std::unordered_map<string, TH2D*> pp_match_aj_tow_m_test;
+  std::unordered_map<string, TH2D*> pp_hard_aj_track_p_test;
+  std::unordered_map<string, TH2D*> pp_match_aj_track_p_test;
+  std::unordered_map<string, TH2D*> pp_hard_aj_track_m_test;
+  std::unordered_map<string, TH2D*> pp_match_aj_track_m_test;
+  
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_p_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_tow_p_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_m_cent;
@@ -426,6 +493,15 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_p_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_m_cent;
   std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_m_cent;
+  
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_p_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_tow_p_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_m_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_tow_m_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_p_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_p_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_m_test_cent;
+  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_m_test_cent;
   
   std::unordered_map<string, std::vector<TGraphErrors*>> systematic_errors_hard;
   std::unordered_map<string, std::vector<TGraphErrors*>> systematic_errors_match;
@@ -621,6 +697,10 @@ int main(int argc, char* argv[]) {
                                  "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     auau_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchaj").c_str(),
                                   "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+    auau_hard_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardajtest").c_str(),
+                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    auau_match_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchajtest").c_str(),
+                                  "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
     auau_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaudphi").c_str(),
                               "d#phi", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 2*TMath::Pi());
     
@@ -636,6 +716,10 @@ int main(int argc, char* argv[]) {
                                  "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     pp_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchaj").c_str(),
                                   "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+    pp_hard_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardajtest").c_str(),
+                               "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_match_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchajtest").c_str(),
+                                "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
     pp_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdphi").c_str(),
                               "d#phi", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 2*TMath::Pi());
     
@@ -781,6 +865,23 @@ int main(int argc, char* argv[]) {
     pp_match_aj_track_m[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackmajmatch").c_str(), "",
                                         cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     
+    pp_hard_aj_tow_p_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "towpajhardtest").c_str(), "",
+                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_match_aj_tow_p_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "towpajmatchtest").c_str(), "",
+                                           cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_hard_aj_tow_m_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "towmajhardtest").c_str(), "",
+                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_match_aj_tow_m_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "towmajmatchtest").c_str(), "",
+                                           cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_hard_aj_track_p_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackpajhardtest").c_str(), "",
+                                            cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_match_aj_track_p_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackpajmatchtest").c_str(), "",
+                                             cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_hard_aj_track_m_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackmajhardtest").c_str(), "",
+                                            cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    pp_match_aj_track_m_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackmajmatchtest").c_str(), "",
+                                             cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+    
     auau_npart[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaunpart").c_str(), ";refmult;nPart",
                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0.5, 2500.5);
     pp_npart[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppnpart").c_str(), ";refmult;nPart",
@@ -839,6 +940,10 @@ int main(int argc, char* argv[]) {
                               fabs((*auau_jl).Pt() - (*auau_js).Pt())/((*auau_jl).Pt() + (*auau_js).Pt()));
       auau_match_aj[key]->Fill(cent_bin,
                                fabs((*auau_jlm).Pt() - (*auau_jsm).Pt())/((*auau_jlm).Pt() + (*auau_jsm).Pt()));
+      auau_hard_aj_test[key]->Fill(cent_bin,
+                                   fabs((*auau_jl).Pt() - (*auau_js).Pt())/((*auau_jl).Pt() + (*auau_js).Pt()));
+      auau_match_aj_test[key]->Fill(cent_bin,
+                                    fabs((*auau_jlm).Pt() - (*auau_jsm).Pt())/((*auau_jlm).Pt() + (*auau_jsm).Pt()));
       
       // auau dphi
       double dphi = (*auau_jl).Phi() - (*auau_js).Phi();
@@ -895,6 +1000,10 @@ int main(int argc, char* argv[]) {
                               fabs((*pp_jl).Pt() - (*pp_js).Pt())/((*pp_jl).Pt() + (*pp_js).Pt()));
       pp_match_aj[key]->Fill(cent_bin,
                                fabs((*pp_jlm).Pt() - (*pp_jsm).Pt())/((*pp_jlm).Pt() + (*pp_jsm).Pt()));
+      pp_hard_aj_test[key]->Fill(cent_bin,
+                                 fabs((*pp_jl).Pt() - (*pp_js).Pt())/((*pp_jl).Pt() + (*pp_js).Pt()));
+      pp_match_aj_test[key]->Fill(cent_bin,
+                                  fabs((*pp_jlm).Pt() - (*pp_jsm).Pt())/((*pp_jlm).Pt() + (*pp_jsm).Pt()));
       
       // pp dphi
       double dphi = (*pp_jl).Phi() - (*pp_js).Phi();
@@ -966,6 +1075,10 @@ int main(int argc, char* argv[]) {
                             fabs((*tow_p_jl).Pt() - (*tow_p_js).Pt()) / ((*tow_p_jl).Pt() + (*tow_p_js).Pt()));
       pp_match_aj_tow_p[key]->Fill(cent_bin,
                              fabs((*tow_p_jlm).Pt() - (*tow_p_jsm).Pt()) / ((*tow_p_jlm).Pt() + (*tow_p_jsm).Pt()));
+      pp_hard_aj_tow_p_test[key]->Fill(cent_bin,
+                                  fabs((*tow_p_jl).Pt() - (*tow_p_js).Pt()) / ((*tow_p_jl).Pt() + (*tow_p_js).Pt()));
+      pp_match_aj_tow_p_test[key]->Fill(cent_bin,
+                                   fabs((*tow_p_jlm).Pt() - (*tow_p_jsm).Pt()) / ((*tow_p_jlm).Pt() + (*tow_p_jsm).Pt()));
     }
     
     while (tow_m_reader.Next()) {
@@ -987,6 +1100,10 @@ int main(int argc, char* argv[]) {
                             fabs((*tow_m_jl).Pt() - (*tow_m_js).Pt()) / ((*tow_m_jl).Pt() + (*tow_m_js).Pt()));
       pp_match_aj_tow_m[key]->Fill(cent_bin,
                              fabs((*tow_m_jlm).Pt() - (*tow_m_jsm).Pt()) / ((*tow_m_jlm).Pt() + (*tow_m_jsm).Pt()));
+      pp_hard_aj_tow_m_test[key]->Fill(cent_bin,
+                                       fabs((*tow_m_jl).Pt() - (*tow_m_js).Pt()) / ((*tow_m_jl).Pt() + (*tow_m_js).Pt()));
+      pp_match_aj_tow_m_test[key]->Fill(cent_bin,
+                                        fabs((*tow_m_jlm).Pt() - (*tow_m_jsm).Pt()) / ((*tow_m_jlm).Pt() + (*tow_m_jsm).Pt()));
     }
     
     while (track_p_reader.Next()) {
@@ -1008,6 +1125,10 @@ int main(int argc, char* argv[]) {
                             fabs((*track_p_jl).Pt() - (*track_p_js).Pt()) / ((*track_p_jl).Pt() + (*track_p_js).Pt()));
       pp_match_aj_track_p[key]->Fill(cent_bin,
                              fabs((*track_p_jlm).Pt() - (*track_p_jsm).Pt()) / ((*track_p_jlm).Pt() + (*track_p_jsm).Pt()));
+      pp_hard_aj_track_p_test[key]->Fill(cent_bin,
+                                         fabs((*track_p_jl).Pt() - (*track_p_js).Pt()) / ((*track_p_jl).Pt() + (*track_p_js).Pt()));
+      pp_match_aj_track_p_test[key]->Fill(cent_bin,
+                                          fabs((*track_p_jlm).Pt() - (*track_p_jsm).Pt()) / ((*track_p_jlm).Pt() + (*track_p_jsm).Pt()));
     }
     
     while (track_m_reader.Next()) {
@@ -1030,6 +1151,10 @@ int main(int argc, char* argv[]) {
                             fabs((*track_m_jl).Pt() - (*track_m_js).Pt()) / ((*track_m_jl).Pt() + (*track_m_js).Pt()));
       pp_match_aj_track_m[key]->Fill(cent_bin,
                              fabs((*track_m_jlm).Pt() - (*track_m_jsm).Pt()) / ((*track_m_jlm).Pt() + (*track_m_jsm).Pt()));
+      pp_hard_aj_track_m_test[key]->Fill(cent_bin,
+                                    fabs((*track_m_jl).Pt() - (*track_m_js).Pt()) / ((*track_m_jl).Pt() + (*track_m_js).Pt()));
+      pp_match_aj_track_m_test[key]->Fill(cent_bin,
+                                     fabs((*track_m_jlm).Pt() - (*track_m_jsm).Pt()) / ((*track_m_jlm).Pt() + (*track_m_jsm).Pt()));
     }
     
     
@@ -1044,6 +1169,8 @@ int main(int argc, char* argv[]) {
     auau_match_sub_pt_cent[key] = SplitByCentralityNormalized(auau_match_sub_pt[key]);
     auau_hard_aj_cent[key] = SplitByCentralityNormalized(auau_hard_aj[key]);
     auau_match_aj_cent[key] = SplitByCentralityNormalized(auau_match_aj[key]);
+    auau_hard_aj_test_cent[key] = SplitByCentralityNormalized(auau_hard_aj_test[key]);
+    auau_match_aj_test_cent[key] = SplitByCentralityNormalized(auau_match_aj_test[key]);
     auau_off_axis_lead_pt_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_pt[key]);
     auau_off_axis_sub_pt_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_pt[key]);
     auau_off_axis_aj_cent[key] = SplitByCentralityNormalized(auau_off_axis_aj[key]);
@@ -1054,6 +1181,8 @@ int main(int argc, char* argv[]) {
     pp_match_sub_pt_cent[key] = SplitByCentralityNormalized(pp_match_sub_pt[key]);
     pp_hard_aj_cent[key] = SplitByCentralityNormalized(pp_hard_aj[key]);
     pp_match_aj_cent[key] = SplitByCentralityNormalized(pp_match_aj[key]);
+    pp_hard_aj_test_cent[key] = SplitByCentralityNormalized(pp_hard_aj_test[key]);
+    pp_match_aj_test_cent[key] = SplitByCentralityNormalized(pp_match_aj_test[key]);
     
     pp_only_hard_lead_pt_cent[key] = SplitByCentralityNormalized(pp_only_hard_lead_pt[key]);
     pp_only_hard_sub_pt_cent[key] = SplitByCentralityNormalized(pp_only_hard_sub_pt[key]);
@@ -1124,10 +1253,20 @@ int main(int argc, char* argv[]) {
     pp_hard_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_m[key]);
     pp_match_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_m[key]);
     
+    pp_hard_aj_tow_p_test_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_p_test[key]);
+    pp_match_aj_tow_p_test_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_p_test[key]);
+    pp_hard_aj_tow_m_test_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_m_test[key]);
+    pp_match_aj_tow_m_test_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_m_test[key]);
+    
     pp_hard_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_p[key]);
     pp_match_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_p[key]);
     pp_hard_aj_track_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_m[key]);
     pp_match_aj_track_m_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_m[key]);
+    
+    pp_hard_aj_track_p_test_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_p_test[key]);
+    pp_match_aj_track_p_test_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_p_test[key]);
+    pp_hard_aj_track_m_test_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_m_test[key]);
+    pp_match_aj_track_m_test_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_m_test[key]);
     
     for (int i = 0; i < auau_hard_aj_cent[key].size(); ++i) {
       auau_hard_aj_cent[key][i]->RebinX(2);
@@ -1297,53 +1436,176 @@ int main(int argc, char* argv[]) {
     }
   }
   
-  // make a directory for our radius outputs
-  string out_loc = FLAGS_outputDir + "/change_radii";
-  
-  // now we have to find the correct keys given our chosen radii
-  std::vector<string> radius_keys;
-  for (auto& rad : radii) {
-    for (auto& entry: parsed_keys) {
-      if (entry.second.lead_init_r == rad &&
-          entry.second.sub_init_r == rad) {
-        radius_keys.push_back(entry.first);
+  for (int cent = 0; cent < cent_boundaries.size(); ++cent) {
+    // make a directory for our radius outputs
+    string out_loc_grid = FLAGS_outputDir + "/grid_cent_" + std::to_string(cent);
+    
+    // build output directory if it doesn't exist, using boost::filesystem
+    boost::filesystem::path dir_cent(out_loc_grid.c_str());
+    boost::filesystem::create_directories(dir_cent);
+    
+    // now build histograms
+    TH2D* p_values_hard = new TH2D(dijetcore::MakeString("p_values_hard_", cent).c_str(), ";R;p_{T}^{const}",
+                                   radii.size(), - 0.5, radii.size() - 0.5,
+                                   constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_hard = new TH2D(dijetcore::MakeString("ks_values_hard_", cent).c_str(), ";R;p_{T}^{const}",
+                                    radii.size(), - 0.5, radii.size() - 0.5,
+                                    constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* p_values_match = new TH2D(dijetcore::MakeString("p_values_match_", cent).c_str(), ";R;p_{T}^{const}",
+                                    radii.size(), - 0.5, radii.size() - 0.5,
+                                    constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_match = new TH2D(dijetcore::MakeString("ks_values_match_", cent).c_str(), ";R;p_{T}^{const}",
+                                     radii.size(), - 0.5, radii.size() - 0.5,
+                                     constpt.size(), -0.5, constpt.size() - 0.5);
+    
+    TH2D* p_values_hard_error = new TH2D(dijetcore::MakeString("p_values_hard_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                         radii.size(), - 0.5, radii.size() - 0.5,
+                                         constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_hard_error = new TH2D(dijetcore::MakeString("ks_values_hard_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                          radii.size(), - 0.5, radii.size() - 0.5,
+                                          constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* p_values_match_error = new TH2D(dijetcore::MakeString("p_values_match_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                          radii.size(), - 0.5, radii.size() - 0.5,
+                                          constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_match_error = new TH2D(dijetcore::MakeString("ks_values_match_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                           radii.size(), - 0.5, radii.size() - 0.5,
+                                           constpt.size(), -0.5, constpt.size() - 0.5);
+    
+    for (int j = 0; j < radii.size(); ++j) {
+      p_values_hard->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_hard->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      p_values_match->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_match->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      p_values_hard_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_hard_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      p_values_match_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_match_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+    }
+    for (int j = 0; j < radii.size(); ++j) {
+      p_values_hard->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_hard->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      p_values_match->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_match->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      p_values_hard_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_hard_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      p_values_match_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_match_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+    }
+    
+    TCanvas* c_hard = new TCanvas(dijetcore::MakeString("hard_canvas_", cent).c_str());
+    std::vector<std::vector<TPad*>> hard_pads = dijetcore::CanvasPartition(c_hard, radii.size(), constpt.size(), 0.10, 0.10, 0.05, 0.05);
+    
+    TCanvas* c_match = new TCanvas(dijetcore::MakeString("match_canvas_", cent).c_str());
+    std::vector<std::vector<TPad*>> matched_pads = dijetcore::CanvasPartition(c_match, radii.size(), constpt.size(), 0.10, 0.10, 0.05, 0.05);
+    for (int rad = 0; rad < radii.size(); ++rad) {
+      for (int pt = 0; pt < constpt.size(); ++pt) {
+    
+        int x_bin = p_values_hard->GetXaxis()->FindBin(rad);
+        int y_bin = p_values_hard->GetYaxis()->FindBin(pt);
+        string key = grid_keys[rad][pt];
+        dijetcore::DijetKey key_params = grid_key_params[rad][pt];
+        
+        TH1D* aj_hard_test = auau_hard_aj_test_cent[key][cent];
+        TH1D* aj_match_test = auau_match_aj_test_cent[key][cent];
+        
+        TH1D* aj_hard_pp_test = pp_hard_aj_test_cent[key][cent];
+        TH1D* aj_match_pp_test = pp_match_aj_test_cent[key][cent];
+        
+        TH1D* aj_hard = auau_hard_aj_cent[key][cent];
+        TH1D* aj_match = auau_match_aj_cent[key][cent];
+        
+        TH1D* aj_hard_pp = pp_hard_aj_cent[key][cent];
+        TH1D* aj_match_pp = pp_match_aj_cent[key][cent];
+        
+        // print
+        
+        c_hard->cd(0);
+        auau_hard_aj_cent[key][cent]->GetXaxis()->SetTitle(dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        auau_hard_aj_cent[key][cent]->GetYaxis()->SetTitle(dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt]).c_str());
+        auau_hard_aj_cent[key][cent]->SetMarkerSize(1.0);
+        pp_hard_aj_cent[key][cent]->SetMarkerSize(1.0);
+        TPad* hard_pad = hard_pads[rad][pt];
+        hard_pad->Draw();
+        hard_pad->SetFillStyle(4000);
+        hard_pad->SetFrameFillStyle(4000);
+        hard_pad->cd();
+        auau_hard_aj_cent[key][cent]->Draw();
+        pp_hard_aj_cent[key][cent]->Draw("SAME");
+        c_hard->cd(0);
+        
+        c_match->cd(0);
+        auau_match_aj_cent[key][cent]->GetXaxis()->SetTitle(dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        auau_match_aj_cent[key][cent]->GetYaxis()->SetTitle(dijetcore::MakeString("p_{T}^{const}=", constpt_string[rad]).c_str());
+        auau_match_aj_cent[key][cent]->SetMarkerSize(1.0);
+        pp_match_aj_cent[key][cent]->SetMarkerSize(1.0);
+        TPad* match_pad = matched_pads[rad][pt];
+        match_pad->SetFillStyle(4000);
+        match_pad->SetFrameFillStyle(4000);
+        match_pad->cd();
+        auau_match_aj_cent[key][cent]->Draw();
+        pp_match_aj_cent[key][cent]->Draw("SAME");
+        c_match->cd(0);
+        
+      
+        std::vector<TH1D*> aj_hard_pp_var{pp_hard_aj_tow_p_cent[key][cent], pp_hard_aj_tow_m_cent[key][cent], pp_hard_aj_track_p_cent[key][cent], pp_hard_aj_track_m_cent[key][cent]};
+        std::vector<TH1D*> aj_match_pp_var{pp_match_aj_tow_p_cent[key][cent], pp_match_aj_tow_m_cent[key][cent], pp_match_aj_track_p_cent[key][cent], pp_match_aj_track_m_cent[key][cent]};
+        
+        std::vector<TH1D*> aj_hard_pp_var_test{pp_hard_aj_tow_p_test_cent[key][cent], pp_hard_aj_tow_m_test_cent[key][cent], pp_hard_aj_track_p_test_cent[key][cent], pp_hard_aj_track_m_test_cent[key][cent]};
+        std::vector<TH1D*> aj_match_pp_var_test{pp_match_aj_tow_p_test_cent[key][cent], pp_match_aj_tow_m_test_cent[key][cent], pp_match_aj_track_p_test_cent[key][cent], pp_match_aj_track_m_test_cent[key][cent]};
+        
+        double p_value_hard = aj_hard->Chi2Test(aj_hard_pp, "UU NORM");
+        double p_value_match = aj_match->Chi2Test(aj_match_pp, "UU NORM");
+        double ks_value_hard = aj_hard_test->KolmogorovTest(aj_hard_pp_test);
+        double ks_value_match = aj_match_test->KolmogorovTest(aj_match_pp_test);
+        
+        double max_hard_p_deviation = 0;
+        double max_match_p_deviation = 0;
+        double max_hard_ks_deviation = 0;
+        double max_match_ks_deviation = 0;
+        
+        for (int i = 0; i < aj_hard_pp_var.size(); ++i) {
+          double hard_p_deviation = aj_hard->Chi2Test(aj_hard_pp_var[i], "UU NORM");
+          double hard_ks_deviation = aj_hard_test->KolmogorovTest(aj_hard_pp_var_test[i]);
+          double match_p_deviation = aj_match->Chi2Test(aj_match_pp_var[i], "UU NORM");
+          double match_ks_deviation = aj_match_test->KolmogorovTest(aj_match_pp_var_test[i]);
+          
+          if (fabs(p_value_hard - hard_p_deviation) > max_hard_p_deviation)
+            max_hard_p_deviation = fabs(hard_p_deviation);
+          if (fabs(ks_value_hard - hard_ks_deviation) > max_hard_ks_deviation)
+            max_hard_ks_deviation = fabs(hard_ks_deviation);
+          if (fabs(p_value_match - match_p_deviation) > max_match_p_deviation)
+            max_match_p_deviation = fabs(match_p_deviation);
+          if (fabs(ks_value_match - match_ks_deviation) > max_match_ks_deviation)
+            max_match_ks_deviation = fabs(match_ks_deviation);
+          
+        }
+        
+        // set bins
+        p_values_hard->SetBinContent(x_bin, y_bin, p_value_hard);
+        p_values_match->SetBinContent(x_bin, y_bin, p_value_match);
+        ks_values_hard->SetBinContent(x_bin, y_bin, ks_value_hard);
+        ks_values_match->SetBinContent(x_bin, y_bin, ks_value_match);
+        p_values_hard_error->SetBinContent(x_bin, y_bin, max_hard_p_deviation);
+        p_values_match_error->SetBinContent(x_bin, y_bin, max_match_p_deviation);
+        ks_values_hard_error->SetBinContent(x_bin, y_bin, max_hard_ks_deviation);
+        ks_values_match_error->SetBinContent(x_bin, y_bin, max_match_ks_deviation);
+        
       }
     }
-  }
-  if (radius_keys.size() != radii.size()) {
-    LOG(ERROR) << "could not find jets matching the radii requested, exiting";
-    return 1;
-  }
-  
-  // now make histograms
-  TH1D* p_value = new TH1D("pvalue", ";R;p-value", radii.size(), 0, radii.size());
-  TH1D* k_value = new TH1D("kvalue", ";R;KS", radii.size(), 0, radii.size());
-  TH1D* mean = new TH1D("mean", ";R;<A_{J}>", radii.size(), 0, radii.size());
-  TH1D* sigma = new TH1D("sigma", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
-  TH1D* skewness = new TH1D("skewness", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
-  TH1D* kurtosis = new TH1D("kurtosis", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
-  
-  TH1D* mean_pp = new TH1D("meanpp", ";R;<A_{J}>", radii.size(), 0, radii.size());
-  TH1D* sigma_pp = new TH1D("sigmapp", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
-  TH1D* skewness_pp = new TH1D("skewnesspp", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
-  TH1D* kurtosis_pp = new TH1D("kurtosispp", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
-  
-  TH1D* p_value_m = new TH1D("pvaluem", ";R;p-value", radii.size(), 0, radii.size());
-  TH1D* k_value_m = new TH1D("kvaluem", ";R;KS", radii.size(), 0, radii.size());
-  TH1D* mean_m = new TH1D("meanm", ";R;<A_{J}>", radii.size(), 0, radii.size());
-  TH1D* sigma_m = new TH1D("sigmam", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
-  TH1D* skewness_m = new TH1D("skewnessm", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
-  TH1D* kurtosis_m = new TH1D("kurtosism", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
-  
-  TH1D* mean_pp_m = new TH1D("meanppm", ";R;<A_{J}>", radii.size(), 0, radii.size());
-  TH1D* sigma_pp_m = new TH1D("sigmappm", ";R;E[A_{J}^2]", radii.size(), 0, radii.size());
-  TH1D* skewness_pp_m = new TH1D("skewnessppm", ";R;E[A_{J}^3]", radii.size(), 0, radii.size());
-  TH1D* kurtosis_pp_m = new TH1D("kurtosisppm", ";R;E[A_{J}^4]", radii.size(), 0, radii.size());
-  
-  for (int i = 0; i < radii.size(); ++i) {
-    double radius = radii[i];
-    string key = radius_keys[i];
-    dijetcore::DijetKey key_value = parsed_keys[key];
+    
+    Print2DSimple(p_values_hard, hopts, copts, out_loc_grid, "ajphard", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(p_values_match, hopts, copts, out_loc_grid, "ajpmatch", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_hard, hopts, copts, out_loc_grid, "ajkshard", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_match, hopts, copts, out_loc_grid, "ajksmatch", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    
+    Print2DSimple(p_values_hard_error, hopts, copts, out_loc_grid, "ajpharderror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(p_values_match_error, hopts, copts, out_loc_grid, "ajpmatcherror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_hard_error, hopts, copts, out_loc_grid, "ajksharderror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_match_error, hopts, copts, out_loc_grid, "ajksmatcherror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    
+    c_hard->SaveAs(dijetcore::MakeString(out_loc_grid, "/ajhardgrid.pdf").c_str());
+    c_match->SaveAs(dijetcore::MakeString(out_loc_grid, "/ajmatchgrid.pdf").c_str());
+    
   }
   
   return 0;
