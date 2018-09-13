@@ -5,6 +5,7 @@
 
 #include <sstream>
 #include <set>
+#include <vector>
 
 #include "dijetcore/lib/types.h"
 #include "dijetcore/lib/string/string_cast.h"
