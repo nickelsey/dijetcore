@@ -53,7 +53,7 @@ namespace dijetcore {
   // TStarJetPicoReader, if unknown input format,
   // returns nullptr
   // supports .root, .list, and .txt
-  TChain* NewChainFromInput(std::string str, int seed = 0) {
+  TChain* NewChainFromInput(std::string str, int seed = 0, int eventThreshold = 0) {
     TChain* chain = nullptr;
     
     if (str.empty())
@@ -83,11 +83,13 @@ namespace dijetcore {
         std::mt19937 g(seed);
         std::shuffle(files.begin(), files.end(), g);
         for (auto& file : files) {
+          if (eventThreshold > 0 &&
+              chain->GetEntries() > eventThreshold)
+            break;
           LOG(INFO) << "Adding file: " << file << " to chain";
           chain->Add(file.c_str());
         }
       }
-      
     }
     return chain;
   }
