@@ -1,7 +1,7 @@
 // run14_eff.hh
 
-#ifndef DIJETCORE_UTIL_DATA_EFFICIENCY_RUN14_EFF_H
-#define DIJETCORE_UTIL_DATA_EFFICIENCY_RUN14_EFF_H
+#ifndef DIJETCORE_UTIL_DATA_EFFICIENCY_RUN14_EFF_SCALED_H
+#define DIJETCORE_UTIL_DATA_EFFICIENCY_RUN14_EFF_SCALED_H
 
 #include <vector>
 #include <string>
@@ -20,12 +20,12 @@ namespace dijetcore {
     NEGATIVE = -1
   };
   
-  class Run14Eff {
+  class Run14EffScaled {
     public:
     
-    Run14Eff(std::string filename = "resources/efficiencies/y14_effic_dca1.root");
+    Run14EffScaled(std::string filename = "resources/efficiencies/y14_effic_dca3_nhit20_scaled.root");
     
-    ~Run14Eff();
+    ~Run14EffScaled();
     
     void loadFile(std::string filename, int nBinsZDC = 3, int nBinsCent = 16);
     
@@ -48,11 +48,15 @@ namespace dijetcore {
     
     private:
     
+    double GetScalar(double pt, int cent);
+    
     void loadCurves(int nBinsZDC = 3, int nBinsCent = 16);
+    void loadScalars(int nBinsScalar = 3);
     
     std::shared_ptr<TFile> file;
     
     std::vector<std::vector<TH2D*>> curves;
+    std::vector<TH1D*> scalars;
     std::shared_ptr<TF2> effY06; // Run 6 parameterization
     
     double max_pt_;
@@ -66,4 +70,4 @@ namespace dijetcore {
   
 } // namespace dijetcore
 
-#endif // DIJETCORE_UTIL_DATA_EFFICIENCY_RUN14_EFF_H
+#endif // DIJETCORE_UTIL_DATA_EFFICIENCY_RUN14_EFF_SCALED_H

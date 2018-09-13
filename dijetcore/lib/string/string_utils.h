@@ -85,9 +85,9 @@ namespace dijetcore {
   
   // parses a comma separated string and casts to type T,
   // returning a set
-  template<typename T>
-  std::set<T> ParseArgString(string str) {
-    std::set<T> ret;
+  template<typename T, class Container=std::set<T>>
+  Container ParseArgString(string str) {
+    Container ret;
     
     // remove all spaces
     str.erase(::dijetcore::RemoveIf(str.begin(), str.end(), ::isspace), str.end());
@@ -103,6 +103,28 @@ namespace dijetcore {
     }
     if (CanCast<T>(str))
       ret.insert(CastTo<T>(str));
+    
+    return ret;
+  }
+  
+  template<typename T>
+  std::vector<T> ParseArgStringToVec(string str) {
+    std::vector<T> ret;
+    
+    // remove all spaces
+    str.erase(::dijetcore::RemoveIf(str.begin(), str.end(), ::isspace), str.end());
+    
+    string token;
+    while ( str.find(",") != string::npos ) {
+      size_t pos = str.find(",");
+      token = str.substr(0, pos);
+      if (CanCast<T>(token)) {
+        ret.push_back(CastTo<T>(token));
+        str.erase(0, pos + 1);
+      }
+    }
+    if (CanCast<T>(str))
+      ret.push_back(CastTo<T>(str));
     
     return ret;
   }

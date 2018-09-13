@@ -14,7 +14,7 @@
 #include "dijetcore/util/data/trigger_lookup.h"
 #include "dijetcore/worker/dijet_worker/dijet_worker.h"
 #include "dijetcore/worker/dijet_worker/off_axis_worker.h"
-#include "dijetcore/util/data/centrality/centrality_run7.h"
+#include "dijetcore/util/data/centrality/centrality_run14.h"
 
 #include "TTree.h"
 #include "TChain.h"
@@ -46,8 +46,9 @@ DIJETCORE_DEFINE_string(offAxisInput, "", "input file for off-axis bkg effect es
 DIJETCORE_DEFINE_string(outputDir, "tmp", "directory for output");
 DIJETCORE_DEFINE_string(name, "job", "name for output file");
 DIJETCORE_DEFINE_int(id, 0, "job id (when running parallel jobs)");
-DIJETCORE_DEFINE_string(towList, "", "bad tower list");
-DIJETCORE_DEFINE_string(triggers, "y7ht", "trigger selection");
+DIJETCORE_DEFINE_string(towList, "resources/bad_tower_lists/y14_y6_bad_tower.txt", "bad tower list");
+DIJETCORE_DEFINE_string(runList, "resources/bad_run_lists/y14_bad_run.txt", "bad run list");
+DIJETCORE_DEFINE_string(triggers, "y14ht", "trigger selection");
 DIJETCORE_DEFINE_string(constEta, "1.0", "constitutent eta cuts (comma separated)");
 DIJETCORE_DEFINE_string(leadConstPt, "2.0", "leading constituent pT cut (comma separated)");
 DIJETCORE_DEFINE_string(subConstPt, "2.0", "subleading constituent pT cut (comma separated)");
@@ -66,7 +67,7 @@ DIJETCORE_DEFINE_bool(forceMatchJetResolutionEquality, false, "Only use DijetDef
 
 int main(int argc, char* argv[]) {
   
-  string usage = "Run 7 differential di-jet imbalance analysis routine";
+  string usage = "Run 14 differential di-jet imbalance analysis routine";
   
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
@@ -88,13 +89,17 @@ int main(int argc, char* argv[]) {
   string outfile_name = FLAGS_outputDir + "/" + FLAGS_name + dijetcore::MakeString(FLAGS_id) + ".root";
   TFile out(outfile_name.c_str(), "RECREATE");
   
-  
   // first, build our input chain
   TChain* chain = dijetcore::NewChainFromInput(FLAGS_input);
   
   // initialize the reader
   TStarJetPicoReader* reader = new TStarJetPicoReader();
-  dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList);
+  dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList, FLAGS_runList);
+  reader->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
+  reader->GetTrackCuts()->SetMinNFitPointsCut(20);       // minimum fit points in track reco
+  reader->GetTrackCuts()->SetFitOverMaxPointsCut(0.0);  // minimum ratio of fit points used over possible
+  reader->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
+  
   
   // and a chain for the off axis worker if it exists
   TChain* off_axis_chain = nullptr;
@@ -107,11 +112,11 @@ int main(int argc, char* argv[]) {
   if (off_axis_chain != nullptr) {
     off_axis_worker = new dijetcore::OffAxisWorker();
     dijetcore::InitReaderWithDefaults(dynamic_cast<TStarJetPicoReader*>(off_axis_worker), off_axis_chain, FLAGS_towList);
-    
+    off_axis_worker->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
+    off_axis_worker->GetTrackCuts()->SetMinNFitPointsCut(20);       // minimum fit points in track reco
+    off_axis_worker->GetTrackCuts()->SetFitOverMaxPointsCut(0.0);  // minimum ratio of fit points used over possible
+    off_axis_worker->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
   }
-  
-  // initialize Run 7 centrality
-  dijetcore::CentralityRun7 centrality;
   
   // get the trigger IDs that will be used
   std::set<unsigned> triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
@@ -158,8 +163,8 @@ int main(int argc, char* argv[]) {
   
   std::set<std::string> keys = worker.Keys();
   
-  // define the centrality cuts for year 7
-  std::vector<unsigned> cent_boundaries = {485, 399, 269, 178, 114, 69, 39, 21, 10};
+  // define centrality for run 14
+  dijetcore::CentralityRun14 centrality;
   
   for (auto key : keys)
     LOG(INFO) << key;
@@ -369,7 +374,9 @@ int main(int argc, char* argv[]) {
       }
       
       // get centrality
-      unsigned centrality_bin = centrality.Centrality9(reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity());
+      centrality.setEvent(header->GetRunId(), header->GetReferenceMultiplicity(),
+                          header->GetZdcCoincidenceRate(), header->GetPrimaryVertexZ());
+      int centrality_bin = centrality.centrality16();
       
       // get the vector container
       TStarJetVectorContainer<TStarJetVector>* container = reader->GetOutputContainer();

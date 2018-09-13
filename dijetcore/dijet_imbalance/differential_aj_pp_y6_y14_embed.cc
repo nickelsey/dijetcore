@@ -13,8 +13,8 @@
 #include "dijetcore/util/data/vector_conversion.h"
 #include "dijetcore/util/data/trigger_lookup.h"
 #include "dijetcore/worker/dijet_worker/dijet_worker.h"
-#include "dijetcore/util/data/efficiency/run7_eff.h"
-#include "dijetcore/util/data/centrality/centrality_run7.h"
+#include "dijetcore/util/data/efficiency/run14_eff_scaled.h"
+#include "dijetcore/util/data/centrality/centrality_run14.h"
 
 #include "TTree.h"
 #include "TChain.h"
@@ -48,9 +48,10 @@ DIJETCORE_DEFINE_string(efficiencyFile, "", "file with efficiency curves if appl
 DIJETCORE_DEFINE_string(outputDir, "tmp", "directory for output");
 DIJETCORE_DEFINE_string(name, "job", "name for output file");
 DIJETCORE_DEFINE_int(id, 0, "job id (when running parallel jobs)");
-DIJETCORE_DEFINE_string(towList, "", "bad tower list");
+DIJETCORE_DEFINE_string(towList, "resources/bad_tower_lists/y14_y6_bad_tower.txt", "bad tower list");
+DIJETCORE_DEFINE_string(runList, "resources/bad_run_lists/y14_bad_run.txt", "bad run list");
 DIJETCORE_DEFINE_string(triggers, "y6ppht", "trigger selection");
-DIJETCORE_DEFINE_string(embedTriggers, "y7mb", "trigger selection for embedding");
+DIJETCORE_DEFINE_string(embedTriggers, "y14vpdmb30", "trigger selection for embedding");
 DIJETCORE_DEFINE_string(constEta, "1.0", "constitutent eta cuts (comma separated)");
 DIJETCORE_DEFINE_string(leadConstPt, "2.0", "leading constituent pT cut (comma separated)");
 DIJETCORE_DEFINE_string(subConstPt, "2.0", "subleading constituent pT cut (comma separated)");
@@ -66,16 +67,20 @@ DIJETCORE_DEFINE_int(towerUnc, 0, "tower scaling for systematic uncertainties");
 DIJETCORE_DEFINE_int(trackingUnc, 0, "tracking efficiency ratio scaling for systematic uncertainties");
 DIJETCORE_DEFINE_int(seed, 0, "seed for the random number generator, so that results can be reproducible");
 DIJETCORE_DEFINE_bool(useEfficiency, true, "flag to scale pp efficiency to be run 7 AuAu-like");
-DIJETCORE_DEFINE_int(minCentrality, 15, "minimum cutoff for embedding centrality")
+DIJETCORE_DEFINE_int(minCentrality, 2, "minimum cutoff for embedding centrality - should not be greater than 2 if efficiency is on")
 DIJETCORE_DEFINE_bool(forceConstituentPtEquality, true, "Only use DijetDefinitions where pT const is equal in leading/subleading jets");
 DIJETCORE_DEFINE_bool(forceConstituentEtaEquality, true, "Only use DijetDefinitions where eta const is equal in leading/subleading jets");
 DIJETCORE_DEFINE_bool(forceJetResolutionEquality, true, "Only use DijetDefinitions where leading/subleading R are equivalent");
 DIJETCORE_DEFINE_bool(forceMatchJetResolutionEquality, false, "Only use DijetDefinitions where initial and matched R are equivalent");
 
-bool GetEmbedEvent(TStarJetPicoReader* reader, std::set<unsigned>& triggers, dijetcore::CentralityRun7& cent) {
+bool GetEmbedEvent(TStarJetPicoReader* reader, std::set<unsigned>& triggers, dijetcore::CentralityRun14& cent) {
   while(reader->NextEvent()) {
-    int centrality = cent.Centrality9(reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity());
-    if (centrality > FLAGS_minCentrality || centrality < 0)
+    TStarJetPicoEventHeader* header = reader->GetEvent()->GetHeader();
+    cent.setEvent(header->GetRunId(), header->GetReferenceMultiplicity(),
+                  header->GetZdcCoincidenceRate(), header->GetPrimaryVertexZ());
+    int centrality = cent.centrality9();
+    
+    if (centrality < 0)
       continue;
     if (triggers.size()) {
       for (auto trigger : triggers)
@@ -86,30 +91,6 @@ bool GetEmbedEvent(TStarJetPicoReader* reader, std::set<unsigned>& triggers, dij
       return true;
   }
   return false;
-}
-
-void GetGoodEvents(TStarJetPicoReader* reader, dijetcore::CentralityRun7& centrality, std::vector<unsigned>& ids,
-                        std::set<unsigned>& triggers, int cent_min = -1, int cent_max = -1) {
-  while (reader->NextEvent()) {
-    TStarJetPicoEventHeader* header = reader->GetEvent()->GetHeader();
-    
-    // check if event fired a trigger we will use
-    if (triggers.size() != 0) {
-      bool use_event = false;
-      for (auto trigger : triggers)
-      if (header->HasTriggerId(trigger))
-      use_event = true;
-      if (!use_event)
-      continue;
-    }
-  
-    int cent = centrality.Centrality9(reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity());
-    if ((cent_min != -1 && cent < cent_min) ||
-        (cent_max != -1 && cent > cent_max))
-      continue;
-    ids.push_back(reader->GetNOfCurrentEvent());
-  }
-  reader->ReadEvent(0);
 }
 
 std::array<fastjet::PseudoJet, 4> ClusterPP(std::vector<fastjet::PseudoJet>& input,
@@ -169,7 +150,7 @@ std::array<fastjet::PseudoJet, 4> ClusterPP(std::vector<fastjet::PseudoJet>& inp
 
 int main(int argc, char* argv[]) {
   
-  string usage = "Run 6 embedded pp differential di-jet imbalance analysis routine";
+  string usage = "Run 6 embedded in Run 14 pp differential di-jet imbalance analysis routine";
   
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
@@ -208,6 +189,11 @@ int main(int argc, char* argv[]) {
   TStarJetPicoReader* embed_reader = new TStarJetPicoReader();
   TChain* embed_chain = dijetcore::NewChainFromInput(FLAGS_embedInput, FLAGS_id, chain->GetEntries() * FLAGS_nEmbed);
   dijetcore::InitReaderWithDefaults(embed_reader, embed_chain, FLAGS_towList);
+  embed_reader->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
+  embed_reader->GetTrackCuts()->SetMinNFitPointsCut(20);       // minimum fit points in track reco
+  embed_reader->GetTrackCuts()->SetFitOverMaxPointsCut(0.0);  // minimum ratio of fit points used over possible
+  embed_reader->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
+  
                                       
   // get the trigger IDs that will be used
   std::set<unsigned> triggers;
@@ -225,29 +211,29 @@ int main(int argc, char* argv[]) {
   }
   
   // initialize efficiency curves
-  dijetcore::Run7Eff* efficiency;
+  dijetcore::Run14EffScaled* efficiency;
   if (FLAGS_efficiencyFile.empty())
-  efficiency = new dijetcore::Run7Eff();
+  efficiency = new dijetcore::Run14EffScaled();
   else
-  efficiency = new dijetcore::Run7Eff(FLAGS_efficiencyFile);
+  efficiency = new dijetcore::Run14EffScaled(FLAGS_efficiencyFile);
   
   switch(FLAGS_trackingUnc) {
     case 0 :
-    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NONE);
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUnc::NONE);
     break;
     case 1 :
-    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::POSITIVE);
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUnc::POSITIVE);
     break;
     case -1 :
-    efficiency->setSystematicUncertainty(dijetcore::TrackingUncY7::NEGATIVE);
+    efficiency->setSystematicUncertainty(dijetcore::TrackingUnc::NEGATIVE);
     break;
     default:
     LOG(ERROR) << "undefined tracking efficiency setting, exiting";
     return 1;
   }
   
-  // initialize Run 7 centrality
-  dijetcore::CentralityRun7 centrality;
+  // initialize Run 14 centrality
+  dijetcore::CentralityRun14 centrality;
   
   // parse jetfinding variables
   // --------------------------
@@ -505,12 +491,6 @@ int main(int argc, char* argv[]) {
   // define a selector to accept tracks with pT > 0.2 GeV, inside our nominal eta acceptance of +/- 1.0
   fastjet::Selector track_pt_min_selector = fastjet::SelectorPtMin(0.2) && fastjet::SelectorAbsRapMax(1.0);
   
-  // get good event numbers for embedding so we don't waste time looping...
-  LOG(INFO) << "Scanning embedding data for acceptable events";
-  std::vector<unsigned> embed_event_ids;
-  int current_embed_event_id = 0;
-  GetGoodEvents(embed_reader, centrality, embed_event_ids, embed_triggers, 0, 2);
-  LOG(INFO) << "From " << embed_chain->GetEntries() << " events, accepted " << embed_event_ids.size();
   // start the analysis loop
   // -----------------------
   try {
@@ -535,13 +515,14 @@ int main(int argc, char* argv[]) {
     
       // we're using this p+p event - start the embedding loop
       for (int emb = 0; emb < FLAGS_nEmbed; ++emb) {
-  
-        // get next embedding event
-        if (current_embed_event_id == embed_event_ids.size() - 1)
-          current_embed_event_id = 0;
-        embed_reader->ReadEvent(embed_event_ids[current_embed_event_id]);
-        current_embed_event_id++;
         
+        if (!GetEmbedEvent(embed_reader, embed_triggers, centrality)) {
+          if (!GetEmbedEvent(embed_reader, embed_triggers, centrality)) {
+            LOG(ERROR) << "No embedding events satisfy criteria: exiting";
+            return 1;
+          }
+        }
+    
         int refmult = header->GetReferenceMultiplicity();
         double refmultcorr = refmult;
         int centrality_bin = -1;
@@ -551,13 +532,18 @@ int main(int argc, char* argv[]) {
         std::vector<fastjet::PseudoJet> embed_particles;
         std::vector<fastjet::PseudoJet> primary_particles;
     
-        embed_centrality = centrality.Centrality9(embed_reader->GetEvent()->GetHeader()->GetGReferenceMultiplicity());
+        centrality.setEvent(embed_header->GetRunId(), embed_header->GetReferenceMultiplicity(),
+                      embed_header->GetZdcCoincidenceRate(), embed_header->GetPrimaryVertexZ());
+        embed_centrality = centrality.centrality16();
         centrality_bin = embed_centrality;
+        
+        // if centrality is not defined or it is 80-100, continue
+        if (centrality_bin < 0 || centrality_bin > 15)
+          continue;
         
         // if successful, load the embedding event
         dijetcore::ConvertTStarJetVector(embed_reader->GetOutputContainer(), particles);
         dijetcore::ConvertTStarJetVector(embed_reader->GetOutputContainer(), embed_particles);
-        
         
         // and now convert the pp - if there is any efficiency curves to apply, do it now
         TStarJetVectorContainer<TStarJetVector>* container = reader->GetOutputContainer();
@@ -574,7 +560,7 @@ int main(int argc, char* argv[]) {
             // then we get the efficiency ratio, and use that as the probability
             // to keep the track
             //double ratio = efficiency->ratio(sv->Pt(), sv->Eta(), centrality_bin);
-            double ratio = efficiency->ratio020Avg(sv->Pt(), sv->Eta());
+            double ratio = efficiency->ratio(sv->Pt(), sv->Eta(), embed_centrality, embed_header->GetZdcCoincidenceRate());
             if (!std::isfinite(ratio))
             continue;
             
@@ -601,7 +587,7 @@ int main(int argc, char* argv[]) {
         
         // select tracks above the minimum pt threshold
         particles = track_pt_min_selector(particles);
-        
+  
         // run the worker
         auto& worker_out = worker.Run(particles);
         
