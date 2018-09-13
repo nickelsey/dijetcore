@@ -1522,8 +1522,8 @@ int main(int argc, char* argv[]) {
         c_hard->cd(0);
         auau_hard_aj_cent[key][cent]->GetXaxis()->SetTitle(dijetcore::MakeString("R=", radii_string[rad]).c_str());
         auau_hard_aj_cent[key][cent]->GetYaxis()->SetTitle(dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt]).c_str());
-        auau_hard_aj_cent[key][cent]->SetMarkerSize(1.0);
-        pp_hard_aj_cent[key][cent]->SetMarkerSize(1.0);
+        auau_hard_aj_cent[key][cent]->SetMarkerSize(0.2);
+        pp_hard_aj_cent[key][cent]->SetMarkerSize(0.2);
         TPad* hard_pad = hard_pads[rad][pt];
         hard_pad->Draw();
         hard_pad->SetFillStyle(4000);
@@ -1536,8 +1536,8 @@ int main(int argc, char* argv[]) {
         c_match->cd(0);
         auau_match_aj_cent[key][cent]->GetXaxis()->SetTitle(dijetcore::MakeString("R=", radii_string[rad]).c_str());
         auau_match_aj_cent[key][cent]->GetYaxis()->SetTitle(dijetcore::MakeString("p_{T}^{const}=", constpt_string[rad]).c_str());
-        auau_match_aj_cent[key][cent]->SetMarkerSize(1.0);
-        pp_match_aj_cent[key][cent]->SetMarkerSize(1.0);
+        auau_match_aj_cent[key][cent]->SetMarkerSize(0.2);
+        pp_match_aj_cent[key][cent]->SetMarkerSize(0.2);
         TPad* match_pad = matched_pads[rad][pt];
         match_pad->SetFillStyle(4000);
         match_pad->SetFrameFillStyle(4000);

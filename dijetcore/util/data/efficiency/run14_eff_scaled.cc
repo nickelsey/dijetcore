@@ -32,8 +32,9 @@ namespace dijetcore {
     int zdcBin = luminosityBin(zdcrate);
     
     int bin = curves.at(zdcBin).at(cent)->FindBin(pt, eta);
-    return curves.at(zdcBin).at(cent)->GetBinContent(bin);
-    
+    double eff = curves.at(zdcBin).at(cent)->GetBinContent(bin);
+    double scalar = GetScalar(pt, cent);
+    return eff / scalar;
   }
   
   double Run14EffScaled::pp6Eff(double pt, double eta) {
