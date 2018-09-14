@@ -559,9 +559,6 @@ int main(int argc, char* argv[]) {
             if (!std::isfinite(ratio))
             continue;
             
-            if (embed_centrality > 3)
-              ratio /= 1.31;
-            
             eff_ratio->Fill(sv->Pt(), sv->Eta(), ratio);
             
             double random_ = dis(gen);
