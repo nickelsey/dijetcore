@@ -66,7 +66,7 @@ DIJETCORE_DEFINE_int(towerUnc, 0, "tower scaling for systematic uncertainties");
 DIJETCORE_DEFINE_int(trackingUnc, 0, "tracking efficiency ratio scaling for systematic uncertainties");
 DIJETCORE_DEFINE_int(seed, 0, "seed for the random number generator, so that results can be reproducible");
 DIJETCORE_DEFINE_bool(useEfficiency, true, "flag to scale pp efficiency to be run 7 AuAu-like");
-DIJETCORE_DEFINE_int(minCentrality, 15, "minimum cutoff for embedding centrality")
+DIJETCORE_DEFINE_int(minCentrality, 2, "minimum cutoff for embedding centrality")
 DIJETCORE_DEFINE_bool(forceConstituentPtEquality, true, "Only use DijetDefinitions where pT const is equal in leading/subleading jets");
 DIJETCORE_DEFINE_bool(forceConstituentEtaEquality, true, "Only use DijetDefinitions where eta const is equal in leading/subleading jets");
 DIJETCORE_DEFINE_bool(forceJetResolutionEquality, true, "Only use DijetDefinitions where leading/subleading R are equivalent");
