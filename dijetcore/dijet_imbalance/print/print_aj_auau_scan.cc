@@ -127,25 +127,6 @@ std::vector<TH1D*> SplitByCentralityNormalized(TH2D* h, int bins = 9) {
   return ret;
 }
 
-std::vector<TH1D*> AddBins(std::vector<TH1D*> container, std::vector<std::pair<int, int>> bins) {
-
-  std::vector<TH1D*> ret(bins.size(), nullptr);
-  for (int i = 0; i < container.size(); ++i) {
-    for (int j = 0; j < bins.size(); ++j) {
-      if (i >=bins[j].first && i <= bins[j].second) {
-        if (ret[j] == nullptr) {
-          string name = string(container[i]->GetName()) + std::to_string(j);
-          ret[j] = (TH1D*) container[i]->Clone(name.c_str());
-        }
-        else {
-          ret[j]->Add(container[i]);
-        }
-      }
-    }
-  }
-  return ret;
-}
-
 TGraphErrors* GetSystematic(TH1D* nom, TH1D* var1_a, TH1D* var1_b, TH1D* var2_a, TH1D* var2_b) {
   int nBins = nom->GetNbinsX();
   double x_[nBins];
@@ -300,14 +281,6 @@ TLegend* DrawPrelim(int x_bin, int y_bin, int x_max, int y_max, double scale = 1
   }
   leg->SetTextFont(62);
   return leg;
-}
-
-void DrawHardText() {
-  
-}
-
-void DrawMatchText() {
-  
 }
 
 int main(int argc, char* argv[]) {

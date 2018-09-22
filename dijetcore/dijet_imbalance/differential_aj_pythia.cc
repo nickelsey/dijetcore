@@ -76,19 +76,24 @@ int main(int argc, char* argv[]) {
   // create the generator
   // --------------------
   std::stringstream pt_stream;
+  std::stringstream seed_stream;
   pt_stream << FLAGS_pTHatMin;
+  seed_stream << FLAGS_id;
   string pt_low_string = "PhaseSpace:pTHatMin = " + pt_stream.str();
   string pt_high_string = "PhaseSpace:pTHatMax = 100.0";
   string qcd_string = "HardQCD:all = on";
   string e_cm_string = "Beams:eCM = 200";
+  string set_seed_string = "Random:setSeed = On";
+  string seed_value_string = "Random:seed = " + seed_stream.str();
+  string hadronic_decay_string = "HadronLevel:Decay = on";
   Pythia8::Pythia pythia;
   pythia.readString(qcd_string);
   pythia.readString(e_cm_string);
   pythia.readString(pt_low_string);
   pythia.readString(pt_high_string);
-  pythia.readString("Random:setSeed = On");
-  pythia.readString("Random:seed = 0");
-  pythia.readString("HadronLevel:Decay = on");
+  pythia.readString(set_seed_string);
+  pythia.readString(seed_value_string);
+  pythia.readString(hadronic_decay_string);
   pythia.init();
   
   // initialize Run 7 centrality
