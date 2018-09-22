@@ -355,11 +355,20 @@ int main(int argc, char* argv[]) {
         npart_dict[key] = particles.size();
         
         // set the four jets
+        // set the four jets
         lead_hard_jet_dict[key] = TLorentzVector(out.lead_hard.px(),
                                                  out.lead_hard.py(),
                                                  out.lead_hard.pz(),
                                                  out.lead_hard.E());
-        lead_hard_jet_nconst_dict[key] = out.lead_hard.constituents().size();
+        int l_const = 0;
+        for (int i = 0; i < out.lead_hard.constituents().size(); ++i) {
+          if (out.lead_hard.constituents()[i].pt() > 0.01) {
+            l_const++;
+            lead_hard_jet_const_pt_dict[key]->Fill(out.lead_hard.constituents()[i].pt());
+            lead_hard_jet_const_dr_dict[key]->Fill(out.lead_hard.constituents()[i].delta_R(out.lead_hard));
+          }
+        }
+        lead_hard_jet_nconst_dict[key] = l_const;
         lead_hard_rho_dict[key] = out.lead_hard_rho;
         lead_hard_sigma_dict[key] = out.lead_hard_sigma;
         lead_hard_area_dict[key] = out.lead_hard.area();
@@ -367,7 +376,15 @@ int main(int argc, char* argv[]) {
                                                   out.lead_match.py(),
                                                   out.lead_match.pz(),
                                                   out.lead_match.E());
-        lead_match_jet_nconst_dict[key] = out.lead_match.constituents().size();
+        int lm_const = 0;
+        for (int i = 0; i < out.lead_match.constituents().size(); ++i) {
+          if (out.lead_match.constituents()[i].pt() > 0.01) {
+            lm_const++;
+            lead_match_jet_const_pt_dict[key]->Fill(out.lead_match.constituents()[i].pt());
+            lead_match_jet_const_dr_dict[key]->Fill(out.lead_match.constituents()[i].delta_R(out.lead_match));
+          }
+        }
+        lead_match_jet_nconst_dict[key] = lm_const;
         lead_match_rho_dict[key] = out.lead_match_rho;
         lead_match_sigma_dict[key] = out.lead_match_sigma;
         lead_match_area_dict[key] = out.lead_match.area();
@@ -375,7 +392,15 @@ int main(int argc, char* argv[]) {
                                                     out.sublead_hard.py(),
                                                     out.sublead_hard.pz(),
                                                     out.sublead_hard.E());
-        sublead_hard_jet_nconst_dict[key] = out.sublead_hard.constituents().size();
+        int s_const = 0;
+        for (int i = 0; i < out.sublead_hard.constituents().size(); ++i) {
+          if (out.sublead_hard.constituents()[i].pt() > 0.01) {
+            s_const++;
+            sublead_hard_jet_const_pt_dict[key]->Fill(out.sublead_hard.constituents()[i].pt());
+            sublead_hard_jet_const_dr_dict[key]->Fill(out.sublead_hard.constituents()[i].delta_R(out.sublead_hard));
+          }
+        }
+        sublead_hard_jet_nconst_dict[key] = s_const;
         sublead_hard_rho_dict[key] = out.sublead_hard_rho;
         sublead_hard_sigma_dict[key] = out.sublead_hard_sigma;
         sublead_hard_area_dict[key] = out.sublead_hard.area();
@@ -383,7 +408,15 @@ int main(int argc, char* argv[]) {
                                                      out.sublead_match.py(),
                                                      out.sublead_match.pz(),
                                                      out.sublead_match.E());
-        sublead_match_jet_nconst_dict[key] = out.sublead_match.constituents().size();
+        int sm_const = 0;
+        for (int i = 0; i < out.sublead_match.constituents().size(); ++i) {
+          if (out.sublead_match.constituents()[i].pt() > 0.01) {
+            sm_const++;
+            sublead_match_jet_const_pt_dict[key]->Fill(out.sublead_match.constituents()[i].pt());
+            sublead_match_jet_const_dr_dict[key]->Fill(out.sublead_match.constituents()[i].delta_R(out.sublead_match));
+          }
+        }
+        sublead_match_jet_nconst_dict[key] = sm_const;
         sublead_match_rho_dict[key] = out.sublead_match_rho;
         sublead_match_sigma_dict[key] = out.sublead_match_sigma;
         sublead_match_area_dict[key] = out.sublead_match.area();
