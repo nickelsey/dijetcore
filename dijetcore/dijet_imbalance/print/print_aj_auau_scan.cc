@@ -1200,26 +1200,26 @@ int main(int argc, char* argv[]) {
       Overlay1D(match_lead_eta_cent[auau_index][key][i], match_lead_eta_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_eta", "", "#eta", "fraction");
       Overlay1D(hard_sub_eta_cent[auau_index][key][i], hard_sub_eta_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_eta", "", "#eta", "fraction");
       Overlay1D(match_sub_eta_cent[auau_index][key][i], match_sub_eta_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_eta", "", "#eta", "fraction");
-      Overlay1D(hard_lead_phi_cent[auau_index][key][i], hard_lead_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_phi", "", "#eta", "fraction");
-      Overlay1D(match_lead_phi_cent[auau_index][key][i], match_lead_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_phi", "", "#eta", "fraction");
-      Overlay1D(hard_sub_phi_cent[auau_index][key][i], hard_sub_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_phi", "", "#eta", "fraction");
-      Overlay1D(match_sub_phi_cent[auau_index][key][i], match_sub_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_phi", "", "#eta", "fraction");
-      Overlay1D(hard_lead_pt_cent[auau_index][key][i], hard_lead_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_pt", "", "#eta", "fraction");
-      Overlay1D(match_lead_pt_cent[auau_index][key][i], match_lead_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_pt", "", "#eta", "fraction");
-      Overlay1D(hard_sub_pt_cent[auau_index][key][i], hard_sub_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_pt", "", "#eta", "fraction");
-      Overlay1D(match_sub_pt_cent[auau_index][key][i], match_sub_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_pt", "", "#eta", "fraction");
-      Overlay1D(hard_lead_const_cent[auau_index][key][i], hard_lead_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_const", "", "#eta", "fraction");
-      Overlay1D(match_lead_const_cent[auau_index][key][i], match_lead_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_const", "", "#eta", "fraction");
-      Overlay1D(hard_sub_const_cent[auau_index][key][i], hard_sub_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_const", "", "#eta", "fraction");
-      Overlay1D(match_sub_const_cent[auau_index][key][i], match_sub_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_const", "", "#eta", "fraction");
-      Overlay1D(hard_lead_rho_cent[auau_index][key][i], hard_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_rho", "", "#eta", "fraction");
-      Overlay1D(match_lead_rho_cent[auau_index][key][i], match_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_rho", "", "#eta", "fraction");
-      Overlay1D(hard_sub_rho_cent[auau_index][key][i], hard_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_rho", "", "#eta", "fraction");
-      Overlay1D(match_sub_rho_cent[auau_index][key][i], match_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_rho", "", "#eta", "fraction");
-      Overlay1D(hard_lead_sig_cent[auau_index][key][i], hard_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_sig", "", "#eta", "fraction");
-      Overlay1D(match_lead_sig_cent[auau_index][key][i], match_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_sig", "", "#eta", "fraction");
-      Overlay1D(hard_sub_sig_cent[auau_index][key][i], hard_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_sig", "", "#eta", "fraction");
-      Overlay1D(match_sub_sig_cent[auau_index][key][i], match_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_sig", "", "#eta", "fraction");
+      Overlay1D(hard_lead_phi_cent[auau_index][key][i], hard_lead_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_phi", "", "#phi", "fraction");
+      Overlay1D(match_lead_phi_cent[auau_index][key][i], match_lead_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_phi", "", "#phi", "fraction");
+      Overlay1D(hard_sub_phi_cent[auau_index][key][i], hard_sub_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_phi", "", "#phi", "fraction");
+      Overlay1D(match_sub_phi_cent[auau_index][key][i], match_sub_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_phi", "", "#phi", "fraction");
+      Overlay1D(hard_lead_pt_cent[auau_index][key][i], hard_lead_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_pt", "", "p_{T}", "fraction");
+      Overlay1D(match_lead_pt_cent[auau_index][key][i], match_lead_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_pt", "", "p_{T}", "fraction");
+      Overlay1D(hard_sub_pt_cent[auau_index][key][i], hard_sub_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_pt", "", "p_{T}", "fraction");
+      Overlay1D(match_sub_pt_cent[auau_index][key][i], match_sub_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_pt", "", "p_{T}", "fraction");
+      Overlay1D(hard_lead_const_cent[auau_index][key][i], hard_lead_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_const", "", "N_{part}", "fraction");
+      Overlay1D(match_lead_const_cent[auau_index][key][i], match_lead_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_const", "", "N_{part}", "fraction");
+      Overlay1D(hard_sub_const_cent[auau_index][key][i], hard_sub_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_const", "", "N_{part}", "fraction");
+      Overlay1D(match_sub_const_cent[auau_index][key][i], match_sub_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_const", "", "N_{part}", "fraction");
+      Overlay1D(hard_lead_rho_cent[auau_index][key][i], hard_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_rho", "", "rho", "fraction");
+      Overlay1D(match_lead_rho_cent[auau_index][key][i], match_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_rho", "", "rho", "fraction");
+      Overlay1D(hard_sub_rho_cent[auau_index][key][i], hard_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_rho", "", "rho", "fraction");
+      Overlay1D(match_sub_rho_cent[auau_index][key][i], match_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_rho", "", "rho", "fraction");
+      Overlay1D(hard_lead_sig_cent[auau_index][key][i], hard_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_sig", "", "sigma", "fraction");
+      Overlay1D(match_lead_sig_cent[auau_index][key][i], match_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_sig", "", "sigma", "fraction");
+      Overlay1D(hard_sub_sig_cent[auau_index][key][i], hard_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_sig", "", "sigma", "fraction");
+      Overlay1D(match_sub_sig_cent[auau_index][key][i], match_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_sig", "", "sigma", "fraction");
       
     } // centrality
     
