@@ -138,6 +138,7 @@ def main(args) :
       clargs = clargs + ' --leadJetPt=' + args.leadJetPt + ' --subJetPt=' + args.subJetPt
       clargs = clargs + ' --leadMatchR=' + args.leadMatchR + ' --subMatchR=' + args.subMatchR
       clargs = clargs + ' --logtostderr' + ' --nEvents=' + str(args.nEvents)
+      clargs = clargs + ' --pTHatMin=' + args.pTHatMin
       if args.forceConstPtEquality :
         clargs = clargs + ' --forceConstituentPtEquality=true'
       else :
@@ -186,6 +187,7 @@ if __name__ == "__main__":
   parser.add_argument('--nJobs', type=int, default=100, help=' number of pythia jobs to submit ')
   parser.add_argument('--nEvents', type=int, default=1e6, help=' number of events per job')
   parser.add_argument('--maxFailures', default=200, help=' number of job submissions that can fail before forcing an exit')
+  parser.add_argument('--pTHatMin', default='14', help=' number of job submissions that can fail before forcing an exit')
   parser.add_argument('--name', default='job_', help=' job name (identifier for qsub)')
   parser.add_argument('--mem', type=int, default=2, help=' memory required per job [GB]')
   parser.add_argument('--nodes', type=int, default=1, help=' number of nodes required per job')
