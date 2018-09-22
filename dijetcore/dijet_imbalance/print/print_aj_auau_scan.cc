@@ -16,8 +16,13 @@
 #include "TH2.h"
 #include "TH3.h"
 #include "TStyle.h"
+#include "TLatex.h"
+#include "TPaveText.h"
+#include "TText.h"
+#include "TLegend.h"
+#include "TLegendEntry.h"
 
-#include <unordered_map>
+#include "dijetcore/lib/map.h"
 #include <string>
 
 // include boost for filesystem manipulation
@@ -28,33 +33,65 @@ using std::string;
 DIJETCORE_DEFINE_string(auau, "", "input file for Au+Au");
 DIJETCORE_DEFINE_string(ppDir, "", "input directory for p+p");
 DIJETCORE_DEFINE_string(outputDir, "results", "directory for output");
+DIJETCORE_DEFINE_bool(setScanning, true, "fixes the initial radius, and scans through matched radii")
+DIJETCORE_DEFINE_double(initRadius, 0.2, "initial radius when set to scan");
+DIJETCORE_DEFINE_string(radii, "0.2,0.25,0.3,0.35,0.4", "radii to put in grid");
+DIJETCORE_DEFINE_string(constPt, "1.0,1.5,2.0,2.5,3.0", "radii to put in grid");
 DIJETCORE_DEFINE_bool(useSingleCentrality, true, "do things in 3 centrality bins or 1");
+
+enum class DATATYPE {
+  AUAU = 0,
+  PP = 1,
+  TOWP = 2,
+  TOWM = 3,
+  TRACKP = 4,
+  TRACKM = 5,
+  SIZE = 6
+};
+
+std::unordered_map<DATATYPE, int, dijetcore::EnumClassHash> TYPEMAP
+ {{DATATYPE::AUAU, static_cast<int>(DATATYPE::AUAU)},
+  {DATATYPE::PP, static_cast<int>(DATATYPE::PP)},
+  {DATATYPE::TOWP, static_cast<int>(DATATYPE::TOWP)},
+  {DATATYPE::TOWM, static_cast<int>(DATATYPE::TOWM)},
+  {DATATYPE::TRACKP, static_cast<int>(DATATYPE::TRACKP)},
+  {DATATYPE::TRACKM, static_cast<int>(DATATYPE::TRACKM)}
+ };
+
+std::unordered_map<DATATYPE, string, dijetcore::EnumClassHash> TYPENAME
+ {{DATATYPE::AUAU, "auau"},
+  {DATATYPE::PP, "pp"},
+  {DATATYPE::TOWP, "towp"},
+  {DATATYPE::TOWM, "towm"},
+  {DATATYPE::TRACKP, "trackp"},
+  {DATATYPE::TRACKM, "trackm"}
+};
 
 // adds to the map all TTrees that conform to
 // the DijetWorker's naming convention
 void GetTreesFromFile(const TFile& file, std::unordered_map<string, TTree*>& map) {
   TKey *key;
   TIter next(file.GetListOfKeys());
-  
+
   while ((key = (TKey*) next())) {
     // check if its a TTree
     TClass *cl = gROOT->GetClass(key->GetClassName());
     if (!cl->InheritsFrom("TTree"))
       continue;
-    
+
     // check if its produced by the DijetWorker
     // (in a rather handwavy fashion)
     string tmp(key->GetName());
     if (tmp.find("LEAD_INIT") == string::npos ||
         tmp.find("SUB_INIT") == string::npos)
       continue;
-    
+
     map.insert({tmp, (TTree*) key->ReadObj()});
   }
 }
 
 std::vector<TH1D*> SplitByCentrality(TH2D* h) {
-  
+
   std::vector<TH1D*> ret;
   for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
@@ -65,7 +102,7 @@ std::vector<TH1D*> SplitByCentrality(TH2D* h) {
 }
 
 std::vector<TH2D*> SplitByCentrality3D(TH3D* h) {
-  
+
   std::vector<TH2D*> ret;
   for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
@@ -78,7 +115,7 @@ std::vector<TH2D*> SplitByCentrality3D(TH3D* h) {
 }
 
 std::vector<TH1D*> SplitByCentralityNormalized(TH2D* h, int bins = 9) {
-  
+
   std::vector<TH1D*> ret;
   for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
@@ -91,7 +128,7 @@ std::vector<TH1D*> SplitByCentralityNormalized(TH2D* h, int bins = 9) {
 }
 
 std::vector<TH1D*> AddBins(std::vector<TH1D*> container, std::vector<std::pair<int, int>> bins) {
-  
+
   std::vector<TH1D*> ret(bins.size(), nullptr);
   for (int i = 0; i < container.size(); ++i) {
     for (int j = 0; j < bins.size(); ++j) {
@@ -115,7 +152,7 @@ TGraphErrors* GetSystematic(TH1D* nom, TH1D* var1_a, TH1D* var1_b, TH1D* var2_a,
   double y_[nBins];
   double x_err_[nBins];
   double y_err_[nBins];
-  
+
   for (int i = 0; i < nBins; ++i) {
     x_[i] = nom->GetBinCenter(i+1);
     y_[i] = nom->GetBinContent(i+1);
@@ -134,12 +171,12 @@ TGraphErrors* GetSystematic(TH1D* nom, TH1D* var1_a, TH1D* var1_b, TH1D* var2_a,
 
 template<class T>
 TH1D* GetSystematicFractional(T* nom, TGraphErrors* errors) {
-  
+
   if (nom->GetXaxis()->GetNbins() != errors->GetN()) {
     LOG(ERROR) << "bin mismatch: exiting";
     return nullptr;
   }
-  
+
   string name = nom->GetName() + "errfrac";
   TH1D* ret = new TH1D(name.c_str(), "", nom->GetXaxis()->GetXbins(),
                        nom->GetXaxis()->GetXmin(), nom->GetXaxis()->GetXmax());
@@ -151,14 +188,136 @@ TH1D* GetSystematicFractional(T* nom, TGraphErrors* errors) {
   return ret;
 }
 
+template<typename H>
+void AjPrintout(H* h1,
+                H* h2,
+                TGraphErrors* sys,
+                double y_min,
+                double y_max,
+                double x_min,
+                double x_max,
+                TPaveText& text,
+                std::string h1_title,
+                std::string h2_title,
+                dijetcore::histogramOpts hopts,
+                dijetcore::canvasOpts copts,
+                std::string output_loc,
+                std::string output_name,
+                std::string canvas_title,
+                std::string x_axis_label,
+                std::string y_axis_label,
+                std::string legend_title = "") {
+  // we assume the output location exists, so create
+  // the final output string that will be used for pdf creation
+  std::string canvas_name = output_loc + "/" + output_name + ".pdf";
+  
+  // axis labels, and title
+  h1->SetTitle(canvas_title.c_str());
+  h1->GetXaxis()->SetTitle(x_axis_label.c_str());
+  h1->GetYaxis()->SetTitle(y_axis_label.c_str());
+  h1->GetYaxis()->SetRangeUser(y_min, y_max);
+  h1->GetXaxis()->SetRangeUser(x_min, x_max);
+  
+  // set draw options
+  hopts.SetHistogram(h1);
+  hopts.SetHistogram(h2);
+  
+  TCanvas c;
+  copts.SetMargins(&c);
+  copts.SetLogScale(&c);
+  
+  sys->SetFillColorAlpha(h2->GetLineColor(), 0.45);
+  sys->SetFillStyle(1001);
+  sys->SetLineWidth(0);
+  sys->SetMarkerSize(0);
+  
+  h1->Draw("9");
+  h2->Draw("9SAME");
+  sys->Draw("9e2SAME");
+  
+  TLegend* leg = copts.Legend();
+  if (leg != nullptr) {
+    leg->SetHeader(legend_title.c_str());
+    leg->SetTextFont(62);
+    leg->AddEntry(h1, h1_title.c_str(), "p")->SetTextSize(.04);
+    leg->AddEntry(h2, h2_title.c_str(), "p")->SetTextSize(.04);
+    leg->Draw();
+  }
+  
+  // and STAR preliminary message
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextSize(0.065);
+  latex.SetTextColor(kRed+3);
+  latex.DrawLatex(0.19, 0.8, "STAR Preliminary");
+  
+  text.Draw();
+  
+  c.SaveAs(canvas_name.c_str());
+}
+
+TLegend* DrawPrelim(int x_bin, int y_bin, int x_max, int y_max, double scale = 1.0) {
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextSize(0.048 * scale);
+  latex.SetTextColor(kRed+3);
+  TLegend* leg;
+  if ( x_bin == 0 && y_bin == 0) {
+    latex.DrawLatex(0.43, 0.93, "STAR Preliminary");
+    leg = new TLegend(0.68, 0.8, 0.95, 0.95);
+  }
+  else if (x_bin == x_max && y_bin == y_max) {
+    latex.DrawLatex(0.03, 0.7, "STAR Preliminary");
+    leg = new TLegend(0.28, 0.6, 0.5, 0.76);
+  }
+  else if (x_bin == x_max && y_bin == 0) {
+    latex.DrawLatex(0.03, 0.93, "STAR Preliminary");
+    leg = new TLegend(0.28, 0.8, 0.5, 0.95);
+  }
+  else if (x_bin == 0 && y_bin == y_max) {
+    latex.DrawLatex(0.43, 0.7, "STAR Preliminary");
+    leg = new TLegend(0.68, 0.6, 0.95, 0.76);
+  }
+  else if (x_bin == 0) {
+    latex.DrawLatex(0.43, 0.9, "STAR Preliminary");
+    leg = new TLegend(0.68, 0.7, 0.95, 0.95);
+  }
+  else if (x_bin == x_max) {
+    latex.DrawLatex(0.03, 0.9, "STAR Preliminary");
+    leg = new TLegend(0.28, 0.7, 0.5, 0.95);
+  }
+  else if (y_bin == 0) {
+    latex.DrawLatex(0.05, 0.93, "STAR Preliminary");
+    leg = new TLegend(0.48, 0.8, 0.95, 0.95);
+  }
+  else if (y_bin == y_max) {
+    latex.DrawLatex(0.05, 0.7, "STAR Preliminary");
+    leg = new TLegend(0.48, 0.6, 0.95, 0.76);
+  }
+  else {
+    latex.DrawLatex(0.05, 0.9, "STAR Preliminary");
+    leg = new TLegend(0.48, 0.7, 0.95, 0.95);
+  }
+  leg->SetTextFont(62);
+  return leg;
+}
+
+void DrawHardText() {
+  
+}
+
+void DrawMatchText() {
+  
+}
+
 int main(int argc, char* argv[]) {
-  
+
   string usage = "Run 7 differential di-jet imbalance print routine";
-  
+
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
   dijetcore::InitLogging(argv[0]);
-  
+
   // set drawing preferences for histograms and graphs
   gStyle->SetOptStat(false);
   gStyle->SetOptFit(false);
@@ -166,7 +325,10 @@ int main(int argc, char* argv[]) {
   gStyle->SetLegendBorderSize(0);
   gStyle->SetHatchesSpacing(1.0);
   gStyle->SetHatchesLineWidth(2);
-  
+
+  // turn off print messages
+  gErrorIgnoreLevel = kInfo+1;
+
   // check to make sure we have valid inputs
   std::vector<string> inputs{FLAGS_auau, FLAGS_ppDir + "/nom.root"};
   for (auto& file : inputs) {
@@ -176,13 +338,13 @@ int main(int argc, char* argv[]) {
       return 1;
     }
   }
-  
+
   // build output directory if it doesn't exist, using boost::filesystem
   if (FLAGS_outputDir.empty())
     FLAGS_outputDir = "tmp";
   boost::filesystem::path dir(FLAGS_outputDir.c_str());
   boost::filesystem::create_directories(dir);
-  
+
   // read in the file
   TFile auau_file(FLAGS_auau.c_str(), "READ");
   TFile pp_file((FLAGS_ppDir + "/nom.root").c_str(), "READ");
@@ -190,242 +352,258 @@ int main(int argc, char* argv[]) {
   TFile tow_m_file((FLAGS_ppDir + "/tow_m.root").c_str(), "READ");
   TFile track_p_file((FLAGS_ppDir + "/track_p.root").c_str(), "READ");
   TFile track_m_file((FLAGS_ppDir + "/track_m.root").c_str(), "READ");
-  
+
   // define centralities
   std::vector<unsigned> cent_boundaries;
   std::vector<std::pair<int, int>> cent_bin_boundaries;
   std::vector<string> refcent_string;
-  
+  std::vector<string> refcent_string_fs;
+
   if (FLAGS_useSingleCentrality) {
     cent_boundaries = {269};
     cent_bin_boundaries = {{0, 2}};
     refcent_string = {"0-20%"};
+    refcent_string_fs = {"0_20"};
   }
   else {
     cent_boundaries = {485, 399, 269};
     cent_bin_boundaries = {{0, 0}, {1, 1}, {2, 2}};
     refcent_string = {"0-5%", "5-10%", "10-20%"};
+    refcent_string_fs = {"0_5", "5_10", "10_20"};
   }
+
+  // and the radii & constituent pT we want to use
+  std::vector<double> radii = dijetcore::ParseArgStringToVec<double>(FLAGS_radii);
+  std::sort(radii.begin(), radii.end());
+  std::vector<string> radii_string;
+  for (auto& val : radii) {
+    std::stringstream stream;
+    stream << val;
+    radii_string.push_back(stream.str());
+  }
+  std::vector<double> constpt = dijetcore::ParseArgStringToVec<double>(FLAGS_constPt);
+  std::sort(constpt.begin(), constpt.end());
+  std::vector<string> constpt_string;
+  for (auto& val : constpt) {
+    std::stringstream stream;
+    stream << val;
+    constpt_string.push_back(stream.str());
+  }
+  if (FLAGS_setScanning) {
+    LOG(INFO) << "match R x const Pt matrix selected";
+    LOG(INFO) << "match R: " << radii_string;
+    LOG(INFO) << "constPt: " << constpt_string;
+  }
+  else {
+    LOG(INFO) << "R x const Pt matrix selected";
+    LOG(INFO) << "Radius: " << radii_string;
+    LOG(INFO) << "constPt: " << constpt_string;
+  }
+
+  // get largest radii - this will set our eta cut for all jets
+  double max_radii = *radii.rbegin();
+  LOG(INFO) << "maximum radius = " << max_radii;
   
-  // and the radii we want to use
-  std::vector<double> ptconst{1.0,1.5,2.0,2.5,3.0,3.5};
+  // set our max jet eta
+  double max_eta = 1.0 - max_radii;
+
+  LOG(INFO) << "so our maximum jet eta = " << max_eta;
   
+  if (max_eta < 0 || max_eta > 1.0) {
+    LOG(ERROR) << "something weird is going on with max jet radius...";
+    return 1;
+  }
+
   // now we'll get the trees from the files, ignoring any objects
   // in the file that don't conform to the naming conventions from
   // the DijetWorker. There are also coincidence histograms to save
   std::vector<string> keys;
-  std::vector<dijetcore::DijetKey> parsed_keys;
-  std::unordered_map<std::string, TTree*> auau_trees;
-  std::unordered_map<std::string, TTree*> pp_trees;
-  std::unordered_map<std::string, TTree*> tow_p_trees;
-  std::unordered_map<std::string, TTree*> tow_m_trees;
-  std::unordered_map<std::string, TTree*> track_p_trees;
-  std::unordered_map<std::string, TTree*> track_m_trees;
-  
-  
-  GetTreesFromFile(auau_file, auau_trees);
-  GetTreesFromFile(pp_file, pp_trees);
-  GetTreesFromFile(tow_p_file, tow_p_trees);
-  GetTreesFromFile(tow_m_file, tow_m_trees);
-  GetTreesFromFile(track_p_file, track_p_trees);
-  GetTreesFromFile(track_m_file, track_m_trees);
-  
+  std::unordered_map<std::string, dijetcore::DijetKey> parsed_keys;
+  std::vector<std::unordered_map<string, TTree*>> trees(TYPEMAP.size());
+
+  GetTreesFromFile(auau_file, trees[TYPEMAP[DATATYPE::AUAU]]);
+  GetTreesFromFile(pp_file, trees[TYPEMAP[DATATYPE::PP]]);
+  GetTreesFromFile(tow_p_file, trees[TYPEMAP[DATATYPE::TOWP]]);
+  GetTreesFromFile(tow_m_file, trees[TYPEMAP[DATATYPE::TOWM]]);
+  GetTreesFromFile(track_p_file, trees[TYPEMAP[DATATYPE::TRACKP]]);
+  GetTreesFromFile(track_m_file, trees[TYPEMAP[DATATYPE::TRACKM]]);
+
   // match keys
-  for (auto entry : auau_trees) {
-    if (pp_trees.find(entry.first) != pp_trees.end()) {
+  int auau_index = static_cast<int>(DATATYPE::AUAU);
+  int pp_index = static_cast<int>(DATATYPE::PP);
+  for (auto entry : trees[auau_index]) {
+    if (trees[pp_index].find(entry.first) != trees[pp_index].end()) {
       keys.push_back(entry.first);
-      parsed_keys.push_back(dijetcore::ParseStringToDijetKey(entry.first));
+      parsed_keys[entry.first] = dijetcore::ParseStringToDijetKey(entry.first);
     }
   }
-  
+
+  LOG(INFO) << "number of matched keys found: " << keys.size();
+
+  // now sort the keys into their grid spots
+  std::vector<std::vector<string>> grid_keys;
+  std::vector<std::vector<dijetcore::DijetKey>> grid_key_params;
+  for (int rad = 0; rad < radii.size(); ++rad) {
+    grid_keys.push_back(std::vector<string>());
+    grid_key_params.push_back(std::vector<dijetcore::DijetKey>());
+    for (int pt = 0; pt < constpt.size(); ++pt) {
+      for (int key_index = 0; key_index < keys.size(); ++key_index) {
+        string key_string = keys[key_index];
+        dijetcore::DijetKey& key = parsed_keys[key_string];
+        if (FLAGS_setScanning &&
+            key.lead_init_r == FLAGS_initRadius &&
+            key.sub_init_r == FLAGS_initRadius &&
+            key.lead_match_r == radii[rad] &&
+            key.sub_match_r == radii[rad] &&
+            key.lead_init_const_pt == constpt[pt] &&
+            key.sub_init_const_pt == constpt[pt]) {
+          grid_keys[rad].push_back(keys[key_index]);
+          grid_key_params[rad].push_back(key);
+        }
+        else if (!FLAGS_setScanning &&
+                 key.lead_init_r == radii[rad] &&
+                 key.sub_init_r == radii[rad] &&
+                 key.lead_match_r == radii[rad] &&
+                 key.sub_match_r == radii[rad] &&
+                 key.lead_init_const_pt == constpt[pt] &&
+                 key.sub_init_const_pt == constpt[pt]) {
+          grid_keys[rad].push_back(keys[key_index]);
+          grid_key_params[rad].push_back(key);
+        }
+      }
+      if (grid_keys[rad].size() < pt + 1) {
+        LOG(INFO) << "could not find a key for R=" << radii[rad] << " const Pt=" << constpt[pt];
+        return 1;
+      }
+      if (grid_keys[rad].size() > pt + 1) {
+        LOG(INFO) << "found multiple keys for R=" << radii[rad] << " const Pt=" << constpt[pt];
+        return 1;
+      }
+    }
+  }
+
   // save all histograms so we can do comparisons
   // between different keys if we want
-  std::unordered_map<string, TH2D*> auau_hard_lead_pt;
-  std::unordered_map<string, TH2D*> auau_hard_sub_pt;
-  std::unordered_map<string, TH2D*> auau_match_lead_pt;
-  std::unordered_map<string, TH2D*> auau_match_sub_pt;
-  std::unordered_map<string, TH2D*> auau_hard_aj;
-  std::unordered_map<string, TH2D*> auau_match_aj;
-  std::unordered_map<string, TH2D*> auau_dphi;
-  std::unordered_map<string, TH2D*> auau_hard_lead_rp;
-  std::unordered_map<string, TH2D*> auau_off_axis_lead_pt;
-  std::unordered_map<string, TH2D*> auau_off_axis_sub_pt;
-  std::unordered_map<string, TH2D*> auau_off_axis_aj;
+
+  const int num_datatypes = TYPEMAP.size();
+
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_const(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_sig(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_const(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_sig(num_datatypes);
+
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_const(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_sig(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_const(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_sig(num_datatypes);
+
+  std::vector<std::unordered_map<string, TH2D*>> npart(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_dphi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_dphi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> lead_dr(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> sub_dr(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> lead_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> sub_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> lead_dpt_frac(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> sub_dpt_frac(num_datatypes);
   
-  std::unordered_map<string, TH2D*> pp_hard_lead_pt;
-  std::unordered_map<string, TH2D*> pp_hard_sub_pt;
-  std::unordered_map<string, TH2D*> pp_match_lead_pt;
-  std::unordered_map<string, TH2D*> pp_match_sub_pt;
-  std::unordered_map<string, TH2D*> pp_hard_aj;
-  std::unordered_map<string, TH2D*> pp_match_aj;
-  std::unordered_map<string, TH2D*> pp_dphi;
-  std::unordered_map<string, TH2D*> pp_hard_lead_rp;
+  std::vector<std::unordered_map<string, TH2D*>> hard_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_aj_test(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_aj_test(num_datatypes);
   
-  std::unordered_map<string, TH2D*> pp_only_hard_lead_pt;
-  std::unordered_map<string, TH2D*> pp_only_hard_sub_pt;
-  std::unordered_map<string, TH2D*> pp_only_match_lead_pt;
-  std::unordered_map<string, TH2D*> pp_only_match_sub_pt;
-  std::unordered_map<string, TH2D*> pp_only_hard_aj;
-  std::unordered_map<string, TH2D*> pp_only_match_aj;
+  std::vector<std::unordered_map<string, TH2D*>> off_axis_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> off_axis_aj_test(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> off_axis_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> off_axis_sig(num_datatypes);
   
-  std::unordered_map<string, TH2D*> pp_hard_lead_dpt;
-  std::unordered_map<string, TH2D*> pp_hard_sub_dpt;
-  std::unordered_map<string, TH2D*> pp_match_lead_dpt;
-  std::unordered_map<string, TH2D*> pp_match_sub_dpt;
+  std::vector<std::unordered_map<string, TH2D*>> hard_pp_only_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_pp_only_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_pp_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_pp_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_pp_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_pp_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_lead_pp_dpt_frac(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_lead_pp_dpt_frac(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> hard_sub_pp_dpt_frac(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> match_sub_pp_dpt_frac(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> pp_lead_hard_match_fraction(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D*>> pp_sub_hard_match_fraction(num_datatypes);
   
-  std::unordered_map<string, TH2D*> pp_lead_hard_match_fraction;
-  std::unordered_map<string, TH2D*> pp_sub_hard_match_fraction;
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_eta_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_phi_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_pt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_const_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_rho_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_sig_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_eta_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_phi_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_pt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_const_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_rho_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_sig_cent(num_datatypes);
+
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_eta_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_phi_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_pt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_const_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_rho_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_sig_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_eta_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_phi_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_pt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_const_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_rho_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_sig_cent(num_datatypes);
+
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> npart_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_dphi_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_dphi_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> lead_dr_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> sub_dr_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> lead_dpt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> sub_dpt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> lead_dpt_frac_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> sub_dpt_frac_cent(num_datatypes);
+
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_aj_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_aj_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_aj_test_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_aj_test_cent(num_datatypes);
+
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> off_axis_aj_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> off_axis_aj_test_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> off_axis_rho_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> off_axis_sig_cent(num_datatypes);
   
-  std::unordered_map<string, TH2D*> pp_hard_lead_dpt_frac;
-  std::unordered_map<string, TH2D*> pp_hard_sub_dpt_frac;
-  std::unordered_map<string, TH2D*> pp_match_lead_dpt_frac;
-  std::unordered_map<string, TH2D*> pp_match_sub_dpt_frac;
-  
-  std::unordered_map<string, TH3D*> pp_hard_lead_pp_3d;
-  std::unordered_map<string, TH3D*> pp_hard_sub_pp_3d;
-  std::unordered_map<string, TH3D*> pp_match_lead_pp_3d;
-  std::unordered_map<string, TH3D*> pp_match_sub_pp_3d;
-  
-  std::unordered_map<string, TH2D*> auau_hard_lead_const;
-  std::unordered_map<string, TH2D*> auau_hard_sub_const;
-  std::unordered_map<string, TH2D*> auau_match_lead_const;
-  std::unordered_map<string, TH2D*> auau_match_sub_const;
-  std::unordered_map<string, TH2D*> auau_off_axis_lead_const;
-  std::unordered_map<string, TH2D*> auau_off_axis_sub_const;
-  
-  std::unordered_map<string, TH2D*> pp_hard_lead_const;
-  std::unordered_map<string, TH2D*> pp_hard_sub_const;
-  std::unordered_map<string, TH2D*> pp_match_lead_const;
-  std::unordered_map<string, TH2D*> pp_match_sub_const;
-  
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_aj_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_aj_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_aj_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_only_match_lead_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_only_match_sub_pt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_only_hard_aj_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_only_match_aj_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_dpt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_dpt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_dpt_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_dpt_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_lead_hard_match_fraction_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_sub_hard_match_fraction_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_dpt_frac_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_dpt_frac_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_dpt_frac_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_dpt_frac_cent;
-  
-  std::unordered_map<string, std::vector<TH2D*>> pp_hard_lead_pp_3d_cent;
-  std::unordered_map<string, std::vector<TH2D*>> pp_hard_sub_pp_3d_cent;
-  std::unordered_map<string, std::vector<TH2D*>> pp_match_lead_pp_3d_cent;
-  std::unordered_map<string, std::vector<TH2D*>> pp_match_sub_pp_3d_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_lead_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_const_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_const_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_const_cent;
-  
-  std::unordered_map<string, TH2D*> auau_hard_lead_rho;
-  std::unordered_map<string, TH2D*> auau_hard_sub_rho;
-  std::unordered_map<string, TH2D*> auau_match_lead_rho;
-  std::unordered_map<string, TH2D*> auau_match_sub_rho;
-  
-  std::unordered_map<string, TH2D*> pp_hard_lead_rho;
-  std::unordered_map<string, TH2D*> pp_hard_sub_rho;
-  std::unordered_map<string, TH2D*> pp_match_lead_rho;
-  std::unordered_map<string, TH2D*> pp_match_sub_rho;
-  
-  std::unordered_map<string, TH2D*> auau_hard_lead_sig;
-  std::unordered_map<string, TH2D*> auau_hard_sub_sig;
-  std::unordered_map<string, TH2D*> auau_match_lead_sig;
-  std::unordered_map<string, TH2D*> auau_match_sub_sig;
-  
-  std::unordered_map<string, TH2D*> pp_hard_lead_sig;
-  std::unordered_map<string, TH2D*> pp_hard_sub_sig;
-  std::unordered_map<string, TH2D*> pp_match_lead_sig;
-  std::unordered_map<string, TH2D*> pp_match_sub_sig;
-  
-  std::unordered_map<string, TH2D*> auau_off_axis_lead_rho;
-  std::unordered_map<string, TH2D*> auau_off_axis_sub_rho;
-  std::unordered_map<string, TH2D*> auau_off_axis_lead_sig;
-  std::unordered_map<string, TH2D*> auau_off_axis_sub_sig;
-  
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_lead_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_rho_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_rho_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_lead_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_hard_sub_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_lead_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_match_sub_sig_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_lead_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_sub_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_lead_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_sub_sig_cent;
-  
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_rho_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_lead_sig_cent;
-  std::unordered_map<string, std::vector<TH1D*>> auau_off_axis_sub_sig_cent;
-  
-  std::unordered_map<string, TH2D*> auau_npart;
-  std::unordered_map<string, TH2D*> pp_npart;
-  
-  std::unordered_map<string, std::vector<TH1D*>> auau_npart_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_npart_cent;
-  
-  // for systematics
-  std::unordered_map<string, TH2D*> pp_hard_aj_tow_p;
-  std::unordered_map<string, TH2D*> pp_match_aj_tow_p;
-  std::unordered_map<string, TH2D*> pp_hard_aj_tow_m;
-  std::unordered_map<string, TH2D*> pp_match_aj_tow_m;
-  std::unordered_map<string, TH2D*> pp_hard_aj_track_p;
-  std::unordered_map<string, TH2D*> pp_match_aj_track_p;
-  std::unordered_map<string, TH2D*> pp_hard_aj_track_m;
-  std::unordered_map<string, TH2D*> pp_match_aj_track_m;
-  
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_p_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_tow_p_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_tow_m_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_tow_m_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_p_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_p_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_hard_aj_track_m_cent;
-  std::unordered_map<string, std::vector<TH1D*>> pp_match_aj_track_m_cent;
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_pp_only_aj_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_pp_only_aj_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_pp_dpt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_pp_dpt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_pp_dpt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_pp_dpt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_pp_dpt_frac_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_lead_pp_dpt_frac_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_pp_dpt_frac_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_pp_dpt_frac_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>>  pp_lead_hard_match_fraction_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D*>>> pp_sub_hard_match_fraction_cent(num_datatypes);
   
   std::unordered_map<string, std::vector<TGraphErrors*>> systematic_errors_hard;
   std::unordered_map<string, std::vector<TGraphErrors*>> systematic_errors_match;
@@ -433,9 +611,12 @@ int main(int argc, char* argv[]) {
   // create our histogram and canvas options
   dijetcore::histogramOpts hopts;
   dijetcore::canvasOpts copts;
+  copts.leg_left_bound = 0.6;
   dijetcore::canvasOpts coptslogz;
+  coptslogz.leg_left_bound = 0.6;
   coptslogz.log_z = true;
   dijetcore::canvasOpts coptslogy;
+  coptslogy.leg_left_bound = 0.6;
   coptslogy.log_y = true;
   dijetcore::canvasOpts cOptsBottomLeg;
   cOptsBottomLeg.leg_upper_bound = 0.4;
@@ -457,851 +638,868 @@ int main(int argc, char* argv[]) {
   cOptsTopLeftLeg.leg_right_bound = 0.18;
   cOptsTopLeftLeg.leg_left_bound = 0.4;
   
-  // count which key we are on
+  // count which entry we're on
   int entry = -1;
-  // loop over all matched trees
-  for (auto key : keys) {
+  
+  // loop over all keys
+  for (auto& key : keys) {
     
-    //count which key we're on
+    //increment entry counter
     entry++;
-    
-    // make output directory
-    string out_loc = FLAGS_outputDir + "/" + key;
-    boost::filesystem::path dir(out_loc.c_str());
+    LOG(INFO) << "loading: " << key;
+    // make our output directory
+    string key_loc = FLAGS_outputDir + "/" + key;
+    boost::filesystem::path dir(key_loc.c_str());
     boost::filesystem::create_directories(dir);
     
-    // key prefix for names so histograms don't get confused
-    // (root fuckin sucks)
-    std::string key_prefix = "key_" + std::to_string(entry) + "_";
-    
-    // and create the file name prefix
-    string file_prefix = out_loc + "/";
-    
-    // process the trees
-    TTree* auau_tree = auau_trees[key];
-    TTreeReader auau_reader(auau_tree);
-    
-    TTree* pp_tree = pp_trees[key];
-    TTreeReader pp_reader(pp_tree);
-    
-    TTree* tow_p_tree = tow_p_trees[key];
-    TTree* tow_m_tree = tow_m_trees[key];
-    TTree* track_p_tree = track_p_trees[key];
-    TTree* track_m_tree = track_m_trees[key];
-    TTreeReader tow_p_reader(tow_p_tree);
-    TTreeReader tow_m_reader(tow_m_tree);
-    TTreeReader track_p_reader(track_p_tree);
-    TTreeReader track_m_reader(track_m_tree);
-    
-    // create readervalues for auau first
-    TTreeReaderValue<int> auau_runid(auau_reader, "runid");
-    TTreeReaderValue<int> auau_eventid(auau_reader, "eventid");
-    TTreeReaderValue<double> auau_vz(auau_reader, "vz");
-    TTreeReaderValue<int> auau_refmult(auau_reader, "refmult");
-    TTreeReaderValue<int> auau_grefmult(auau_reader, "grefmult");
-    TTreeReaderValue<double> auau_refmultcorr(auau_reader, "refmultcorr");
-    TTreeReaderValue<double> auau_grefmultcorr(auau_reader, "grefmultcorr");
-    TTreeReaderValue<int> auau_cent(auau_reader, "cent");
-    TTreeReaderValue<double> auau_zdcrate(auau_reader, "zdcrate");
-    TTreeReaderValue<double> auau_rp(auau_reader, "rp");
-    TTreeReaderValue<int> auau_nglobal(auau_reader, "nglobal");
-    TTreeReaderValue<int> auau_nprt(auau_reader, "npart");
-    TTreeReaderValue<TLorentzVector> auau_jl(auau_reader, "jl");
-    TTreeReaderValue<TLorentzVector> auau_js(auau_reader, "js");
-    TTreeReaderValue<TLorentzVector> auau_jlm(auau_reader, "jlm");
-    TTreeReaderValue<TLorentzVector> auau_jsm(auau_reader, "jsm");
-    TTreeReaderValue<TLorentzVector> auau_jloa(auau_reader, "jloa");
-    TTreeReaderValue<TLorentzVector> auau_jsoa(auau_reader, "jsoa");
-    TTreeReaderValue<int> auau_jlconst(auau_reader, "jlconst");
-    TTreeReaderValue<double> auau_jlrho(auau_reader, "jlrho");
-    TTreeReaderValue<double> auau_jlsig(auau_reader, "jlsig");
-    TTreeReaderValue<int> auau_jlmconst(auau_reader, "jlmconst");
-    TTreeReaderValue<double> auau_jlmrho(auau_reader, "jlmrho");
-    TTreeReaderValue<double> auau_jlmsig(auau_reader, "jlmsig");
-    TTreeReaderValue<int> auau_jsconst(auau_reader, "jsconst");
-    TTreeReaderValue<double> auau_jsrho(auau_reader, "jsrho");
-    TTreeReaderValue<double> auau_jssig(auau_reader, "jssig");
-    TTreeReaderValue<int> auau_jsmconst(auau_reader, "jsmconst");
-    TTreeReaderValue<double> auau_jsmrho(auau_reader, "jsmrho");
-    TTreeReaderValue<double> auau_jsmsig(auau_reader, "jsmsig");
-    TTreeReaderValue<int> auau_jloaconst(auau_reader, "jloaconst");
-    TTreeReaderValue<double> auau_jloarho(auau_reader, "jloarho");
-    TTreeReaderValue<double> auau_jloasig(auau_reader, "jloasig");
-    TTreeReaderValue<int> auau_jsoaconst(auau_reader, "jsoaconst");
-    TTreeReaderValue<double> auau_jsoarho(auau_reader, "jsoarho");
-    TTreeReaderValue<double> auau_jsoasig(auau_reader, "jsoasig");
-    
-    // create readervalues for pp
-    TTreeReaderValue<int> pp_runid(pp_reader, "runid");
-    TTreeReaderValue<int> pp_eventid(pp_reader, "eventid");
-    TTreeReaderValue<double> pp_vz(pp_reader, "vz");
-    TTreeReaderValue<int> pp_refmult(pp_reader, "refmult");
-    TTreeReaderValue<int> pp_grefmult(pp_reader, "grefmult");
-    TTreeReaderValue<double> pp_refmultcorr(pp_reader, "refmultcorr");
-    TTreeReaderValue<double> pp_grefmultcorr(pp_reader, "grefmultcorr");
-    TTreeReaderValue<int> pp_cent(pp_reader, "cent");
-    TTreeReaderValue<double> pp_zdcrate(pp_reader, "zdcrate");
-    TTreeReaderValue<double> pp_rp(pp_reader, "rp");
-    TTreeReaderValue<int> pp_nglobal(pp_reader, "nglobal");
-    TTreeReaderValue<int> pp_nprt(pp_reader, "npart");
-    TTreeReaderValue<TLorentzVector> pp_jl(pp_reader, "jl");
-    TTreeReaderValue<TLorentzVector> pp_js(pp_reader, "js");
-    TTreeReaderValue<TLorentzVector> pp_jlm(pp_reader, "jlm");
-    TTreeReaderValue<TLorentzVector> pp_jsm(pp_reader, "jsm");
-    TTreeReaderValue<bool> pp_only_found_match(pp_reader, "foundpp");
-    TTreeReaderValue<TLorentzVector> pp_only_jl(pp_reader, "ppjl");
-    TTreeReaderValue<TLorentzVector> pp_only_js(pp_reader, "ppjs");
-    TTreeReaderValue<TLorentzVector> pp_only_jlm(pp_reader, "ppjlm");
-    TTreeReaderValue<TLorentzVector> pp_only_jsm(pp_reader, "ppjsm");
-    TTreeReaderValue<int> pp_jlconst(pp_reader, "jlconst");
-    TTreeReaderValue<double> pp_jlrho(pp_reader, "jlrho");
-    TTreeReaderValue<double> pp_jlsig(pp_reader, "jlsig");
-    TTreeReaderValue<int> pp_jlmconst(pp_reader, "jlmconst");
-    TTreeReaderValue<double> pp_jlmrho(pp_reader, "jlmrho");
-    TTreeReaderValue<double> pp_jlmsig(pp_reader, "jlmsig");
-    TTreeReaderValue<int> pp_jsconst(pp_reader, "jsconst");
-    TTreeReaderValue<double> pp_jsrho(pp_reader, "jsrho");
-    TTreeReaderValue<double> pp_jssig(pp_reader, "jssig");
-    TTreeReaderValue<int> pp_jsmconst(pp_reader, "jsmconst");
-    TTreeReaderValue<double> pp_jsmrho(pp_reader, "jsmrho");
-    TTreeReaderValue<double> pp_jsmsig(pp_reader, "jsmsig");
-    
-    // create the readers for the 4 systematic variations
-    TTreeReaderValue<TLorentzVector> tow_p_jl(tow_p_reader, "jl");
-    TTreeReaderValue<TLorentzVector> tow_p_js(tow_p_reader, "js");
-    TTreeReaderValue<TLorentzVector> tow_p_jlm(tow_p_reader, "jlm");
-    TTreeReaderValue<TLorentzVector> tow_p_jsm(tow_p_reader, "jsm");
-    TTreeReaderValue<int> tow_p_cent(tow_p_reader, "cent");
-    
-    TTreeReaderValue<TLorentzVector> tow_m_jl(tow_m_reader, "jl");
-    TTreeReaderValue<TLorentzVector> tow_m_js(tow_m_reader, "js");
-    TTreeReaderValue<TLorentzVector> tow_m_jlm(tow_m_reader, "jlm");
-    TTreeReaderValue<TLorentzVector> tow_m_jsm(tow_m_reader, "jsm");
-    TTreeReaderValue<int> tow_m_cent(tow_m_reader, "cent");
-    
-    TTreeReaderValue<TLorentzVector> track_p_jl(track_p_reader, "jl");
-    TTreeReaderValue<TLorentzVector> track_p_js(track_p_reader, "js");
-    TTreeReaderValue<TLorentzVector> track_p_jlm(track_p_reader, "jlm");
-    TTreeReaderValue<TLorentzVector> track_p_jsm(track_p_reader, "jsm");
-    TTreeReaderValue<int> track_p_cent(track_p_reader, "cent");
-    
-    TTreeReaderValue<TLorentzVector> track_m_jl(track_m_reader, "jl");
-    TTreeReaderValue<TLorentzVector> track_m_js(track_m_reader, "js");
-    TTreeReaderValue<TLorentzVector> track_m_jlm(track_m_reader, "jlm");
-    TTreeReaderValue<TLorentzVector> track_m_jsm(track_m_reader, "jsm");
-    TTreeReaderValue<int> track_m_cent(track_m_reader, "cent");
-    
-    // and check if we have embedding in the pp tree
-    bool pp_embedded = false;
-    if (pp_tree->GetBranch("embed_eventid"))
-      pp_embedded = true;
-    // build all embedding branches (only used if pp_embedded is true)
-    TTreeReaderValue<int> embed_eventid(pp_reader, "embed_eventid");
-    TTreeReaderValue<int> embed_runid(pp_reader, "embed_runid");
-    TTreeReaderValue<int> embed_refmult(pp_reader, "embed_refmult");
-    TTreeReaderValue<int> embed_grefmult(pp_reader, "embed_grefmult");
-    TTreeReaderValue<int> embed_nprt(pp_reader, "embed_npart");
-    TTreeReaderValue<double> embed_refmultcorr(pp_reader, "embed_refmultcorr");
-    TTreeReaderValue<double> embed_grefmultcorr(pp_reader, "embed_grefmultcorr");
-    TTreeReaderValue<int> embed_cent(pp_reader, "embed_cent");
-    TTreeReaderValue<double> embed_rp(pp_reader, "embed_rp");
-    TTreeReaderValue<double> embed_zdcrate(pp_reader, "embed_zdcrate");
-    TTreeReaderValue<double> embed_vz(pp_reader, "embed_vz");
-    
-    // insert into the dictionaries
-    auau_hard_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadpt").c_str(),
-                                      "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_hard_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubpt").c_str(),
-                                     "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_match_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadpt").c_str(),
-                                       "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubpt").c_str(),
-                                      "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardaj").c_str(),
-                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    auau_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchaj").c_str(),
-                                  "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    auau_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaudphi").c_str(),
-                              "d#phi", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 2*TMath::Pi());
-    
-    pp_hard_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardleadpt").c_str(),
-                                    "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_hard_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardsubpt").c_str(),
-                                   "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_match_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchleadpt").c_str(),
-                                     "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchsubpt").c_str(),
-                                    "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardaj").c_str(),
-                               "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchaj").c_str(),
-                                "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdphi").c_str(),
-                            "d#phi", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 2*TMath::Pi());
-    
-    pp_only_hard_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlyhardleadpt").c_str(), "",
-                                         cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_only_hard_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlyhardsubpt").c_str(), "",
-                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_only_match_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchleadpt").c_str(), "",
-                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_only_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchsubpt").c_str(), "",
-                                         cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_only_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlyhardaj").c_str(),
-                                    "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_only_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchaj").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    
-    pp_hard_lead_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhard").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
-    pp_hard_sub_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhard").c_str(),
-                                    "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
-    pp_match_lead_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadmatch").c_str(),
-                                      "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
-    pp_match_sub_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatch").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
-    
-    pp_hard_lead_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppleadhardpt3d").c_str(), "",
-                                       cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
-                                       50, 0, 50, 50, 0, 50);
-    pp_hard_sub_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppsubhardpt3d").c_str(), "",
-                                      cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
-                                      50, 0, 50, 50, 0, 50);
-    pp_match_lead_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppleadmatchpt3d").c_str(), "",
-                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
-                                        50, 0, 50, 50, 0, 50);
-    pp_match_sub_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppsubmatchpt3d").c_str(), "",
-                                       cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
-                                       50, 0, 50, 50, 0, 50);
-    
-    pp_lead_hard_match_fraction[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppleadhardmatchfrac").c_str(),
-                                                "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
-                                                2, -0.5, 1.5);
-    pp_sub_hard_match_fraction[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppsubhardmatchfrac").c_str(),
-                                               "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
-                                               2, -0.5, 1.5);
-    
-    pp_hard_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhardfrac").c_str(),
-                                          "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
-    pp_hard_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhardfrac").c_str(),
-                                         "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
-    pp_match_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadmatchfrac").c_str(),
-                                           "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
-    pp_match_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatchfrac").c_str(),
-                                          "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
-    
-    
-    
-    auau_off_axis_lead_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadpt").c_str(),
-                                          "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_off_axis_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubpt").c_str(),
-                                         "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_off_axis_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisaj").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    
-    auau_hard_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadconst").c_str(),
-                                         "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_hard_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubconst").c_str(),
-                                        "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_match_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadconst").c_str(),
-                                          "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_match_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubconst").c_str(),
-                                         "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_off_axis_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadconst").c_str(),
-                                             "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_off_axis_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubconst").c_str(),
-                                            "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    
-    pp_hard_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardleadconst").c_str(),
-                                       "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_hard_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardsubconst").c_str(),
-                                      "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_match_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchleadconst").c_str(),
-                                        "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_match_sub_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchsubconst").c_str(),
-                                       "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    
-    auau_hard_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadrho").c_str(),
-                                       "auau hard lead rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_hard_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadsig").c_str(),
-                                       "auau hard lead sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    auau_hard_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubrho").c_str(),
-                                      "auau hard sub rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_hard_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardsubsig").c_str(),
-                                      "auau hard sub sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    auau_match_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadrho").c_str(),
-                                        "auau match lead rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_match_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchleadsig").c_str(),
-                                        "auau match lead sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    auau_match_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubrho").c_str(),
-                                       "auau match sub rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_match_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubsig").c_str(),
-                                       "auau match sub sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    
-    pp_hard_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardleadrho").c_str(),
-                                     "pp hard lead rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_hard_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardleadsig").c_str(),
-                                     "pp hard lead sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    pp_hard_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardsubrho").c_str(),
-                                    "pp hard sub rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_hard_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardsubsig").c_str(),
-                                    "pp hard sub sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    pp_match_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchleadrho").c_str(),
-                                      "pp match lead rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_match_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchleadsig").c_str(),
-                                      "pp match lead sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    pp_match_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchsubrho").c_str(),
-                                     "pp match sub rho", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    pp_match_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchsubsig").c_str(),
-                                     "pp match sub sig", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    
-    auau_off_axis_lead_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadrho").c_str(),
-                                           "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_off_axis_sub_rho[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubrho").c_str(),
-                                          "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
-    auau_off_axis_lead_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisleadsig").c_str(),
-                                           "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    auau_off_axis_sub_sig[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubsig").c_str(),
-                                          "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 20);
-    
-    pp_hard_aj_tow_p[key] = new TH2D(dijetcore::MakeString(key_prefix, "towpajhard").c_str(), "",
-                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_match_aj_tow_p[key] = new TH2D(dijetcore::MakeString(key_prefix, "towpajmatch").c_str(), "",
-                                      cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_hard_aj_tow_m[key] = new TH2D(dijetcore::MakeString(key_prefix, "towmajhard").c_str(), "",
-                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_match_aj_tow_m[key] = new TH2D(dijetcore::MakeString(key_prefix, "towmajmatch").c_str(), "",
-                                      cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_hard_aj_track_p[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackpajhard").c_str(), "",
-                                       cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_match_aj_track_p[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackpajmatch").c_str(), "",
-                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_hard_aj_track_m[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackmajhard").c_str(), "",
-                                       cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    pp_match_aj_track_m[key] = new TH2D(dijetcore::MakeString(key_prefix, "trackmajmatch").c_str(), "",
-                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
-    
-    auau_npart[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaunpart").c_str(), ";refmult;nPart",
-                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0.5, 2500.5);
-    pp_npart[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppnpart").c_str(), ";refmult;nPart",
-                             cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0.5, 2500.5);
-    
-    
-    
-    // loop over the data & fill histograms
-    while (auau_reader.Next()) {
+    // now iterate over all our datasets
+    for (auto type : TYPEMAP) {
+      auto& type_enum = type.first;
+      auto& data_index = type.second;
       
-      int cent_bin = -1;
-      for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
-        auto& pair = cent_bin_boundaries[i];
-        if (*auau_cent >= pair.first &&
-            *auau_cent <= pair.second) {
-          cent_bin = i;
-          break;
-        }
-      }
-      
-      if (cent_bin == -1)
-        continue;
-      
-      // auau jet pt
-      auau_hard_lead_pt[key]->Fill(cent_bin, (*auau_jl).Pt());
-      auau_hard_lead_rho[key]->Fill(cent_bin, *auau_jlrho);
-      auau_hard_lead_sig[key]->Fill(cent_bin, *auau_jlsig);
-      auau_hard_sub_pt[key]->Fill(cent_bin, (*auau_js).Pt());
-      auau_hard_sub_rho[key]->Fill(cent_bin, *auau_jsrho);
-      auau_hard_sub_sig[key]->Fill(cent_bin, *auau_jssig);
-      auau_match_lead_pt[key]->Fill(cent_bin,(*auau_jlm).Pt());
-      auau_match_lead_rho[key]->Fill(cent_bin, *auau_jlmrho);
-      auau_match_lead_sig[key]->Fill(cent_bin, *auau_jlmsig);
-      auau_match_sub_pt[key]->Fill(cent_bin, (*auau_jsm).Pt());
-      auau_match_sub_rho[key]->Fill(cent_bin, *auau_jsmrho);
-      auau_match_sub_sig[key]->Fill(cent_bin, *auau_jsmsig);
-      auau_hard_lead_const[key]->Fill(cent_bin, *auau_jlconst);
-      auau_hard_sub_const[key]->Fill(cent_bin, *auau_jsconst);
-      auau_match_lead_const[key]->Fill(cent_bin, *auau_jlmconst);
-      auau_match_sub_const[key]->Fill(cent_bin, *auau_jsmconst);
-      
-      if (*auau_jloaconst != 0 && *auau_jsoaconst != 0) {
-        auau_off_axis_lead_pt[key]->Fill(cent_bin, (*auau_jloa).Pt());
-        auau_off_axis_lead_rho[key]->Fill(cent_bin, *auau_jloarho);
-        auau_off_axis_lead_sig[key]->Fill(cent_bin, *auau_jloasig);
-        auau_off_axis_sub_pt[key]->Fill(cent_bin, (*auau_jsoa).Pt());
-        auau_off_axis_sub_rho[key]->Fill(cent_bin, *auau_jsoarho);
-        auau_off_axis_sub_sig[key]->Fill(cent_bin, *auau_jsoasig);
-        auau_off_axis_lead_const[key]->Fill(cent_bin, *auau_jloaconst);
-        auau_off_axis_sub_const[key]->Fill(cent_bin, *auau_jsoaconst);
-        auau_off_axis_aj[key]->Fill(cent_bin,
-                                    fabs((*auau_jloa).Pt() - (*auau_jsoa).Pt())/((*auau_jloa).Pt() + (*auau_jsoa).Pt()));
-      }
-      // auau Aj
-      auau_hard_aj[key]->Fill(cent_bin,
-                              fabs((*auau_jl).Pt() - (*auau_js).Pt())/((*auau_jl).Pt() + (*auau_js).Pt()));
-      auau_match_aj[key]->Fill(cent_bin,
-                               fabs((*auau_jlm).Pt() - (*auau_jsm).Pt())/((*auau_jlm).Pt() + (*auau_jsm).Pt()));
-      
-      // auau dphi
-      double dphi = (*auau_jl).Phi() - (*auau_js).Phi();
-      
-      //rotate dphi to be in [0,2*pi]
-      while (dphi < 0)
-        dphi += 2 * TMath::Pi();
-      while (dphi > 2.0 * TMath::Pi())
-        dphi -= 2.0 * TMath::Pi();
-      
-      auau_dphi[key]->Fill(cent_bin, dphi);
-      
-      // and grefmult/npart
-      auau_npart[key]->Fill(cent_bin, *auau_nprt);
-    }
-    
-    // loop over the data & fill histograms
-    while (pp_reader.Next()) {
-      
-      int cent_bin = -1;
-      for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
-        auto& pair = cent_bin_boundaries[i];
-        if (*pp_cent >= pair.first &&
-            *pp_cent <= pair.second) {
-          cent_bin = i;
-          break;
-        }
-      }
-      
-      if (cent_bin == -1)
-        continue;
-      
-      // pp jet pt
-      pp_hard_lead_pt[key]->Fill(cent_bin, (*pp_jl).Pt());
-      pp_hard_lead_rho[key]->Fill(cent_bin, *pp_jlrho);
-      pp_hard_lead_sig[key]->Fill(cent_bin, *pp_jlsig);
-      pp_hard_sub_pt[key]->Fill(cent_bin, (*pp_js).Pt());
-      pp_hard_sub_rho[key]->Fill(cent_bin, *pp_jsrho);
-      pp_hard_sub_sig[key]->Fill(cent_bin, *pp_jssig);
-      pp_match_lead_pt[key]->Fill(cent_bin,(*pp_jlm).Pt());
-      pp_match_lead_rho[key]->Fill(cent_bin, *pp_jlmrho);
-      pp_match_lead_sig[key]->Fill(cent_bin, *pp_jlmsig);
-      pp_match_sub_pt[key]->Fill(cent_bin, (*pp_jsm).Pt());
-      pp_match_sub_rho[key]->Fill(cent_bin, *pp_jsmrho);
-      pp_match_sub_sig[key]->Fill(cent_bin, *pp_jsmsig);
-      pp_hard_lead_const[key]->Fill(cent_bin, *pp_jlconst);
-      pp_hard_sub_const[key]->Fill(cent_bin, *pp_jsconst);
-      pp_match_lead_const[key]->Fill(cent_bin, *pp_jlmconst);
-      pp_match_sub_const[key]->Fill(cent_bin, *pp_jsmconst);
-      
-      
-      // pp Aj
-      pp_hard_aj[key]->Fill(cent_bin,
-                            fabs((*pp_jl).Pt() - (*pp_js).Pt())/((*pp_jl).Pt() + (*pp_js).Pt()));
-      pp_match_aj[key]->Fill(cent_bin,
-                             fabs((*pp_jlm).Pt() - (*pp_jsm).Pt())/((*pp_jlm).Pt() + (*pp_jsm).Pt()));
-      
-      // pp dphi
-      double dphi = (*pp_jl).Phi() - (*pp_js).Phi();
-      
-      //rotate dphi to be in [0,2*pi]
-      while (dphi < 0)
-        dphi += 2 * TMath::Pi();
-      while (dphi > 2.0 * TMath::Pi())
-        dphi -= 2.0 * TMath::Pi();
-      
-      pp_dphi[key]->Fill(cent_bin, dphi);
-      
-      // and grefmult/npart
-      pp_npart[key]->Fill(cent_bin, *pp_nprt);
-      
-      // pp only now
-      if ((*pp_only_jl).Pt() > 0) {
-        pp_lead_hard_match_fraction[key]->Fill(cent_bin, 1);
-        if ((*pp_only_js).Pt() > 0) {
-          pp_sub_hard_match_fraction[key]->Fill(cent_bin, 1);
-          pp_only_hard_lead_pt[key]->Fill(cent_bin, (*pp_only_jl).Pt());
-          pp_only_hard_sub_pt[key]->Fill(cent_bin, (*pp_only_js).Pt());
-          pp_only_match_lead_pt[key]->Fill(cent_bin, (*pp_only_jlm).Pt());
-          pp_only_match_sub_pt[key]->Fill(cent_bin, (*pp_only_jsm).Pt());
-          pp_only_hard_aj[key]->Fill(cent_bin,
-                                     fabs((*pp_only_jl).Pt() - (*pp_only_js).Pt()) / ((*pp_only_jl).Pt() + (*pp_only_js).Pt()));
-          pp_only_match_aj[key]->Fill(cent_bin,
-                                      fabs((*pp_only_jlm).Pt() - (*pp_only_jsm).Pt()) / ((*pp_only_jlm).Pt() + (*pp_only_jsm).Pt()));
-          pp_hard_lead_dpt[key]->Fill(cent_bin, (*pp_jl).Pt() - (*pp_only_jl).Pt());
-          pp_hard_sub_dpt[key]->Fill(cent_bin, (*pp_js).Pt() - (*pp_only_js).Pt());
-          pp_match_lead_dpt[key]->Fill(cent_bin, (*pp_jlm).Pt() - (*pp_only_jlm).Pt());
-          pp_match_sub_dpt[key]->Fill(cent_bin, (*pp_jsm).Pt() - (*pp_only_jsm).Pt());
-          pp_hard_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jl).Pt() - (*pp_only_jl).Pt()) / (*pp_jl).Pt());
-          pp_hard_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_js).Pt() - (*pp_only_js).Pt()) / (*pp_js).Pt());
-          pp_match_lead_dpt_frac[key]->Fill(cent_bin, ((*pp_jlm).Pt() - (*pp_only_jlm).Pt()) / (*pp_jlm).Pt());
-          pp_match_sub_dpt_frac[key]->Fill(cent_bin, ((*pp_jsm).Pt() - (*pp_only_jsm).Pt()) / (*pp_jsm).Pt());
-          
-          pp_hard_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jl).Pt(), (*pp_jl).Pt());
-          pp_hard_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_js).Pt(), (*pp_js).Pt());
-          pp_match_lead_pp_3d[key]->Fill(cent_bin, (*pp_only_jlm).Pt(), (*pp_jlm).Pt());
-          pp_match_sub_pp_3d[key]->Fill(cent_bin, (*pp_only_jsm).Pt(), (*pp_jsm).Pt());
-        }
-        else {
-          pp_sub_hard_match_fraction[key]->Fill(cent_bin, 0);
-        }
-      }
-      else {
-        pp_lead_hard_match_fraction[key]->Fill(cent_bin, 0);
-      }
-    }
-    
-    // now for the systematics
-    while (tow_p_reader.Next()) {
-      
-      int cent_bin = -1;
-      for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
-        auto& pair = cent_bin_boundaries[i];
-        if (*tow_p_cent >= pair.first &&
-            *tow_p_cent <= pair.second) {
-          cent_bin = i;
-          break;
-        }
-      }
-      
-      if (cent_bin == -1)
-        continue;
-      
-      pp_hard_aj_tow_p[key]->Fill(cent_bin,
-                                  fabs((*tow_p_jl).Pt() - (*tow_p_js).Pt()) / ((*tow_p_jl).Pt() + (*tow_p_js).Pt()));
-      pp_match_aj_tow_p[key]->Fill(cent_bin,
-                                   fabs((*tow_p_jlm).Pt() - (*tow_p_jsm).Pt()) / ((*tow_p_jlm).Pt() + (*tow_p_jsm).Pt()));
-    }
-    
-    while (tow_m_reader.Next()) {
-      
-      int cent_bin = -1;
-      for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
-        auto& pair = cent_bin_boundaries[i];
-        if (*tow_m_cent >= pair.first &&
-            *tow_m_cent <= pair.second) {
-          cent_bin = i;
-          break;
-        }
-      }
-      
-      if (cent_bin == -1)
-        continue;
-      
-      pp_hard_aj_tow_m[key]->Fill(cent_bin,
-                                  fabs((*tow_m_jl).Pt() - (*tow_m_js).Pt()) / ((*tow_m_jl).Pt() + (*tow_m_js).Pt()));
-      pp_match_aj_tow_m[key]->Fill(cent_bin,
-                                   fabs((*tow_m_jlm).Pt() - (*tow_m_jsm).Pt()) / ((*tow_m_jlm).Pt() + (*tow_m_jsm).Pt()));
-    }
-    
-    while (track_p_reader.Next()) {
-      
-      int cent_bin = -1;
-      for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
-        auto& pair = cent_bin_boundaries[i];
-        if (*track_p_cent >= pair.first &&
-            *track_p_cent <= pair.second) {
-          cent_bin = i;
-          break;
-        }
-      }
-      
-      if (cent_bin == -1)
-        continue;
-      
-      pp_hard_aj_track_p[key]->Fill(cent_bin,
-                                    fabs((*track_p_jl).Pt() - (*track_p_js).Pt()) / ((*track_p_jl).Pt() + (*track_p_js).Pt()));
-      pp_match_aj_track_p[key]->Fill(cent_bin,
-                                     fabs((*track_p_jlm).Pt() - (*track_p_jsm).Pt()) / ((*track_p_jlm).Pt() + (*track_p_jsm).Pt()));
-    }
-    
-    while (track_m_reader.Next()) {
-      
-      int cent_bin = -1;
-      for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
-        auto& pair = cent_bin_boundaries[i];
-        if (*track_m_cent >= pair.first &&
-            *track_m_cent <= pair.second) {
-          cent_bin = i;
-          break;
-        }
-      }
-      
-      if (cent_bin == -1)
-        continue;
-      
-      
-      pp_hard_aj_track_m[key]->Fill(cent_bin,
-                                    fabs((*track_m_jl).Pt() - (*track_m_js).Pt()) / ((*track_m_jl).Pt() + (*track_m_js).Pt()));
-      pp_match_aj_track_m[key]->Fill(cent_bin,
-                                     fabs((*track_m_jlm).Pt() - (*track_m_jsm).Pt()) / ((*track_m_jlm).Pt() + (*track_m_jsm).Pt()));
-    }
-    
-    
-    
-    // split by centrality
-    auau_npart_cent[key] = SplitByCentralityNormalized(auau_npart[key]);
-    pp_npart_cent[key] = SplitByCentralityNormalized(pp_npart[key]);
-    
-    auau_hard_lead_pt_cent[key] = SplitByCentralityNormalized(auau_hard_lead_pt[key]);
-    auau_hard_sub_pt_cent[key] = SplitByCentralityNormalized(auau_hard_sub_pt[key]);
-    auau_match_lead_pt_cent[key] = SplitByCentralityNormalized(auau_match_lead_pt[key]);
-    auau_match_sub_pt_cent[key] = SplitByCentralityNormalized(auau_match_sub_pt[key]);
-    auau_hard_aj_cent[key] = SplitByCentralityNormalized(auau_hard_aj[key]);
-    auau_match_aj_cent[key] = SplitByCentralityNormalized(auau_match_aj[key]);
-    auau_off_axis_lead_pt_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_pt[key]);
-    auau_off_axis_sub_pt_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_pt[key]);
-    auau_off_axis_aj_cent[key] = SplitByCentralityNormalized(auau_off_axis_aj[key]);
-    
-    pp_hard_lead_pt_cent[key] = SplitByCentralityNormalized(pp_hard_lead_pt[key]);
-    pp_hard_sub_pt_cent[key] = SplitByCentralityNormalized(pp_hard_sub_pt[key]);
-    pp_match_lead_pt_cent[key] = SplitByCentralityNormalized(pp_match_lead_pt[key]);
-    pp_match_sub_pt_cent[key] = SplitByCentralityNormalized(pp_match_sub_pt[key]);
-    pp_hard_aj_cent[key] = SplitByCentralityNormalized(pp_hard_aj[key]);
-    pp_match_aj_cent[key] = SplitByCentralityNormalized(pp_match_aj[key]);
-    
-    pp_only_hard_lead_pt_cent[key] = SplitByCentralityNormalized(pp_only_hard_lead_pt[key]);
-    pp_only_hard_sub_pt_cent[key] = SplitByCentralityNormalized(pp_only_hard_sub_pt[key]);
-    pp_only_match_lead_pt_cent[key] = SplitByCentralityNormalized(pp_only_match_lead_pt[key]);
-    pp_only_match_sub_pt_cent[key] = SplitByCentralityNormalized(pp_only_match_sub_pt[key]);
-    pp_only_hard_aj_cent[key] = SplitByCentralityNormalized(pp_only_hard_aj[key]);
-    pp_only_match_aj_cent[key] = SplitByCentralityNormalized(pp_only_match_aj[key]);
-    
-    pp_hard_lead_dpt_cent[key] = SplitByCentralityNormalized(pp_hard_lead_dpt[key]);
-    pp_hard_sub_dpt_cent[key] = SplitByCentralityNormalized(pp_hard_sub_dpt[key]);
-    pp_match_lead_dpt_cent[key] = SplitByCentralityNormalized(pp_match_lead_dpt[key]);
-    pp_match_sub_dpt_cent[key] = SplitByCentralityNormalized(pp_match_sub_dpt[key]);
-    
-    pp_hard_lead_pp_3d_cent[key] = SplitByCentrality3D(pp_hard_lead_pp_3d[key]);
-    pp_hard_sub_pp_3d_cent[key] = SplitByCentrality3D(pp_hard_sub_pp_3d[key]);
-    pp_match_lead_pp_3d_cent[key] = SplitByCentrality3D(pp_match_lead_pp_3d[key]);
-    pp_match_sub_pp_3d_cent[key] = SplitByCentrality3D(pp_match_sub_pp_3d[key]);
-    
-    pp_lead_hard_match_fraction_cent[key] = SplitByCentralityNormalized(pp_lead_hard_match_fraction[key]);
-    pp_sub_hard_match_fraction_cent[key] = SplitByCentralityNormalized(pp_sub_hard_match_fraction[key]);
-    
-    pp_hard_lead_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_lead_dpt_frac[key]);
-    pp_hard_sub_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_hard_sub_dpt_frac[key]);
-    pp_match_lead_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_match_lead_dpt_frac[key]);
-    pp_match_sub_dpt_frac_cent[key] = SplitByCentralityNormalized(pp_match_sub_dpt_frac[key]);
-    
-    auau_hard_lead_const_cent[key] = SplitByCentralityNormalized(auau_hard_lead_const[key]);
-    auau_hard_sub_const_cent[key] = SplitByCentralityNormalized(auau_hard_sub_const[key]);
-    auau_match_lead_const_cent[key] = SplitByCentralityNormalized(auau_match_lead_const[key]);
-    auau_match_sub_const_cent[key] = SplitByCentralityNormalized(auau_match_sub_const[key]);
-    auau_off_axis_lead_const_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_const[key]);
-    auau_off_axis_sub_const_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_const[key]);
-    
-    pp_hard_lead_const_cent[key] = SplitByCentralityNormalized(pp_hard_lead_const[key]);
-    pp_hard_sub_const_cent[key] = SplitByCentralityNormalized(pp_hard_sub_const[key]);
-    pp_match_lead_const_cent[key] = SplitByCentralityNormalized(pp_match_lead_const[key]);
-    pp_match_sub_const_cent[key] = SplitByCentralityNormalized(pp_match_sub_const[key]);
-    
-    auau_hard_lead_rho_cent[key] = SplitByCentralityNormalized(auau_hard_lead_rho[key]);
-    auau_hard_sub_rho_cent[key] = SplitByCentralityNormalized(auau_hard_sub_rho[key]);
-    auau_match_lead_rho_cent[key] = SplitByCentralityNormalized(auau_match_lead_rho[key]);
-    auau_match_sub_rho_cent[key] = SplitByCentralityNormalized(auau_match_sub_rho[key]);
-    
-    pp_hard_lead_rho_cent[key] = SplitByCentralityNormalized(pp_hard_lead_rho[key]);
-    pp_hard_sub_rho_cent[key] = SplitByCentralityNormalized(pp_hard_sub_rho[key]);
-    pp_match_lead_rho_cent[key] = SplitByCentralityNormalized(pp_match_lead_rho[key]);
-    pp_match_sub_rho_cent[key] = SplitByCentralityNormalized(pp_match_sub_rho[key]);
-    
-    auau_hard_lead_sig_cent[key] = SplitByCentralityNormalized(auau_hard_lead_sig[key]);
-    auau_hard_sub_sig_cent[key] = SplitByCentralityNormalized(auau_hard_sub_sig[key]);
-    auau_match_lead_sig_cent[key] = SplitByCentralityNormalized(auau_match_lead_sig[key]);
-    auau_match_sub_sig_cent[key] = SplitByCentralityNormalized(auau_match_sub_sig[key]);
-    
-    pp_hard_lead_sig_cent[key] = SplitByCentralityNormalized(pp_hard_lead_sig[key]);
-    pp_hard_sub_sig_cent[key] = SplitByCentralityNormalized(pp_hard_sub_sig[key]);
-    pp_match_lead_sig_cent[key] = SplitByCentralityNormalized(pp_match_lead_sig[key]);
-    pp_match_sub_sig_cent[key] = SplitByCentralityNormalized(pp_match_sub_sig[key]);
-    
-    auau_off_axis_lead_rho_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_rho[key]);
-    auau_off_axis_sub_rho_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_rho[key]);
-    auau_off_axis_lead_sig_cent[key] = SplitByCentralityNormalized(auau_off_axis_lead_sig[key]);
-    auau_off_axis_sub_sig_cent[key] = SplitByCentralityNormalized(auau_off_axis_sub_sig[key]);
-    
-    // now for the systematics
-    
-    pp_hard_aj_tow_p_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_p[key]);
-    pp_match_aj_tow_p_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_p[key]);
-    pp_hard_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_tow_m[key]);
-    pp_match_aj_tow_m_cent[key] = SplitByCentralityNormalized(pp_match_aj_tow_m[key]);
-    
-    pp_hard_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_p[key]);
-    pp_match_aj_track_p_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_p[key]);
-    pp_hard_aj_track_m_cent[key] = SplitByCentralityNormalized(pp_hard_aj_track_m[key]);
-    pp_match_aj_track_m_cent[key] = SplitByCentralityNormalized(pp_match_aj_track_m[key]);
-    
-    for (int i = 0; i < auau_hard_aj_cent[key].size(); ++i) {
-      auau_hard_aj_cent[key][i]->RebinX(2);
-      auau_match_aj_cent[key][i]->RebinX(2);
-      auau_off_axis_aj_cent[key][i]->RebinX(2);
-      pp_hard_aj_cent[key][i]->RebinX(2);
-      pp_match_aj_cent[key][i]->RebinX(2);
-      pp_hard_aj_tow_p_cent[key][i]->RebinX(2);
-      pp_match_aj_tow_p_cent[key][i]->RebinX(2);
-      pp_hard_aj_tow_m_cent[key][i]->RebinX(2);
-      pp_match_aj_tow_m_cent[key][i]->RebinX(2);
-      pp_hard_aj_track_p_cent[key][i]->RebinX(2);
-      pp_match_aj_track_p_cent[key][i]->RebinX(2);
-      pp_hard_aj_track_m_cent[key][i]->RebinX(2);
-      pp_match_aj_track_m_cent[key][i]->RebinX(2);
-    }
-    
-    Overlay1D(auau_npart_cent[key], refcent_string, hopts, copts, out_loc, "auau_npart_cent",
-              "", "N_{part}", "fraction", "Centrality");
-    Overlay1D(auau_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_aj",
-              "", "A_{J}", "fraction", "Centrality");
-    Overlay1D(auau_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_aj",
-              "", "A_{J}", "fraction", "Centrality");
-    Overlay1D(auau_off_axis_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_aj",
-              "", "A_{J}", "fraction", "Centrality");
-    Overlay1D(auau_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(auau_match_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(auau_hard_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(auau_match_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(auau_off_axis_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(auau_off_axis_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    
-    Overlay1D(pp_npart_cent[key], refcent_string, hopts, copts, out_loc, "pp_npart_cent",
-              "", "N_{part}", "fraction", "Centrality");
-    Overlay1D(pp_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_aj",
-              "", "A_{J}", "fraction", "Centrality");
-    Overlay1D(pp_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_aj",
-              "", "A_{J}", "fraction", "Centrality");
-    Overlay1D(pp_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(pp_match_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(pp_hard_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    Overlay1D(pp_match_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
-    
-    Overlay1D(auau_hard_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(auau_hard_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(auau_match_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(auau_match_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(auau_off_axis_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(auau_off_axis_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_const",
-              "", "N_{constituents}", "fraction");
-    
-    Overlay1D(pp_hard_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(pp_hard_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(pp_match_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_const",
-              "", "N_{constituents}", "fraction");
-    Overlay1D(pp_match_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_const",
-              "", "N_{constituents}", "fraction");
-    
-    Overlay1D(auau_hard_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_rho",
-              "", "#rho", "fraction");
-    Overlay1D(auau_hard_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_rho",
-              "", "#rho", "fraction");
-    Overlay1D(auau_match_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_rho",
-              "", "#rho", "fraction");
-    Overlay1D(auau_match_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_rho",
-              "", "#rho", "fraction");
-    
-    Overlay1D(pp_hard_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_rho",
-              "", "#rho", "fraction");
-    Overlay1D(pp_hard_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_rho",
-              "", "#rho", "fraction");
-    Overlay1D(pp_match_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_rho",
-              "", "#rho", "fraction");
-    Overlay1D(pp_match_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_rho",
-              "", "#rho", "fraction");
-    
-    Overlay1D(auau_hard_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_sig",
-              "", "#sigma", "fraction");
-    Overlay1D(auau_hard_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_sig",
-              "", "#sigma", "fraction");
-    Overlay1D(auau_match_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_sig",
-              "", "#sigma", "fraction");
-    Overlay1D(auau_match_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_sig",
-              "", "#sigma", "fraction");
-    
-    Overlay1D(pp_hard_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_sig",
-              "", "#sigma", "fraction");
-    Overlay1D(pp_hard_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_sig",
-              "", "#sigma", "fraction");
-    Overlay1D(pp_match_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_sig",
-              "", "#sigma", "fraction");
-    Overlay1D(pp_match_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_sig",
-              "", "#sigma", "fraction");
-    
-    Overlay1D(auau_off_axis_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_rho",
-              "", "#rho", "fraction");
-    Overlay1D(auau_off_axis_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_sub_rho",
-              "", "#rho", "fraction");
-    Overlay1D(auau_off_axis_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_sig",
-              "", "#sigma", "fraction");
-    Overlay1D(auau_off_axis_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_sig",
-              "", "#sigma", "fraction");
-    
-    for (int i = 0; i < auau_hard_aj_cent[key].size(); ++i) {
-      std::vector<string> cent_name{"AuAu", "pp"};
-      std::vector<string> cent_name_match{"AuAu", "pp", "hard-core embed"};
-      std::vector<TH1D*> cent_list{auau_hard_aj_cent[key][i], pp_hard_aj_cent[key][i]};
-      std::vector<TH1D*> cent_list_match{auau_match_aj_cent[key][i], pp_match_aj_cent[key][i], auau_off_axis_aj_cent[key][i]};
-      
-      string out_loc_cent = FLAGS_outputDir + "/" + key + "/" + "cent_" + std::to_string(i);
-      boost::filesystem::path dir(out_loc_cent.c_str());
+      // make our output directory
+      string out_loc = key_loc + "/" + TYPENAME[type_enum];
+      boost::filesystem::path dir(out_loc.c_str());
       boost::filesystem::create_directories(dir);
       
-      Print2DSimple(pp_hard_lead_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppleadhardpt2d", "", "pp p_{T}", "embedded pp p_{T}");
-      Print2DSimple(pp_hard_sub_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppsubhardpt2d", "", "pp p_{T}", "embedded pp p_{T}");
-      Print2DSimple(pp_match_lead_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppleadmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
-      Print2DSimple(pp_match_sub_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppsubmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
+      // load our reader
+      TTree* current_tree = trees[data_index][key];
+      TTreeReader reader(current_tree);
       
-      Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj_with_off_axis", "", "A_{J}", "fraction");
+      // create readervalues for auau first
+      dijetcore::unique_ptr<TTreeReaderValue<int>> runid = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "runid");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> eventid = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "eventid");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> vz = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "vz");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> refmult = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "refmult");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> grefmult = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "grefmult");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> refmultcorr = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "refmultcorr");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> grefmultcorr = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "grefmultcorr");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> cent = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "cent");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> zdcrate = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "zdcrate");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> rp = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "rp");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> nglobal = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "nglobal");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> nprt = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "npart");
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jl = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jl");
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> js = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "js");
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jlm = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jlm");
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jsm = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jsm");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> jlconst = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "jlconst");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jlrho = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jlrho");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jlsig = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jlsig");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> jlmconst = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "jlmconst");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jlmrho = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jlmrho");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jlmsig = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jlmsig");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> jsconst = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "jsconst");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jsrho = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jsrho");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jssig = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jssig");
+      dijetcore::unique_ptr<TTreeReaderValue<int>> jsmconst = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "jsmconst");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jsmrho = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jsmrho");
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jsmsig = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jsmsig");
       
-      Overlay1D(pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "tow",
-                "", "AJ", "fraction");
-      Overlay1D(pp_hard_aj_track_p_cent[key][i], pp_hard_aj_track_m_cent[key][i], "pp track_p", "pp track_m", hopts, copts, out_loc_cent, "track",
-                "", "AJ", "fraction");
-      Overlay1D(pp_match_aj_tow_p_cent[key][i], pp_match_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "towmatch",
-                "", "AJ", "fraction");
-      Overlay1D(pp_match_aj_track_p_cent[key][i], pp_match_aj_track_m_cent[key][i], "pp track_p", "pp track_m", hopts, copts, out_loc_cent, "trackmatch",
-                "", "AJ", "fraction");
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jloa;
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jsoa;
+      dijetcore::unique_ptr<TTreeReaderValue<int>> jloaconst;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jloarho;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jloasig;
+      dijetcore::unique_ptr<TTreeReaderValue<int>> jsoaconst;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jsoarho;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> jsoasig;
       
-      systematic_errors_hard[key].push_back( GetSystematic(pp_hard_aj_cent[key][i], pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i],
-                                                           pp_hard_aj_track_p_cent[key][i], pp_hard_aj_track_m_cent[key][i]));
-      systematic_errors_match[key].push_back( GetSystematic(pp_match_aj_cent[key][i], pp_match_aj_tow_p_cent[key][i], pp_match_aj_tow_m_cent[key][i],
-                                                            pp_match_aj_track_p_cent[key][i], pp_match_aj_track_m_cent[key][i]));
+      // build all embedding branches (only used if pp_embedded is true)
+      dijetcore::unique_ptr<TTreeReaderValue<int>> embed_eventid;
+      dijetcore::unique_ptr<TTreeReaderValue<int>> embed_runid;
+      dijetcore::unique_ptr<TTreeReaderValue<int>> embed_refmult;
+      dijetcore::unique_ptr<TTreeReaderValue<int>> embed_grefmult;
+      dijetcore::unique_ptr<TTreeReaderValue<int>> embed_nprt;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> embed_refmultcorr;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> embed_grefmultcorr;
+      dijetcore::unique_ptr<TTreeReaderValue<int>> embed_cent;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> embed_rp;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> embed_zdcrate;
+      dijetcore::unique_ptr<TTreeReaderValue<double>> embed_vz;
       
-      Overlay1D(auau_hard_aj_cent[key][i], pp_hard_aj_cent[key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, "AuAu hard A_{J}", "PP hard A_{J}",
-                "", hopts, copts, out_loc_cent, "aj_hard", "", "A_{J}", "fraction");
-      Overlay1D(auau_match_aj_cent[key][i], pp_match_aj_cent[key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, "AuAu matched A_{J}", "PP matched A_{J}",
-                "systematics", hopts, copts, out_loc_cent, "aj_match", "", "A_{J}", "fraction");
+      dijetcore::unique_ptr<TTreeReaderValue<bool>> only_found_match;
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> pp_only_jl;
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> pp_only_js;
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> pp_only_jlm;
+      dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> pp_only_jsm;
       
-      Overlay1D(pp_hard_lead_dpt_cent[key][i], pp_hard_sub_dpt_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt",
-                "", "dp_{T}", "fraction");
-      Overlay1D(pp_hard_lead_dpt_frac_cent[key][i], pp_hard_sub_dpt_frac_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt_frac",
-                "", "dp_{T}/p_{T}", "fraction");
+      // check if we have off-axis entries (for auau)
+      bool auau_off_axis_present = false;
+      if (data_index == TYPEMAP[DATATYPE::AUAU] &&
+          current_tree->GetBranch("jloa"))
+        auau_off_axis_present = true;
       
-      // print the fractions of successfully matched jets from embedded pp -> pp
-      PrettyPrint1D(pp_lead_hard_match_fraction_cent[key][i], hopts, copts, "", out_loc_cent, "leadhardmatchingfraction", "no match / match",
-                    "fraction", "");
-      PrettyPrint1D(pp_sub_hard_match_fraction_cent[key][i], hopts, copts, "", out_loc_cent, "leadsubmatchingfraction", "no match / match",
-                    "fraction", "");
+      // check if we have pp-only cluster results
+      bool pp_only_present = false;
+      if (data_index == TYPEMAP[DATATYPE::PP] &&
+          current_tree->GetBranch("foundpp"))
+        pp_only_present = true;
+      
+      // and check if we have embedding (for pp tree)
+      bool pp_embedded_present = false;
+      if (data_index == TYPEMAP[DATATYPE::PP] &&
+          current_tree->GetBranch("embed_eventid"))
+        pp_embedded_present = true;
+      
+      // initialize source dependent reader values
+      
+      if (auau_off_axis_present) {
+        jloa = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jloa");
+        jsoa = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jsoa");
+        jloaconst = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "jloaconst");
+        jloarho = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jloarho");
+        jloasig = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jloasig");
+        jsoaconst = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "jsoaconst");
+        jsoarho = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jsoarho");
+        jsoasig = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "jsoasig");
+      }
+      
+      if (pp_embedded_present) {
+        embed_eventid = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "embed_eventid");
+        embed_runid = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "embed_runid");
+        embed_refmult = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "embed_refmult");
+        embed_grefmult = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "embed_grefmult");
+        embed_nprt = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "embed_npart");
+        embed_refmultcorr = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "embed_refmultcorr");
+        embed_grefmultcorr = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "embed_grefmultcorr");
+        embed_cent = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "embed_cent");
+        embed_rp = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "embed_rp");
+        embed_zdcrate = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "embed_zdcrate");
+        embed_vz = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "embed_vz");
+      }
+      
+      if (pp_only_present) {
+        only_found_match = dijetcore::make_unique<TTreeReaderValue<bool>>(reader, "foundpp");
+        pp_only_jl = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "ppjl");
+        pp_only_js = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "ppjs");
+        pp_only_jlm = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "ppjlm");
+        pp_only_jsm = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "ppjsm");
+      }
+      
+      
+      // build prefix for names so histograms don't get confused
+      // (root fuckin sucks)
+      std::string key_prefix = "key_" + std::to_string(entry) + "_";
+      std::string datatype_prefix = TYPENAME[type_enum];
+      std::string hist_prefix = key_prefix + datatype_prefix;
+      
+      // create the histograms
+      hard_lead_eta[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardleadeta").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, -1, 1);
+      hard_lead_phi[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardleadphi").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, -TMath::Pi(), TMath::Pi());
+      hard_lead_pt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardleadpt").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               50, 0, 50);
+      hard_lead_const[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardleadconst").c_str(), "",
+                                                  cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                  50, 0, 100);
+      hard_lead_rho[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardleadrho").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, 0, 100);
+      hard_lead_sig[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardleadsig").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, 0, 20);
+      
+      match_lead_eta[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchleadeta").c_str(), "",
+                                                 cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                 50, -1, 1);
+      match_lead_phi[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchleadphi").c_str(), "",
+                                                 cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                 50, -TMath::Pi(), TMath::Pi());
+      match_lead_pt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchleadpt").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, 0, 50);
+      match_lead_const[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchleadconst").c_str(), "",
+                                                   cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                   50, 0, 100);
+      match_lead_rho[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchleadrho").c_str(), "",
+                                                 cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                 50, 0, 100);
+      match_lead_sig[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchleadsig").c_str(), "",
+                                                 cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                 50, 0, 20);
+      
+      hard_sub_eta[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardsubeta").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               50, -1, 1);
+      hard_sub_phi[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardsubphi").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               50, -TMath::Pi(), TMath::Pi());
+      hard_sub_pt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardsubpt").c_str(), "",
+                                              cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                              50, 0, 50);
+      hard_sub_const[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardsubconst").c_str(), "",
+                                                 cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                 50, 0, 100);
+      hard_sub_rho[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardsubrho").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               50, 0, 100);
+      hard_sub_sig[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardsubsig").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               50, 0, 20);
+      
+      match_sub_eta[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchsubeta").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, -1, 1);
+      match_sub_phi[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchsubphi").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, -TMath::Pi(), TMath::Pi());
+      match_sub_pt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchsubpt").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               50, 0, 50);
+      match_sub_const[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchsubconst").c_str(), "",
+                                                  cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                  50, 0, 100);
+      match_sub_rho[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchsubrho").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, 0, 100);
+      match_sub_sig[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchsubsig").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, 0, 20);
+      
+      npart[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "npart").c_str(), "",
+                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                        100, 0, 1200);
+      hard_dphi[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "harddphi").c_str(), "",
+                                            cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                            50, 0, TMath::Pi());
+      match_dphi[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchdphi").c_str(), "",
+                                             cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                             50, 0, TMath::Pi());
+      lead_dr[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "leaddr").c_str(), "",
+                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                          50, 0, 0.5);
+      sub_dr[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "subdr").c_str(), "",
+                                         cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                         50, 0, 0.5);
+      lead_dpt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "leaddpt").c_str(), "",
+                                           cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                           50, -20, 20);
+      sub_dpt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "subdptfrac").c_str(), "",
+                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                          50, -20, 20);
+      lead_dpt_frac[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "leaddptfrac").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                50, -2.0, 2.0);
+      sub_dpt_frac[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "subdpt").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               50, -2.0, 2.0);
+      
+      hard_aj[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardaj").c_str(), "",
+                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                          15, 0, 0.9);
+      match_aj[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchaj").c_str(), "",
+                                           cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                           15, 0, 0.9);
+      hard_aj_test[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "hardajtest").c_str(), "",
+                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                               10000, 0, 0.9);
+      match_aj_test[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "matchajtest").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                10000, 0, 0.9);
+      
+      if (auau_off_axis_present) {
+        off_axis_aj[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "offaxisaj").c_str(), "",
+                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                15, 0, 0.9);
+        off_axis_aj_test[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "offaxisajtest").c_str(), "",
+                                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                     10000, 0, 0.9);
+        off_axis_rho[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "offaxisrho").c_str(), "",
+                                                 cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                 50, 0, 100);
+        off_axis_sig[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "offaxissig").c_str(), "",
+                                                 cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                 50, 0, 20);
+      }
+      if (pp_only_present) {
+        hard_pp_only_aj[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "pphardaj").c_str(), "",
+                                                    cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                    15, 0, 0.9);
+        match_pp_only_aj[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "ppmatchaj").c_str(), "",
+                                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                     15, 0, 0.9);
+        hard_lead_pp_dpt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "pphardleaddpt").c_str(), "",
+                                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                     50, 0, 30);
+        match_lead_pp_dpt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "ppmatchleaddpt").c_str(), "",
+                                                      cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                      50, 0, 30);
+        hard_sub_pp_dpt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "pphardsubdpt").c_str(), "",
+                                                    cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                    50, 0, 30);
+        match_sub_pp_dpt[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "ppmatchsubdpt").c_str(), "",
+                                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                     50, 0, 30);
+        hard_lead_pp_dpt_frac[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "pphardleaddptfrac").c_str(), "",
+                                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                          50, 0, 30);
+        match_lead_pp_dpt_frac[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "ppmatchleaddptfrac").c_str(), "",
+                                                           cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                           50, 0, 30);
+        hard_sub_pp_dpt_frac[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "pphardsubdptfrac").c_str(), "",
+                                                         cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                         50, 0, 30);
+        match_sub_pp_dpt_frac[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "ppmatchsubdptfrac").c_str(), "",
+                                                          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                          50, 0, 30);
+        pp_lead_hard_match_fraction[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "ppleadhardmatchfrac").c_str(), "",
+                                                                cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                                2, -0.5, 1.5);
+        pp_sub_hard_match_fraction[data_index][key] = new TH2D(dijetcore::MakeString(hist_prefix, "ppsubhardmatchfrac").c_str(), "",
+                                                               cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                                                               2, -0.5, 1.5);
+      }
+      
+      // event loop
+      while (reader.Next()) {
+        
+        int cent_bin = -1;
+        for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
+          auto& pair = cent_bin_boundaries[i];
+          if (**cent >= pair.first &&
+              **cent <= pair.second) {
+            cent_bin = i;
+            break;
+          }
+        }
+        
+        if (cent_bin == -1)
+          continue;
+        
+        // check jet eta
+        if (FLAGS_setScanning &&
+            (fabs((*jl)->Eta()) > max_eta ||
+            fabs((*js)->Eta()) > max_eta))
+          continue;
+        
+        hard_lead_eta[data_index][key]->Fill(cent_bin, (*jl)->Eta());
+        hard_lead_phi[data_index][key]->Fill(cent_bin, (*jl)->Phi());
+        hard_lead_pt[data_index][key]->Fill(cent_bin, (*jl)->Pt());
+        hard_lead_const[data_index][key]->Fill(cent_bin, **jlconst);
+        hard_lead_rho[data_index][key]->Fill(cent_bin, **jlrho);
+        hard_lead_sig[data_index][key]->Fill(cent_bin, **jlsig);
+        match_lead_eta[data_index][key]->Fill(cent_bin, (*jlm)->Eta());
+        match_lead_phi[data_index][key]->Fill(cent_bin, (*jlm)->Phi());
+        match_lead_pt[data_index][key]->Fill(cent_bin, (*jlm)->Pt());
+        match_lead_const[data_index][key]->Fill(cent_bin, **jlmconst);
+        match_lead_rho[data_index][key]->Fill(cent_bin, **jlmrho);
+        match_lead_sig[data_index][key]->Fill(cent_bin, **jlmsig);
+        
+        hard_sub_eta[data_index][key]->Fill(cent_bin, (*js)->Eta());
+        hard_sub_phi[data_index][key]->Fill(cent_bin, (*js)->Phi());
+        hard_sub_pt[data_index][key]->Fill(cent_bin, (*js)->Pt());
+        hard_sub_const[data_index][key]->Fill(cent_bin, **jsconst);
+        hard_sub_rho[data_index][key]->Fill(cent_bin, **jsrho);
+        hard_sub_sig[data_index][key]->Fill(cent_bin, **jssig);
+        match_sub_eta[data_index][key]->Fill(cent_bin, (*jsm)->Eta());
+        match_sub_phi[data_index][key]->Fill(cent_bin, (*jsm)->Phi());
+        match_sub_pt[data_index][key]->Fill(cent_bin, (*jsm)->Pt());
+        match_sub_const[data_index][key]->Fill(cent_bin, **jsmconst);
+        match_sub_rho[data_index][key]->Fill(cent_bin, **jsmrho);
+        match_sub_sig[data_index][key]->Fill(cent_bin, **jsmsig);
+        
+        npart[data_index][key]->Fill(cent_bin, **nprt);
+        hard_dphi[data_index][key]->Fill(cent_bin, fabs((*jl)->DeltaPhi(**js)));
+        match_dphi[data_index][key]->Fill(cent_bin, fabs((*jlm)->DeltaPhi(**jsm)));
+        lead_dr[data_index][key]->Fill(cent_bin, (*jl)->DeltaR(**jlm));
+        sub_dr[data_index][key]->Fill(cent_bin, (*js)->DeltaR(**jsm));
+        lead_dpt[data_index][key]->Fill(cent_bin, (*jl)->Pt() - (*jlm)->Pt());
+        sub_dpt[data_index][key]->Fill(cent_bin, (*js)->Pt() - (*jsm)->Pt());
+        lead_dpt_frac[data_index][key]->Fill(cent_bin, ((*jl)->Pt() - (*jlm)->Pt()) / (*jl)->Pt());
+        sub_dpt_frac[data_index][key]->Fill(cent_bin, ((*js)->Pt() - (*jsm)->Pt()) / (*js)->Pt());
+        
+        hard_aj[data_index][key]->Fill(cent_bin,
+                                       fabs((*jl)->Pt() - (*js)->Pt()) / ((*jl)->Pt() + (*js)->Pt()));
+        match_aj[data_index][key]->Fill(cent_bin,
+                                        fabs((*jlm)->Pt() - (*jsm)->Pt()) / ((*jlm)->Pt() + (*jsm)->Pt()));
+        hard_aj_test[data_index][key]->Fill(cent_bin,
+                                            fabs((*jl)->Pt() - (*js)->Pt()) / ((*jl)->Pt() + (*js)->Pt()));
+        match_aj_test[data_index][key]->Fill(cent_bin,
+                                             fabs((*jlm)->Pt() - (*jsm)->Pt()) / ((*jlm)->Pt() + (*jsm)->Pt()));
+        
+        if (auau_off_axis_present) {
+          off_axis_aj[data_index][key]->Fill(cent_bin,
+                                             fabs((*jloa)->Pt() - (*jsoa)->Pt()) / ((*jloa)->Pt() + (*jsoa)->Pt()));
+          off_axis_aj_test[data_index][key]->Fill(cent_bin,
+                                                  fabs((*jloa)->Pt() - (*jsoa)->Pt()) / ((*jloa)->Pt() + (*jsoa)->Pt()));
+          off_axis_rho[data_index][key]->Fill(cent_bin, **jloarho);
+          off_axis_sig[data_index][key]->Fill(cent_bin, **jloasig);
+        }
+        
+        if (pp_only_present) {
+          if ((*pp_only_jl)->Pt() > 0) {
+            pp_lead_hard_match_fraction[data_index][key]->Fill(cent_bin, 1);
+            if ((*pp_only_js)->Pt() > 0) {
+              pp_sub_hard_match_fraction[data_index][key]->Fill(cent_bin, 1);
+              hard_pp_only_aj[data_index][key]->Fill(cent_bin,
+                                                     fabs((*pp_only_jl)->Pt() - (*pp_only_js)->Pt()) / ((*pp_only_jl)->Pt() + (*pp_only_js)->Pt()));
+              match_pp_only_aj[data_index][key]->Fill(cent_bin,
+                                                      fabs((*pp_only_jlm)->Pt() - (*pp_only_jsm)->Pt()) / ((*pp_only_jlm)->Pt() + (*pp_only_jsm)->Pt()));
+              hard_lead_pp_dpt[data_index][key]->Fill(cent_bin, (*jl)->Pt() - (*pp_only_jl)->Pt());
+              match_lead_pp_dpt[data_index][key]->Fill(cent_bin, (*jlm)->Pt() - (*pp_only_jlm)->Pt());
+              hard_sub_pp_dpt[data_index][key]->Fill(cent_bin, (*js)->Pt() - (*pp_only_js)->Pt());
+              match_sub_pp_dpt[data_index][key]->Fill(cent_bin, (*jsm)->Pt() - (*pp_only_jsm)->Pt());
+              hard_lead_pp_dpt_frac[data_index][key]->Fill(cent_bin, ((*jl)->Pt() - (*pp_only_jl)->Pt()) / (*jl)->Pt());
+              match_lead_pp_dpt_frac[data_index][key]->Fill(cent_bin, ((*jlm)->Pt() - (*pp_only_jlm)->Pt()) / (*jlm)->Pt());
+              hard_sub_pp_dpt_frac[data_index][key]->Fill(cent_bin, ((*js)->Pt() - (*pp_only_js)->Pt()) / (*js)->Pt());
+              match_sub_pp_dpt_frac[data_index][key]->Fill(cent_bin, ((*jsm)->Pt() - (*pp_only_jsm)->Pt()) / (*jsm)->Pt());
+            }
+            else {
+              pp_sub_hard_match_fraction[data_index][key]->Fill(cent_bin, 0);
+            }
+          }
+          else
+            pp_lead_hard_match_fraction[data_index][key]->Fill(cent_bin, 0);
+        }
+        
+      }
+      
+      hard_lead_eta_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_eta[data_index][key]);
+      hard_lead_phi_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_phi[data_index][key]);
+      hard_lead_pt_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_pt[data_index][key]);
+      hard_lead_const_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_const[data_index][key]);
+      hard_lead_rho_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_rho[data_index][key]);
+      hard_lead_sig_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_sig[data_index][key]);
+      match_lead_eta_cent[data_index][key] = SplitByCentralityNormalized(match_lead_eta[data_index][key]);
+      match_lead_phi_cent[data_index][key] = SplitByCentralityNormalized(match_lead_phi[data_index][key]);
+      match_lead_pt_cent[data_index][key] = SplitByCentralityNormalized(match_lead_pt[data_index][key]);
+      match_lead_const_cent[data_index][key] = SplitByCentralityNormalized(match_lead_const[data_index][key]);
+      match_lead_rho_cent[data_index][key] = SplitByCentralityNormalized(match_lead_rho[data_index][key]);
+      match_lead_sig_cent[data_index][key] = SplitByCentralityNormalized(match_lead_sig[data_index][key]);
+      
+      hard_sub_eta_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_eta[data_index][key]);
+      hard_sub_phi_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_phi[data_index][key]);
+      hard_sub_pt_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_pt[data_index][key]);
+      hard_sub_const_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_const[data_index][key]);
+      hard_sub_rho_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_rho[data_index][key]);
+      hard_sub_sig_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_sig[data_index][key]);
+      match_sub_eta_cent[data_index][key] = SplitByCentralityNormalized(match_sub_eta[data_index][key]);
+      match_sub_phi_cent[data_index][key] = SplitByCentralityNormalized(match_sub_phi[data_index][key]);
+      match_sub_pt_cent[data_index][key] = SplitByCentralityNormalized(match_sub_pt[data_index][key]);
+      match_sub_const_cent[data_index][key] = SplitByCentralityNormalized(match_sub_const[data_index][key]);
+      match_sub_rho_cent[data_index][key] = SplitByCentralityNormalized(match_sub_rho[data_index][key]);
+      match_sub_sig_cent[data_index][key] = SplitByCentralityNormalized(match_sub_sig[data_index][key]);
+      
+      npart_cent[data_index][key] = SplitByCentralityNormalized(npart[data_index][key]);
+      hard_dphi_cent[data_index][key] = SplitByCentralityNormalized(hard_dphi[data_index][key]);
+      match_dphi_cent[data_index][key] = SplitByCentralityNormalized(match_dphi[data_index][key]);
+      lead_dr_cent[data_index][key] = SplitByCentralityNormalized(lead_dr[data_index][key]);
+      sub_dr_cent[data_index][key] = SplitByCentralityNormalized(sub_dr[data_index][key]);
+      lead_dpt_cent[data_index][key] = SplitByCentralityNormalized(lead_dpt[data_index][key]);
+      sub_dpt_cent[data_index][key] = SplitByCentralityNormalized(sub_dpt[data_index][key]);
+      lead_dpt_frac_cent[data_index][key] = SplitByCentralityNormalized(lead_dpt_frac[data_index][key]);
+      sub_dpt_frac_cent[data_index][key] = SplitByCentralityNormalized(sub_dpt_frac[data_index][key]);
+      
+      hard_aj_cent[data_index][key] = SplitByCentralityNormalized(hard_aj[data_index][key]);
+      match_aj_cent[data_index][key] = SplitByCentralityNormalized(match_aj[data_index][key]);
+      hard_aj_test_cent[data_index][key] = SplitByCentralityNormalized(hard_aj_test[data_index][key]);
+      match_aj_test_cent[data_index][key] = SplitByCentralityNormalized(match_aj_test[data_index][key]);
+      
+      if (auau_off_axis_present) {
+        off_axis_aj_cent[data_index][key] = SplitByCentralityNormalized(off_axis_aj[data_index][key]);
+        off_axis_aj_test_cent[data_index][key] = SplitByCentralityNormalized(off_axis_aj_test[data_index][key]);
+        off_axis_rho_cent[data_index][key] = SplitByCentralityNormalized(off_axis_rho[data_index][key]);
+        off_axis_sig_cent[data_index][key] = SplitByCentralityNormalized(off_axis_sig[data_index][key]);
+      }
+      
+      if (pp_only_present) {
+        hard_pp_only_aj_cent[data_index][key] = SplitByCentralityNormalized(hard_pp_only_aj[data_index][key]);
+        match_pp_only_aj_cent[data_index][key] = SplitByCentralityNormalized(match_pp_only_aj[data_index][key]);
+        hard_lead_pp_dpt_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_pp_dpt[data_index][key]);
+        match_lead_pp_dpt_cent[data_index][key] = SplitByCentralityNormalized(match_lead_pp_dpt[data_index][key]);
+        hard_sub_pp_dpt_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_pp_dpt[data_index][key]);
+        match_sub_pp_dpt_cent[data_index][key] = SplitByCentralityNormalized(match_sub_pp_dpt[data_index][key]);
+        hard_lead_pp_dpt_frac_cent[data_index][key] = SplitByCentralityNormalized(hard_lead_pp_dpt_frac[data_index][key]);
+        match_lead_pp_dpt_frac_cent[data_index][key] = SplitByCentralityNormalized(match_lead_pp_dpt_frac[data_index][key]);
+        hard_sub_pp_dpt_frac_cent[data_index][key] = SplitByCentralityNormalized(hard_sub_pp_dpt_frac[data_index][key]);
+        match_sub_pp_dpt_frac_cent[data_index][key] = SplitByCentralityNormalized(match_sub_pp_dpt_frac[data_index][key]);
+        pp_lead_hard_match_fraction_cent[data_index][key] = SplitByCentralityNormalized(pp_lead_hard_match_fraction[data_index][key]);
+        pp_sub_hard_match_fraction_cent[data_index][key] = SplitByCentralityNormalized(pp_sub_hard_match_fraction[data_index][key]);
+      }
+      
+      if (auau_off_axis_present) {
+        Overlay1D(off_axis_aj_cent[data_index][key], refcent_string, hopts, copts, out_loc, "off_axis_aj",
+                  "", "A_{J}", "fraction", "Centrality");
+        Overlay1D(off_axis_rho_cent[data_index][key], refcent_string, hopts, copts, out_loc, "off_axis_rho",
+                  "", "rho", "fraction", "Centrality");
+        Overlay1D(off_axis_sig_cent[data_index][key], refcent_string, hopts, copts, out_loc, "off_axis_sig",
+                  "", "sig", "fraction", "Centrality");
+      }
+      if (pp_only_present) {
+        Overlay1D(hard_pp_only_aj_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_aj",
+                  "", "A_{J}", "fraction", "Centrality");
+        Overlay1D(match_pp_only_aj_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_match_aj",
+                  "", "A_{J}", "fraction", "Centrality");
+        Overlay1D(hard_lead_pp_dpt_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_lead_dpt",
+                  "", "dp_{T}", "fraction", "Centrality");
+        Overlay1D(hard_sub_pp_dpt_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_sub_dpt",
+                  "", "dp_{T}", "fraction", "Centrality");
+        Overlay1D(match_lead_pp_dpt_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_match_lead_dpt",
+                  "", "dp_{T}", "fraction", "Centrality");
+        Overlay1D(match_sub_pp_dpt_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_match_sub_dpt",
+                  "", "dp_{T}", "fraction", "Centrality");
+        Overlay1D(hard_lead_pp_dpt_frac_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_lead_dpt_frac",
+                  "", "dp_{T}/p_{T}", "fraction", "Centrality");
+        Overlay1D(hard_sub_pp_dpt_frac_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_sub_dpt_frac",
+                  "", "dp_{T}/p_{T}", "fraction", "Centrality");
+        Overlay1D(match_lead_pp_dpt_frac_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_match_lead_dpt_frac",
+                  "", "dp_{T}/p_{T}", "fraction", "Centrality");
+        Overlay1D(match_sub_pp_dpt_frac_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_match_sub_dpt_frac",
+                  "", "dp_{T}/p_{T}", "fraction", "Centrality");
+        Overlay1D(pp_lead_hard_match_fraction_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_lead_hard_match_fraction",
+                  "", "", "fraction", "Centrality");
+        Overlay1D(pp_sub_hard_match_fraction_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_sub_hard_match_fraction",
+                  "", "", "fraction", "Centrality");
+        
+      }
+    } // datatype
+    
+    // now we will get systematics and print out comparisons - do everything in bins of centrality
+    for (int i = 0; i < refcent_string.size(); ++i) {
+      // make our output directory
+      string out_loc = key_loc + "/cent_" + refcent_string_fs[i];
+      boost::filesystem::path dir(out_loc.c_str());
+      boost::filesystem::create_directories(dir);
+      
+      // get systematic errors
+      systematic_errors_hard[key].push_back(GetSystematic(hard_aj_cent[pp_index][key][i], hard_aj_cent[TYPEMAP[DATATYPE::TOWP]][key][i], hard_aj_cent[TYPEMAP[DATATYPE::TOWM]][key][i],
+                                                          hard_aj_cent[TYPEMAP[DATATYPE::TRACKP]][key][i], hard_aj_cent[TYPEMAP[DATATYPE::TRACKM]][key][i]));
+      systematic_errors_match[key].push_back(GetSystematic(match_aj_cent[pp_index][key][i], match_aj_cent[TYPEMAP[DATATYPE::TOWP]][key][i], match_aj_cent[TYPEMAP[DATATYPE::TOWM]][key][i],
+                                                           match_aj_cent[TYPEMAP[DATATYPE::TRACKP]][key][i], match_aj_cent[TYPEMAP[DATATYPE::TRACKM]][key][i]));
+      
+      // pave text for hard & matched jets
+      dijetcore::DijetKey params = parsed_keys[key];
+      std::stringstream streamHard;
+      std::stringstream streamMatch;
+      std::stringstream streamLeadPt;
+      std::stringstream streamSubPt;
+      std::stringstream streamConstPt;
+      streamHard << params.lead_init_r;
+      streamMatch << params.lead_match_r;
+      streamLeadPt << params.lead_init_pt;
+      streamSubPt << params.sub_init_pt;
+      streamConstPt << params.lead_init_const_pt;
+      
+      TPaveText hardPave(0.65, 0.35, 0.88, 0.6, "NB NDC");
+      hardPave.SetFillStyle(0);
+      hardPave.SetBorderSize(0);
+      hardPave.AddText(dijetcore::MakeString("Au+Au, ", refcent_string[i]).c_str())->SetTextSize(0.038);
+      hardPave.AddText(dijetcore::MakeString("anti-k_{T}, R = ", streamHard.str()).c_str())->SetTextSize(0.038);
+      hardPave.AddText(dijetcore::MakeString("p_{T}^{hard const} > ", streamConstPt.str(), "GeV/c").c_str())->SetTextSize(0.038);
+      hardPave.AddText(dijetcore::MakeString("p_{T}^{lead} > ", streamLeadPt.str(), "GeV/c").c_str())->SetTextSize(0.038);
+      hardPave.AddText(dijetcore::MakeString("p_{T}^{sublead} > ", streamSubPt.str(), "GeV/c").c_str())->SetTextSize(0.038);
+      TPaveText matchPave(0.65, 0.45, 0.88, 0.6, "NB NDC");
+      matchPave.SetFillStyle(0);
+      matchPave.SetBorderSize(0);
+      matchPave.AddText(dijetcore::MakeString("Au+Au, ", refcent_string[i]).c_str())->SetTextSize(0.038);
+      matchPave.AddText(dijetcore::MakeString("anti-k_{T}, R = ", streamMatch.str()).c_str())->SetTextSize(0.038);
+      matchPave.AddText(dijetcore::MakeString("p_{T}^{hard const} > ", streamConstPt.str(), "GeV/c").c_str())->SetTextSize(0.038);
+      matchPave.AddText(dijetcore::MakeString("p_{T}^{match const} > 0.2 GeV/c").c_str())->SetTextSize(0.038);
+      
+      // print aj
+      AjPrintout(hard_aj_cent[auau_index][key][i], hard_aj_cent[pp_index][key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, hardPave, "Au+Au HT%", "p+p #oplus Au+Au MB",
+                hopts, copts, out_loc, "aj_hard", "", "A_{J}", "fraction");
+      AjPrintout(match_aj_cent[auau_index][key][i], match_aj_cent[pp_index][key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, matchPave, "Au+Au HT", "p+p #oplus Au+Au MB",
+                 hopts, copts, out_loc, "aj_match", "", "A_{J}", "fraction");
+      
+      // now print off-axis AJ with the matched
+      std::vector<TH1D*> off_axis_match_compare{match_aj_cent[auau_index][key][i], match_aj_cent[pp_index][key][i], off_axis_aj_cent[auau_index][key][i]};
+      std::vector<string> off_axis_match_string{"Au+Au", "embedded p+p", "embedded HC Au+Au"};
+      
+      
+      
+      // now we will compare all the other observables
+      Overlay1D(npart_cent[auau_index][key][i], npart_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "npart", "", "N_{part}", "fraction");
+      Overlay1D(hard_dphi_cent[auau_index][key][i], hard_dphi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_dphi", "", "d#phi", "fraction");
+      Overlay1D(match_dphi_cent[auau_index][key][i], match_dphi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_dphi", "", "d#phi", "fraction");
+      Overlay1D(lead_dr_cent[auau_index][key][i], lead_dr_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "lead_dr", "", "d#phi", "fraction");
+      Overlay1D(sub_dr_cent[auau_index][key][i], sub_dr_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "sub_dr", "", "d#phi", "fraction");
+      Overlay1D(lead_dpt_cent[auau_index][key][i], lead_dpt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "lead_dpt", "", "dp_{T}", "fraction");
+      Overlay1D(sub_dpt_cent[auau_index][key][i], sub_dpt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "sub_dpt", "", "dp_{T}", "fraction");
+      Overlay1D(lead_dpt_frac_cent[auau_index][key][i], lead_dpt_frac_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "lead_dpt_frac", "", "dp_{T}", "fraction");
+      Overlay1D(sub_dpt_frac_cent[auau_index][key][i], sub_dpt_frac_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "sub_dpt_frac", "", "dp_{T}", "fraction");
+      Overlay1D(hard_lead_eta_cent[auau_index][key][i], hard_lead_eta_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_eta", "", "#eta", "fraction");
+      Overlay1D(match_lead_eta_cent[auau_index][key][i], match_lead_eta_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_eta", "", "#eta", "fraction");
+      Overlay1D(hard_sub_eta_cent[auau_index][key][i], hard_sub_eta_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_eta", "", "#eta", "fraction");
+      Overlay1D(match_sub_eta_cent[auau_index][key][i], match_sub_eta_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_eta", "", "#eta", "fraction");
+      Overlay1D(hard_lead_phi_cent[auau_index][key][i], hard_lead_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_phi", "", "#eta", "fraction");
+      Overlay1D(match_lead_phi_cent[auau_index][key][i], match_lead_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_phi", "", "#eta", "fraction");
+      Overlay1D(hard_sub_phi_cent[auau_index][key][i], hard_sub_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_phi", "", "#eta", "fraction");
+      Overlay1D(match_sub_phi_cent[auau_index][key][i], match_sub_phi_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_phi", "", "#eta", "fraction");
+      Overlay1D(hard_lead_pt_cent[auau_index][key][i], hard_lead_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_pt", "", "#eta", "fraction");
+      Overlay1D(match_lead_pt_cent[auau_index][key][i], match_lead_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_pt", "", "#eta", "fraction");
+      Overlay1D(hard_sub_pt_cent[auau_index][key][i], hard_sub_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_pt", "", "#eta", "fraction");
+      Overlay1D(match_sub_pt_cent[auau_index][key][i], match_sub_pt_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_pt", "", "#eta", "fraction");
+      Overlay1D(hard_lead_const_cent[auau_index][key][i], hard_lead_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_const", "", "#eta", "fraction");
+      Overlay1D(match_lead_const_cent[auau_index][key][i], match_lead_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_const", "", "#eta", "fraction");
+      Overlay1D(hard_sub_const_cent[auau_index][key][i], hard_sub_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_const", "", "#eta", "fraction");
+      Overlay1D(match_sub_const_cent[auau_index][key][i], match_sub_const_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_const", "", "#eta", "fraction");
+      Overlay1D(hard_lead_rho_cent[auau_index][key][i], hard_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_rho", "", "#eta", "fraction");
+      Overlay1D(match_lead_rho_cent[auau_index][key][i], match_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_rho", "", "#eta", "fraction");
+      Overlay1D(hard_sub_rho_cent[auau_index][key][i], hard_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_rho", "", "#eta", "fraction");
+      Overlay1D(match_sub_rho_cent[auau_index][key][i], match_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_rho", "", "#eta", "fraction");
+      Overlay1D(hard_lead_sig_cent[auau_index][key][i], hard_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_lead_sig", "", "#eta", "fraction");
+      Overlay1D(match_lead_sig_cent[auau_index][key][i], match_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_lead_sig", "", "#eta", "fraction");
+      Overlay1D(hard_sub_sig_cent[auau_index][key][i], hard_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "hard_sub_sig", "", "#eta", "fraction");
+      Overlay1D(match_sub_sig_cent[auau_index][key][i], match_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded", hopts, copts, out_loc, "match_sub_sig", "", "#eta", "fraction");
+      
+    } // centrality
+    
+  } // key
+  
+  for (int cent = 0; cent < cent_boundaries.size(); ++cent) {
+    // make a directory for our grid outputs
+    string out_loc_grid = FLAGS_outputDir + "/grid_cent_" + refcent_string_fs[cent];
+    LOG(INFO) << "output directory: " << out_loc_grid;
+    // build output directory if it doesn't exist, using boost::filesystem
+    boost::filesystem::path dir_cent(out_loc_grid.c_str());
+    boost::filesystem::create_directories(dir_cent);
+    
+    // now build histograms
+    TH2D* p_values_hard = new TH2D(dijetcore::MakeString("p_values_hard_", cent).c_str(), ";R;p_{T}^{const}",
+                                   radii.size(), - 0.5, radii.size() - 0.5,
+                                   constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_hard = new TH2D(dijetcore::MakeString("ks_values_hard_", cent).c_str(), ";R;p_{T}^{const}",
+                                    radii.size(), - 0.5, radii.size() - 0.5,
+                                    constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* p_values_match = new TH2D(dijetcore::MakeString("p_values_match_", cent).c_str(), ";R;p_{T}^{const}",
+                                    radii.size(), - 0.5, radii.size() - 0.5,
+                                    constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_match = new TH2D(dijetcore::MakeString("ks_values_match_", cent).c_str(), ";R;p_{T}^{const}",
+                                     radii.size(), - 0.5, radii.size() - 0.5,
+                                     constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* p_values_bkg = new TH2D(dijetcore::MakeString("p_values_bkg_", cent).c_str(), ";R;p_{T}^{const}",
+                                  radii.size(), - 0.5, radii.size() - 0.5,
+                                  constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_bkg = new TH2D(dijetcore::MakeString("ks_values_bkg_", cent).c_str(), ";R;p_{T}^{const}",
+                                   radii.size(), - 0.5, radii.size() - 0.5,
+                                   constpt.size(), -0.5, constpt.size() - 0.5);
+    
+    TH2D* p_values_hard_error = new TH2D(dijetcore::MakeString("p_values_hard_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                         radii.size(), - 0.5, radii.size() - 0.5,
+                                         constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_hard_error = new TH2D(dijetcore::MakeString("ks_values_hard_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                          radii.size(), - 0.5, radii.size() - 0.5,
+                                          constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* p_values_match_error = new TH2D(dijetcore::MakeString("p_values_match_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                          radii.size(), - 0.5, radii.size() - 0.5,
+                                          constpt.size(), -0.5, constpt.size() - 0.5);
+    TH2D* ks_values_match_error = new TH2D(dijetcore::MakeString("ks_values_match_error_", cent).c_str(), ";R;p_{T}^{const}",
+                                           radii.size(), - 0.5, radii.size() - 0.5,
+                                           constpt.size(), -0.5, constpt.size() - 0.5);
+    
+    
+    for (int j = 0; j < radii_string.size(); ++j) {
+      p_values_hard->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_hard->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      p_values_match->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_match->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      p_values_bkg->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_bkg->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      p_values_hard_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_hard_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      p_values_match_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+      ks_values_match_error->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
     }
-  }
-  
-  // make a directory for our radius outputs
-  string out_loc = FLAGS_outputDir + "/change_radii";
-  
+    for (int j = 0; j < constpt_string.size(); ++j) {
+      p_values_hard->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_hard->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      p_values_match->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_match->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      p_values_bkg->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_bkg->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      p_values_hard_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_hard_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      p_values_match_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+      ks_values_match_error->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+    }
+    
+    TCanvas* c_hard = new TCanvas(dijetcore::MakeString("hard_canvas_", cent).c_str());
+    std::vector<std::vector<TPad*>> hard_pads = dijetcore::CanvasPartition(c_hard, radii.size(), constpt.size(), 0.10, 0.10, 0.05, 0.05);
+    
+    TCanvas* c_match = new TCanvas(dijetcore::MakeString("match_canvas_", cent).c_str());
+    std::vector<std::vector<TPad*>> matched_pads = dijetcore::CanvasPartition(c_match, radii.size(), constpt.size(), 0.10, 0.10, 0.05, 0.05);
+    
+    TCanvas* c_match_oa = new TCanvas(dijetcore::MakeString("match_canvas_oa_", cent).c_str());
+    std::vector<std::vector<TPad*>> matched_oa_pads = dijetcore::CanvasPartition(c_match_oa, radii.size(), constpt.size(), 0.10, 0.10, 0.05, 0.05);
+    for (int rad = 0; rad < radii.size(); ++rad) {
+      for (int pt = 0; pt < constpt.size(); ++pt) {
+        
+        int x_bin = p_values_hard->GetXaxis()->FindBin(rad);
+        int y_bin = p_values_hard->GetYaxis()->FindBin(pt);
+        string key = grid_keys[rad][pt];
+        dijetcore::DijetKey key_params = grid_key_params[rad][pt];
+        
+        TH1D* aj_hard_test = hard_aj_test_cent[auau_index][key][cent];
+        TH1D* aj_match_test = match_aj_test_cent[auau_index][key][cent];
+        
+        TH1D* aj_hard_pp_test = hard_aj_test_cent[pp_index][key][cent];
+        TH1D* aj_match_pp_test = match_aj_test_cent[pp_index][key][cent];
+        
+        TH1D* aj_hard = hard_aj_cent[auau_index][key][cent];
+        TH1D* aj_match = match_aj_cent[auau_index][key][cent];
+        
+        TH1D* aj_hard_pp = hard_aj_cent[pp_index][key][cent];
+        TH1D* aj_match_pp = match_aj_cent[pp_index][key][cent];
+        
+        TGraphErrors* hard_sys_error = systematic_errors_hard[key][cent];
+        TGraphErrors* match_sys_error = systematic_errors_match[key][cent];
+        
+        TH1D* aj_off_axis = off_axis_aj_cent[auau_index][key][cent];
+        TH1D* aj_off_axis_test = off_axis_aj_test_cent[auau_index][key][cent];
+        
+        // print
+        
+        c_hard->cd(0);
+        aj_hard->GetXaxis()->SetTitle(dijetcore::MakeString("R=", radii_string[rad], "   |A_{J}|").c_str());
+        aj_hard->GetXaxis()->SetTitleOffset(1.15);
+        aj_hard->GetYaxis()->SetTitle(dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt], "  fraction").c_str());
+        aj_hard->GetYaxis()->SetRangeUser(0.0, 0.25);
+        aj_hard->SetMarkerSize(0.2);
+        aj_hard_pp->SetMarkerSize(0.2);
+        hard_sys_error->SetFillColorAlpha(hard_aj_cent[pp_index][key][cent]->GetLineColor(), 0.4);
+        hard_sys_error->SetFillStyle(1001);
+        hard_sys_error->SetLineWidth(0);
+        hard_sys_error->SetMarkerSize(0);
+        TPad* hard_pad = hard_pads[rad][pt];
+        double scale_factor = hard_pads[0][0]->GetAbsHNDC()/hard_pad->GetAbsHNDC();
+        hard_pad->Draw();
+        hard_pad->SetFillStyle(4000);
+        hard_pad->SetFrameFillStyle(4000);
+        hard_pad->cd();
+        aj_hard->Draw();
+        aj_hard_pp->Draw("SAME");
+        hard_sys_error->Draw("9e2SAME");
+        
+        // draw the STAR Prelim
+        TLegend* leg1 = DrawPrelim(rad, pt, radii_string.size() - 1, constpt_string.size() -1, scale_factor);
+        leg1->AddEntry(aj_hard, "Au+Au HT", "p")->SetTextSize(.04 * scale_factor);
+        leg1->AddEntry(aj_hard_pp, "p+p HT #oplus Au+Au MB", "p")->SetTextSize(.04 * scale_factor);
+        leg1->Draw();
+        c_hard->cd(0);
+        
+        c_match->cd(0);
+        aj_match->GetXaxis()->SetTitle(dijetcore::MakeString("R=", radii_string[rad], "   |A_{J}|").c_str());
+        aj_match->GetXaxis()->SetTitleOffset(1.15);
+        aj_match->GetYaxis()->SetTitle(dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt], "  fraction").c_str());
+        aj_match->GetYaxis()->SetRangeUser(0.0, 0.25);
+        aj_match->SetMarkerSize(0.2);
+        aj_match_pp->SetMarkerSize(0.2);
+        match_sys_error->SetFillColorAlpha(match_aj_cent[pp_index][key][cent]->GetLineColor(), 0.4);
+        match_sys_error->SetFillStyle(1001);
+        match_sys_error->SetLineWidth(0);
+        match_sys_error->SetMarkerSize(0);
+        TPad* match_pad = matched_pads[rad][pt];
+        match_pad->SetFillStyle(4000);
+        match_pad->SetFrameFillStyle(4000);
+        match_pad->cd();
+        aj_match->Draw();
+        aj_match_pp->Draw("SAME");
+        match_sys_error->Draw("9e2SAME");
+        
+        // draw STAR prelim
+        TLegend* leg2 = DrawPrelim(rad, pt, radii_string.size() - 1, constpt_string.size() -1, scale_factor);
+        leg2->AddEntry(aj_match, "Au+Au HT", "p")->SetTextSize(.04 * scale_factor);
+        leg2->AddEntry(aj_match_pp, "p+p HT #oplus Au+Au MB", "p")->SetTextSize(.04 * scale_factor);
+        leg2->Draw();
+        c_match->cd(0);
+        
+        c_match_oa->cd(0);
+        aj_off_axis->SetMarkerSize(0.2);
+        aj_off_axis->SetMarkerStyle(23);
+        aj_off_axis->SetMarkerColor(kAzure);
+        aj_off_axis->SetLineColor(kAzure);
+        aj_off_axis->SetLineWidth(2);
+        TPad* match_oa_pad = matched_oa_pads[rad][pt];
+        match_oa_pad->SetFillStyle(4000);
+        match_oa_pad->SetFrameFillStyle(4000);
+        match_oa_pad->cd();
+        aj_match->Draw();
+        aj_match_pp->Draw("SAME");
+        aj_off_axis->Draw("SAME");
+        match_sys_error->Draw("9e2SAME");
+        
+        // draw STAR prelim
+        TLegend* leg3 = DrawPrelim(rad, pt, radii_string.size() - 1, constpt_string.size() -1, scale_factor);
+        leg3->AddEntry(aj_match, "Au+Au HT", "p")->SetTextSize(.04 * scale_factor);
+        leg3->AddEntry(aj_match_pp, "p+p HT #oplus Au+Au MB", "p")->SetTextSize(.04 * scale_factor);
+        leg3->AddEntry(aj_off_axis, "Au+Au HT #oplus Au+Au MB", "p")->SetTextSize(.04 * scale_factor);
+        leg3->Draw();
+        
+        c_match_oa->cd(0);
+        
+        std::vector<TH1D*> aj_hard_pp_var{hard_aj_cent[TYPEMAP[DATATYPE::TOWP]][key][cent], hard_aj_cent[TYPEMAP[DATATYPE::TOWM]][key][cent], hard_aj_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent], hard_aj_cent[TYPEMAP[DATATYPE::TRACKM]][key][cent]};
+        std::vector<TH1D*> aj_match_pp_var{match_aj_cent[TYPEMAP[DATATYPE::TOWP]][key][cent], match_aj_cent[TYPEMAP[DATATYPE::TOWM]][key][cent], match_aj_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent], match_aj_cent[TYPEMAP[DATATYPE::TRACKM]][key][cent]};
+        
+        std::vector<TH1D*> aj_hard_pp_var_test{hard_aj_test_cent[TYPEMAP[DATATYPE::TOWP]][key][cent], hard_aj_test_cent[TYPEMAP[DATATYPE::TOWM]][key][cent], hard_aj_test_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent], hard_aj_test_cent[TYPEMAP[DATATYPE::TRACKM]][key][cent]};
+        std::vector<TH1D*> aj_match_pp_var_test{match_aj_test_cent[TYPEMAP[DATATYPE::TOWP]][key][cent], match_aj_test_cent[TYPEMAP[DATATYPE::TOWM]][key][cent], match_aj_test_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent], match_aj_test_cent[TYPEMAP[DATATYPE::TRACKM]][key][cent]};
+        
+        double p_value_hard = aj_hard->Chi2Test(aj_hard_pp, "UU NORM");
+        double p_value_match = aj_match->Chi2Test(aj_match_pp, "UU NORM");
+        double p_value_bkg = aj_match->Chi2Test(aj_off_axis, "UU NORM");
+        double ks_value_hard = aj_hard_test->KolmogorovTest(aj_hard_pp_test);
+        double ks_value_match = aj_match_test->KolmogorovTest(aj_match_pp_test);
+        double ks_value_bkg = aj_match_test->KolmogorovTest(aj_off_axis_test);
+        
+        double max_hard_p_deviation = 0;
+        double max_match_p_deviation = 0;
+        double max_hard_ks_deviation = 0;
+        double max_match_ks_deviation = 0;
+        
+        for (int i = 0; i < aj_hard_pp_var.size(); ++i) {
+          double hard_p_deviation = aj_hard->Chi2Test(aj_hard_pp_var[i], "UU NORM");
+          double hard_ks_deviation = aj_hard_test->KolmogorovTest(aj_hard_pp_var_test[i]);
+          double match_p_deviation = aj_match->Chi2Test(aj_match_pp_var[i], "UU NORM");
+          double match_ks_deviation = aj_match_test->KolmogorovTest(aj_match_pp_var_test[i]);
+          
+          if (fabs(p_value_hard - hard_p_deviation) > max_hard_p_deviation)
+            max_hard_p_deviation = fabs(hard_p_deviation);
+          if (fabs(ks_value_hard - hard_ks_deviation) > max_hard_ks_deviation)
+            max_hard_ks_deviation = fabs(hard_ks_deviation);
+          if (fabs(p_value_match - match_p_deviation) > max_match_p_deviation)
+            max_match_p_deviation = fabs(match_p_deviation);
+          if (fabs(ks_value_match - match_ks_deviation) > max_match_ks_deviation)
+            max_match_ks_deviation = fabs(match_ks_deviation);
+          
+        }
+        
+        // set bins
+        p_values_hard->SetBinContent(x_bin, y_bin, p_value_hard);
+        p_values_match->SetBinContent(x_bin, y_bin, p_value_match);
+        p_values_bkg->SetBinContent(x_bin, y_bin, p_value_bkg);
+        ks_values_hard->SetBinContent(x_bin, y_bin, ks_value_hard);
+        ks_values_match->SetBinContent(x_bin, y_bin, ks_value_match);
+        ks_values_bkg->SetBinContent(x_bin, y_bin, ks_value_bkg);
+        p_values_hard_error->SetBinContent(x_bin, y_bin, max_hard_p_deviation);
+        p_values_match_error->SetBinContent(x_bin, y_bin, max_match_p_deviation);
+        ks_values_hard_error->SetBinContent(x_bin, y_bin, max_hard_ks_deviation);
+        ks_values_match_error->SetBinContent(x_bin, y_bin, max_match_ks_deviation);
+        
+      }
+    }
+    
+    Print2DSimple(p_values_hard, hopts, copts, out_loc_grid, "ajphard", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(p_values_match, hopts, copts, out_loc_grid, "ajpmatch", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(p_values_bkg, hopts, copts, out_loc_grid, "ajpbkg", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_hard, hopts, copts, out_loc_grid, "ajkshard", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_match, hopts, copts, out_loc_grid, "ajksmatch", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_bkg, hopts, copts, out_loc_grid, "ajksbkg", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    
+    Print2DSimple(p_values_hard_error, hopts, copts, out_loc_grid, "ajpharderror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(p_values_match_error, hopts, copts, out_loc_grid, "ajpmatcherror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_hard_error, hopts, copts, out_loc_grid, "ajksharderror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_values_match_error, hopts, copts, out_loc_grid, "ajksmatcherror", "", "R", "p_{T}^{const}", "TEXT COLZ");
+    
+    c_hard->SaveAs(dijetcore::MakeString(out_loc_grid, "/ajhardgrid.pdf").c_str());
+    c_match->SaveAs(dijetcore::MakeString(out_loc_grid, "/ajmatchgrid.pdf").c_str());
+    c_match_oa->SaveAs(dijetcore::MakeString(out_loc_grid, "/ajmatchgridwithoa.pdf").c_str());
+  } // centrality
   
   
   return 0;
 }
-

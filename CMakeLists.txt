@@ -16,6 +16,7 @@ set(CMAKE_BUILD_TYPE RELEASE)
 ## build options
 option(BUILD_SHARED_LIBS "Build libdijetcore.so" ON)
 option(BUILD_TEST "Build test suite binaries" OFF)
+option(BUILD_BINARIES "Build analysis binaries" ON)
 
 ## compiler & system checks
 include(cmake/SysCheck.cmake)

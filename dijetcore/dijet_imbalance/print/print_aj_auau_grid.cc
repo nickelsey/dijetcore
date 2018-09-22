@@ -17,7 +17,7 @@
 #include "TH3.h"
 #include "TStyle.h"
 
-#include <unordered_map>
+#include "dijetcore/lib/map.h"
 #include <string>
 
 // include boost for filesystem manipulation
@@ -31,6 +31,20 @@ DIJETCORE_DEFINE_string(outputDir, "results", "directory for output");
 DIJETCORE_DEFINE_string(radii, "0.2,0.25,0.3,0.35,0.4", "radii to put in grid");
 DIJETCORE_DEFINE_string(constPt, "1.0,1.5,2.0,2.5,3.0", "radii to put in grid");
 DIJETCORE_DEFINE_bool(useSingleCentrality, true, "do things in 3 centrality bins or 1");
+
+enum class DATATYPE {
+  AUAU = 0,
+  PP = 1,
+  TOWP = 2,
+  TOWM = 3,
+  TRACKP = 4,
+  TRACKM = 5,
+  SIZE = 6
+};
+
+const std::set<DATATYPE> data_types
+{DATATYPE::AUAU, DATATYPE::PP, DATATYPE::TOWP, DATATYPE::TOWM, DATATYPE::TRACKP, DATATYPE::TRACKM};
+
 
 // adds to the map all TTrees that conform to
 // the DijetWorker's naming convention
@@ -1437,7 +1451,7 @@ int main(int argc, char* argv[]) {
   }
   
   for (int cent = 0; cent < cent_boundaries.size(); ++cent) {
-    // make a directory for our radius outputs
+    // make a directory for our grid outputs
     string out_loc_grid = FLAGS_outputDir + "/grid_cent_" + std::to_string(cent);
     
     // build output directory if it doesn't exist, using boost::filesystem
