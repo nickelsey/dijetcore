@@ -225,6 +225,7 @@ int main(int argc, char* argv[]) {
   std::unordered_map<string, TH1D*> match_sub_sig;
 
   std::unordered_map<string, TH1D*> npart;
+  std::unordered_map<string, TH1D*> pthat;
   std::unordered_map<string, TH1D*> hard_dphi;
   std::unordered_map<string, TH1D*> match_dphi;
   std::unordered_map<string, TH1D*> lead_dr;
@@ -293,6 +294,7 @@ int main(int argc, char* argv[]) {
     
     // create readervalues for auau first
     dijetcore::unique_ptr<TTreeReaderValue<int>> nprt = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "npart");
+    dijetcore::unique_ptr<TTreeReaderValue<int>> ptht = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "pthat");
     dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jl = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jl");
     dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> js = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "js");
     dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jlm = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jlm");
@@ -365,6 +367,8 @@ int main(int argc, char* argv[]) {
     
     npart[key] = new TH1D(dijetcore::MakeString(hist_prefix, "npart").c_str(), "",
                                       100, 0, 1200);
+    pthat[key] = new TH1D(dijetcore::MakeString(hist_prefix, "pthat").c_str(), "",
+                          100, 0, 100);
     hard_dphi[key] = new TH1D(dijetcore::MakeString(hist_prefix, "harddphi").c_str(), "",
                                           50, 0, TMath::Pi());
     match_dphi[key] = new TH1D(dijetcore::MakeString(hist_prefix, "matchdphi").c_str(), "",
@@ -428,6 +432,7 @@ int main(int argc, char* argv[]) {
       match_sub_sig[key]->Fill(**jsmsig);
       
       npart[key]->Fill(**nprt);
+      pthat[key]->Fill(**ptht);
       hard_dphi[key]->Fill(fabs((*jl)->DeltaPhi(**js)));
       match_dphi[key]->Fill(fabs((*jlm)->DeltaPhi(**jsm)));
       lead_dr[key]->Fill((*jl)->DeltaR(**jlm));
@@ -445,39 +450,40 @@ int main(int argc, char* argv[]) {
     }
     
     // now we will compare all the other observables
-    PrettyPrint1D(npart[key], hopts, copts, "Au+Au",  out_loc, "npart", "", "N_{part}", "fraction");
-    PrettyPrint1D(hard_dphi[key], hopts, copts, "Au+Au",  out_loc, "hard_dphi", "", "d#phi", "fraction");
-    PrettyPrint1D(match_dphi[key], hopts, copts, "Au+Au",  out_loc, "match_dphi", "", "d#phi", "fraction");
-    PrettyPrint1D(lead_dr[key], hopts, copts, "Au+Au",  out_loc, "lead_dr", "", "d#phi", "fraction");
-    PrettyPrint1D(sub_dr[key], hopts, copts, "Au+Au",  out_loc, "sub_dr", "", "d#phi", "fraction");
-    PrettyPrint1D(lead_dpt[key], hopts, copts, "Au+Au",  out_loc, "lead_dpt", "", "dp_{T}", "fraction");
-    PrettyPrint1D(sub_dpt[key], hopts, copts, "Au+Au",  out_loc, "sub_dpt", "", "dp_{T}", "fraction");
-    PrettyPrint1D(lead_dpt_frac[key], hopts, copts, "Au+Au",  out_loc, "lead_dpt_frac", "", "dp_{T}", "fraction");
-    PrettyPrint1D(sub_dpt_frac[key], hopts, copts, "Au+Au",  out_loc, "sub_dpt_frac", "", "dp_{T}", "fraction");
-    PrettyPrint1D(hard_lead_eta[key], hopts, copts, "Au+Au",  out_loc, "hard_lead_eta", "", "#eta", "fraction");
-    PrettyPrint1D(match_lead_eta[key], hopts, copts, "Au+Au",  out_loc, "match_lead_eta", "", "#eta", "fraction");
-    PrettyPrint1D(hard_sub_eta[key], hopts, copts, "Au+Au",  out_loc, "hard_sub_eta", "", "#eta", "fraction");
-    PrettyPrint1D(match_sub_eta[key], hopts, copts, "Au+Au",  out_loc, "match_sub_eta", "", "#eta", "fraction");
-    PrettyPrint1D(hard_lead_phi[key], hopts, copts, "Au+Au",  out_loc, "hard_lead_phi", "", "#phi", "fraction");
-    PrettyPrint1D(match_lead_phi[key], hopts, copts, "Au+Au",  out_loc, "match_lead_phi", "", "#phi", "fraction");
-    PrettyPrint1D(hard_sub_phi[key], hopts, copts, "Au+Au",  out_loc, "hard_sub_phi", "", "#phi", "fraction");
-    PrettyPrint1D(match_sub_phi[key], hopts, copts, "Au+Au",  out_loc, "match_sub_phi", "", "#phi", "fraction");
-    PrettyPrint1D(hard_lead_pt[key], hopts, copts, "Au+Au",  out_loc, "hard_lead_pt", "", "p_{T}", "fraction");
-    PrettyPrint1D(match_lead_pt[key], hopts, copts, "Au+Au",  out_loc, "match_lead_pt", "", "p_{T}", "fraction");
-    PrettyPrint1D(hard_sub_pt[key], hopts, copts, "Au+Au",  out_loc, "hard_sub_pt", "", "p_{T}", "fraction");
-    PrettyPrint1D(match_sub_pt[key], hopts, copts, "Au+Au",  out_loc, "match_sub_pt", "", "p_{T}", "fraction");
-    PrettyPrint1D(hard_lead_const[key], hopts, copts, "Au+Au",  out_loc, "hard_lead_const", "", "N_{part}", "fraction");
-    PrettyPrint1D(match_lead_const[key], hopts, copts, "Au+Au",  out_loc, "match_lead_const", "", "N_{part}", "fraction");
-    PrettyPrint1D(hard_sub_const[key], hopts, copts, "Au+Au",  out_loc, "hard_sub_const", "", "N_{part}", "fraction");
-    PrettyPrint1D(match_sub_const[key], hopts, copts, "Au+Au",  out_loc, "match_sub_const", "", "N_{part}", "fraction");
-    PrettyPrint1D(hard_lead_rho[key], hopts, copts, "Au+Au",  out_loc, "hard_lead_rho", "", "rho", "fraction");
-    PrettyPrint1D(match_lead_rho[key], hopts, copts, "Au+Au",  out_loc, "match_lead_rho", "", "rho", "fraction");
-    PrettyPrint1D(hard_sub_rho[key], hopts, copts, "Au+Au",  out_loc, "hard_sub_rho", "", "rho", "fraction");
-    PrettyPrint1D(match_sub_rho[key], hopts, copts, "Au+Au",  out_loc, "match_sub_rho", "", "rho", "fraction");
-    PrettyPrint1D(hard_lead_sig[key], hopts, copts, "Au+Au",  out_loc, "hard_lead_sig", "", "sigma", "fraction");
-    PrettyPrint1D(match_lead_sig[key], hopts, copts, "Au+Au",  out_loc, "match_lead_sig", "", "sigma", "fraction");
-    PrettyPrint1D(hard_sub_sig[key], hopts, copts, "Au+Au",  out_loc, "hard_sub_sig", "", "sigma", "fraction");
-    PrettyPrint1D(match_sub_sig[key], hopts, copts, "Au+Au",  out_loc, "match_sub_sig", "", "sigma", "fraction");
+    PrettyPrint1D(npart[key], hopts, copts, "pythia",  out_loc, "npart", "", "N_{part}", "fraction");
+    PrettyPrint1D(pthat[key], hopts, copts, "pythia",  out_loc, "pthat", "", "N_{part}", "fraction");
+    PrettyPrint1D(hard_dphi[key], hopts, copts, "pythia",  out_loc, "hard_dphi", "", "d#phi", "fraction");
+    PrettyPrint1D(match_dphi[key], hopts, copts, "pythia",  out_loc, "match_dphi", "", "d#phi", "fraction");
+    PrettyPrint1D(lead_dr[key], hopts, copts, "pythia",  out_loc, "lead_dr", "", "d#phi", "fraction");
+    PrettyPrint1D(sub_dr[key], hopts, copts, "pythia",  out_loc, "sub_dr", "", "d#phi", "fraction");
+    PrettyPrint1D(lead_dpt[key], hopts, copts, "pythia",  out_loc, "lead_dpt", "", "dp_{T}", "fraction");
+    PrettyPrint1D(sub_dpt[key], hopts, copts, "pythia",  out_loc, "sub_dpt", "", "dp_{T}", "fraction");
+    PrettyPrint1D(lead_dpt_frac[key], hopts, copts, "pythia",  out_loc, "lead_dpt_frac", "", "dp_{T}", "fraction");
+    PrettyPrint1D(sub_dpt_frac[key], hopts, copts, "pythia",  out_loc, "sub_dpt_frac", "", "dp_{T}", "fraction");
+    PrettyPrint1D(hard_lead_eta[key], hopts, copts, "pythia",  out_loc, "hard_lead_eta", "", "#eta", "fraction");
+    PrettyPrint1D(match_lead_eta[key], hopts, copts, "pythia",  out_loc, "match_lead_eta", "", "#eta", "fraction");
+    PrettyPrint1D(hard_sub_eta[key], hopts, copts, "pythia",  out_loc, "hard_sub_eta", "", "#eta", "fraction");
+    PrettyPrint1D(match_sub_eta[key], hopts, copts, "pythia",  out_loc, "match_sub_eta", "", "#eta", "fraction");
+    PrettyPrint1D(hard_lead_phi[key], hopts, copts, "pythia",  out_loc, "hard_lead_phi", "", "#phi", "fraction");
+    PrettyPrint1D(match_lead_phi[key], hopts, copts, "pythia",  out_loc, "match_lead_phi", "", "#phi", "fraction");
+    PrettyPrint1D(hard_sub_phi[key], hopts, copts, "pythia",  out_loc, "hard_sub_phi", "", "#phi", "fraction");
+    PrettyPrint1D(match_sub_phi[key], hopts, copts, "pythia",  out_loc, "match_sub_phi", "", "#phi", "fraction");
+    PrettyPrint1D(hard_lead_pt[key], hopts, copts, "pythia",  out_loc, "hard_lead_pt", "", "p_{T}", "fraction");
+    PrettyPrint1D(match_lead_pt[key], hopts, copts, "pythia",  out_loc, "match_lead_pt", "", "p_{T}", "fraction");
+    PrettyPrint1D(hard_sub_pt[key], hopts, copts, "pythia",  out_loc, "hard_sub_pt", "", "p_{T}", "fraction");
+    PrettyPrint1D(match_sub_pt[key], hopts, copts, "pythia",  out_loc, "match_sub_pt", "", "p_{T}", "fraction");
+    PrettyPrint1D(hard_lead_const[key], hopts, copts, "pythia",  out_loc, "hard_lead_const", "", "N_{part}", "fraction");
+    PrettyPrint1D(match_lead_const[key], hopts, copts, "pythia",  out_loc, "match_lead_const", "", "N_{part}", "fraction");
+    PrettyPrint1D(hard_sub_const[key], hopts, copts, "pythia",  out_loc, "hard_sub_const", "", "N_{part}", "fraction");
+    PrettyPrint1D(match_sub_const[key], hopts, copts, "pythia",  out_loc, "match_sub_const", "", "N_{part}", "fraction");
+    PrettyPrint1D(hard_lead_rho[key], hopts, copts, "pythia",  out_loc, "hard_lead_rho", "", "rho", "fraction");
+    PrettyPrint1D(match_lead_rho[key], hopts, copts, "pythia",  out_loc, "match_lead_rho", "", "rho", "fraction");
+    PrettyPrint1D(hard_sub_rho[key], hopts, copts, "pythia",  out_loc, "hard_sub_rho", "", "rho", "fraction");
+    PrettyPrint1D(match_sub_rho[key], hopts, copts, "pythia",  out_loc, "match_sub_rho", "", "rho", "fraction");
+    PrettyPrint1D(hard_lead_sig[key], hopts, copts, "pythia",  out_loc, "hard_lead_sig", "", "sigma", "fraction");
+    PrettyPrint1D(match_lead_sig[key], hopts, copts, "pythia",  out_loc, "match_lead_sig", "", "sigma", "fraction");
+    PrettyPrint1D(hard_sub_sig[key], hopts, copts, "pythia",  out_loc, "hard_sub_sig", "", "sigma", "fraction");
+    PrettyPrint1D(match_sub_sig[key], hopts, copts, "pythia",  out_loc, "match_sub_sig", "", "sigma", "fraction");
     
   } // key
 

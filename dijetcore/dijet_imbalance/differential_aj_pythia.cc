@@ -156,6 +156,7 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, double> reactionplane_dict;
   std::unordered_map<std::string, int> nglobal_dict;
   std::unordered_map<std::string, int> npart_dict;
+  std::unordered_map<std::string, double> pthat_dict;
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_dict;
   std::unordered_map<std::string, TH1D*> lead_hard_jet_const_pt_dict;
   std::unordered_map<std::string, TH1D*> lead_hard_jet_const_dr_dict;
@@ -208,6 +209,7 @@ int main(int argc, char* argv[]) {
     reactionplane_dict.insert({key, 0});
     nglobal_dict.insert({key, 0});
     npart_dict.insert({key, 0});
+    pthat_dict.insert({key, 0});
     lead_hard_jet_dict.insert({key, TLorentzVector()});
     lead_hard_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlconstpt").c_str(),
                                                       "", 90, 0, 30)});
@@ -269,6 +271,7 @@ int main(int argc, char* argv[]) {
     tmp->Branch("rp", &reactionplane_dict[key]);
     tmp->Branch("nglobal", &nglobal_dict[key]);
     tmp->Branch("npart", &npart_dict[key]);
+    tmp->Branch("pthat", &pthat_dict[key]);
     tmp->Branch("jl", &lead_hard_jet_dict[key]);
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
     tmp->Branch("jlm", &lead_match_jet_dict[key]);
@@ -353,6 +356,7 @@ int main(int argc, char* argv[]) {
       if (out.found_match) {
         // fill all branches for that key
         npart_dict[key] = particles.size();
+        pthat_dict[key] = pythia.info.pTHat();
         
         // set the four jets
         // set the four jets
