@@ -294,7 +294,7 @@ int main(int argc, char* argv[]) {
     
     // create readervalues for auau first
     dijetcore::unique_ptr<TTreeReaderValue<int>> nprt = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "npart");
-    dijetcore::unique_ptr<TTreeReaderValue<int>> ptht = dijetcore::make_unique<TTreeReaderValue<int>>(reader, "pthat");
+    dijetcore::unique_ptr<TTreeReaderValue<double>> ptht = dijetcore::make_unique<TTreeReaderValue<double>>(reader, "pthat");
     dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jl = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jl");
     dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> js = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "js");
     dijetcore::unique_ptr<TTreeReaderValue<TLorentzVector>> jlm = dijetcore::make_unique<TTreeReaderValue<TLorentzVector>>(reader, "jlm");
@@ -496,10 +496,22 @@ int main(int argc, char* argv[]) {
   TH2D* mean_hard_pt = new TH2D("mean_hard_pt", ";R;p_{T}^{const}",
                                 radii.size(), - 0.5, radii.size() - 0.5,
                                 constpt.size(), -0.5, constpt.size() - 0.5);
-  for (int j = 0; j < radii_string.size(); ++j)
+  TH2D* mean_match_pt = new TH2D("mean_match_pt", ";R;p_{T}^{const}",
+                                 radii.size(), - 0.5, radii.size() - 0.5,
+                                 constpt.size(), -0.5, constpt.size() - 0.5);
+  TH2D* mean_pt_hat = new TH2D("mean_pt_hat", ";R;p_{T}^{const}",
+                               radii.size(), - 0.5, radii.size() - 0.5,
+                               constpt.size(), -0.5, constpt.size() - 0.5);
+  for (int j = 0; j < radii_string.size(); ++j) {
     mean_hard_pt->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
-  for (int j = 0; j < constpt_string.size(); ++j)
+    mean_match_pt->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+    mean_pt_hat->GetXaxis()->SetBinLabel(j+1, radii_string[j].c_str());
+  }
+  for (int j = 0; j < constpt_string.size(); ++j) {
     mean_hard_pt->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+    mean_match_pt->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+    mean_pt_hat->GetYaxis()->SetBinLabel(j+1, constpt_string[j].c_str());
+  }
   
   for (int rad = 0; rad < radii.size(); ++rad) {
     for (int pt = 0; pt < constpt.size(); ++pt) {
@@ -509,11 +521,17 @@ int main(int argc, char* argv[]) {
       string key = grid_keys[rad][pt];
       dijetcore::DijetKey key_params = grid_key_params[rad][pt];
       
-      TH1D* hist = hard_lead_pt[key];
-      mean_hard_pt->SetBinContent(x_bin, y_bin, hist->GetMean());
+      TH1D* hist_hard = hard_lead_pt[key];
+      mean_hard_pt->SetBinContent(x_bin, y_bin, hist_hard->GetMean());
+      TH1D* hist_match = match_lead_pt[key];
+      mean_match_pt->SetBinContent(x_bin, y_bin, hist_match->GetMean());
+      TH1D* hist_pt = pthat[key];
+      mean_pt_hat->SetBinContent(x_bin, y_bin, hist_pt->GetMean());
     }
   }
-  Print2DSimple(mean_hard_pt, hopts, copts, out_loc_grid, "mean_pt", "", "R", "p_{T}^{const}", "TEXT COLZ");
+  Print2DSimple(mean_hard_pt, hopts, copts, out_loc_grid, "mean_pt_hard", "", "R", "p_{T}^{const}", "TEXT COLZ");
+  Print2DSimple(mean_match_pt, hopts, copts, out_loc_grid, "mean_pt_match", "", "R", "p_{T}^{const}", "TEXT COLZ");
+  Print2DSimple(mean_pt_hat, hopts, copts, out_loc_grid, "mean_pt_hat", "", "R", "p_{T}^{const}", "TEXT COLZ");
  
   return 0;
 }

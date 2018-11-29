@@ -220,8 +220,8 @@ void AjPrintout(H* h1,
   if (leg != nullptr) {
     leg->SetHeader(legend_title.c_str());
     leg->SetTextFont(62);
-    leg->AddEntry(h1, h1_title.c_str(), "p")->SetTextSize(.04);
-    leg->AddEntry(h2, h2_title.c_str(), "p")->SetTextSize(.04);
+    leg->AddEntry(h1, h1_title.c_str(), "p")->SetTextSize(.035);
+    leg->AddEntry(h2, h2_title.c_str(), "p")->SetTextSize(.035);
     leg->Draw();
   }
   
@@ -1158,7 +1158,7 @@ int main(int argc, char* argv[]) {
       streamSubPt << params.sub_init_pt;
       streamConstPt << params.lead_init_const_pt;
       
-      TPaveText hardPave(0.65, 0.35, 0.88, 0.6, "NB NDC");
+      TPaveText hardPave(0.68, 0.3, 0.88, 0.6, "NB NDC");
       hardPave.SetFillStyle(0);
       hardPave.SetBorderSize(0);
       hardPave.AddText(dijetcore::MakeString("Au+Au, ", refcent_string[i]).c_str())->SetTextSize(0.038);
@@ -1166,7 +1166,7 @@ int main(int argc, char* argv[]) {
       hardPave.AddText(dijetcore::MakeString("p_{T}^{hard const} > ", streamConstPt.str(), "GeV/c").c_str())->SetTextSize(0.038);
       hardPave.AddText(dijetcore::MakeString("p_{T}^{lead} > ", streamLeadPt.str(), "GeV/c").c_str())->SetTextSize(0.038);
       hardPave.AddText(dijetcore::MakeString("p_{T}^{sublead} > ", streamSubPt.str(), "GeV/c").c_str())->SetTextSize(0.038);
-      TPaveText matchPave(0.65, 0.45, 0.88, 0.6, "NB NDC");
+      TPaveText matchPave(0.65, 0.3, 0.88, 0.6, "NB NDC");
       matchPave.SetFillStyle(0);
       matchPave.SetBorderSize(0);
       matchPave.AddText(dijetcore::MakeString("Au+Au, ", refcent_string[i]).c_str())->SetTextSize(0.038);
@@ -1175,9 +1175,9 @@ int main(int argc, char* argv[]) {
       matchPave.AddText(dijetcore::MakeString("p_{T}^{match const} > 0.2 GeV/c").c_str())->SetTextSize(0.038);
       
       // print aj
-      AjPrintout(hard_aj_cent[auau_index][key][i], hard_aj_cent[pp_index][key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, hardPave, "Au+Au HT%", "p+p #oplus Au+Au MB",
+      AjPrintout(hard_aj_cent[auau_index][key][i], hard_aj_cent[pp_index][key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, hardPave, "Au+Au HT", "p+p HT #oplus Au+Au MB",
                 hopts, copts, out_loc, "aj_hard", "", "A_{J}", "fraction");
-      AjPrintout(match_aj_cent[auau_index][key][i], match_aj_cent[pp_index][key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, matchPave, "Au+Au HT", "p+p #oplus Au+Au MB",
+      AjPrintout(match_aj_cent[auau_index][key][i], match_aj_cent[pp_index][key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, matchPave, "Au+Au HT", "p+p HT #oplus Au+Au MB",
                  hopts, copts, out_loc, "aj_match", "", "A_{J}", "fraction");
       
       // now print off-axis AJ with the matched
