@@ -708,13 +708,13 @@ int main(int argc, char* argv[]) {
     auau_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchsubpt").c_str(),
                                       "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
     auau_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardaj").c_str(),
-                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+                                 "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     auau_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchaj").c_str(),
-                                  "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+                                  "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     auau_hard_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardajtest").c_str(),
-                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+                                 "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
     auau_match_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaumatchajtest").c_str(),
-                                  "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+                                  "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
     auau_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "auaudphi").c_str(),
                               "d#phi", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 2*TMath::Pi());
     
@@ -727,13 +727,13 @@ int main(int argc, char* argv[]) {
     pp_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchsubpt").c_str(),
                                       "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
     pp_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardaj").c_str(),
-                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+                                 "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     pp_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchaj").c_str(),
-                                  "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+                                  "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     pp_hard_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "pphardajtest").c_str(),
-                               "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+                               "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
     pp_match_aj_test[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppmatchajtest").c_str(),
-                                "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
+                                "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000, 0, 0.9);
     pp_dphi[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdphi").c_str(),
                               "d#phi", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 2*TMath::Pi());
     
@@ -746,18 +746,18 @@ int main(int argc, char* argv[]) {
     pp_only_match_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchsubpt").c_str(), "",
                                     cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
     pp_only_hard_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlyhardaj").c_str(),
-                               "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+                               "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     pp_only_match_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "pponlymatchaj").c_str(),
-                                "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+                                "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     
     pp_hard_lead_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhard").c_str(),
-                                   "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+                                   "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
     pp_hard_sub_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhard").c_str(),
-                               "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+                               "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
     pp_match_lead_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadmatch").c_str(),
-                                 "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+                                 "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
     pp_match_sub_dpt[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatch").c_str(),
-                                "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
+                                "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 30);
     
     pp_hard_lead_pp_3d[key] = new TH3D(dijetcore::MakeString(key_prefix, "ppleadhardpt3d").c_str(), "",
                                        cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
@@ -780,13 +780,13 @@ int main(int argc, char* argv[]) {
                                                2, -0.5, 1.5);
     
     pp_hard_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadhardfrac").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
+                                     "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     pp_hard_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubhardfrac").c_str(),
-                                    "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
+                                    "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     pp_match_lead_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptleadmatchfrac").c_str(),
-                                      "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
+                                      "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     pp_match_sub_dpt_frac[key] = new TH2D(dijetcore::MakeString(key_prefix, "ppdptsubmatchfrac").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
+                                     "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 20, 0, 1.01);
     
     
     
@@ -795,7 +795,7 @@ int main(int argc, char* argv[]) {
     auau_off_axis_sub_pt[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxissubpt").c_str(),
                                          "p_{T}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
     auau_off_axis_aj[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauoffaxisaj").c_str(),
-                                     "A_{J}", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
+                                     "|A_{J}|", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 30, 0, 0.9);
     
     auau_hard_lead_const[key] = new TH2D(dijetcore::MakeString(key_prefix, "auauhardleadconst").c_str(),
                                          "", cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 100, 0, 100);
@@ -1301,11 +1301,11 @@ int main(int argc, char* argv[]) {
     Overlay1D(auau_npart_cent[key], refcent_string, hopts, copts, out_loc, "auau_npart_cent",
               "", "N_{part}", "fraction", "Centrality");
     Overlay1D(auau_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_aj",
-              "", "A_{J}", "fraction", "Centrality");
+              "", "|A_{J}|", "fraction", "Centrality");
     Overlay1D(auau_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_aj",
-              "", "A_{J}", "fraction", "Centrality");
+              "", "|A_{J}|", "fraction", "Centrality");
     Overlay1D(auau_off_axis_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_aj",
-              "", "A_{J}", "fraction", "Centrality");
+              "", "|A_{J}|", "fraction", "Centrality");
     Overlay1D(auau_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_pt",
               "", "p_{T}", "fraction", "Centrality");
     Overlay1D(auau_match_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_pt",
@@ -1322,9 +1322,9 @@ int main(int argc, char* argv[]) {
     Overlay1D(pp_npart_cent[key], refcent_string, hopts, copts, out_loc, "pp_npart_cent",
               "", "N_{part}", "fraction", "Centrality");
     Overlay1D(pp_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_aj",
-              "", "A_{J}", "fraction", "Centrality");
+              "", "|A_{J}|", "fraction", "Centrality");
     Overlay1D(pp_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_aj",
-              "", "A_{J}", "fraction", "Centrality");
+              "", "|A_{J}|", "fraction", "Centrality");
     Overlay1D(pp_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_pt",
               "", "p_{T}", "fraction", "Centrality");
     Overlay1D(pp_match_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_pt",
@@ -1416,7 +1416,7 @@ int main(int argc, char* argv[]) {
       Print2DSimple(pp_match_lead_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppleadmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
       Print2DSimple(pp_match_sub_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppsubmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
       
-      Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj_with_off_axis", "", "A_{J}", "fraction");
+      Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj_with_off_axis", "", "|A_{J}|", "fraction");
       
       Overlay1D(pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "tow",
                 "", "AJ", "fraction");
@@ -1433,9 +1433,9 @@ int main(int argc, char* argv[]) {
                                               pp_match_aj_track_p_cent[key][i], pp_match_aj_track_m_cent[key][i]));
       
       Overlay1D(auau_hard_aj_cent[key][i], pp_hard_aj_cent[key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, "AuAu hard A_{J}", "PP hard A_{J}",
-                "", hopts, copts, out_loc_cent, "aj_hard", "", "A_{J}", "fraction");
+                "", hopts, copts, out_loc_cent, "aj_hard", "", "|A_{J}|", "fraction");
       Overlay1D(auau_match_aj_cent[key][i], pp_match_aj_cent[key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, "AuAu matched A_{J}", "PP matched A_{J}",
-                "systematics", hopts, copts, out_loc_cent, "aj_match", "", "A_{J}", "fraction");
+                "systematics", hopts, copts, out_loc_cent, "aj_match", "", "|A_{J}|", "fraction");
       
       Overlay1D(pp_hard_lead_dpt_cent[key][i], pp_hard_sub_dpt_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt",
                 "", "dp_{T}", "fraction");
