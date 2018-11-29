@@ -1097,7 +1097,7 @@ int main(int argc, char* argv[]) {
       
       if (auau_off_axis_present) {
         Overlay1D(off_axis_aj_cent[data_index][key], refcent_string, hopts, copts, out_loc, "off_axis_aj",
-                  "", "A_{J}", "fraction", "Centrality");
+                  "", "|A_{J}|", "fraction", "Centrality");
         Overlay1D(off_axis_rho_cent[data_index][key], refcent_string, hopts, copts, out_loc, "off_axis_rho",
                   "", "rho", "fraction", "Centrality");
         Overlay1D(off_axis_sig_cent[data_index][key], refcent_string, hopts, copts, out_loc, "off_axis_sig",
@@ -1105,9 +1105,9 @@ int main(int argc, char* argv[]) {
       }
       if (pp_only_present) {
         Overlay1D(hard_pp_only_aj_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_aj",
-                  "", "A_{J}", "fraction", "Centrality");
+                  "", "|A_{J}|", "fraction", "Centrality");
         Overlay1D(match_pp_only_aj_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_match_aj",
-                  "", "A_{J}", "fraction", "Centrality");
+                  "", "|A_{J}|", "fraction", "Centrality");
         Overlay1D(hard_lead_pp_dpt_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_lead_dpt",
                   "", "dp_{T}", "fraction", "Centrality");
         Overlay1D(hard_sub_pp_dpt_cent[data_index][key], refcent_string, hopts, copts, out_loc, "pp_only_hard_sub_dpt",
@@ -1176,9 +1176,9 @@ int main(int argc, char* argv[]) {
       
       // print aj
       AjPrintout(hard_aj_cent[auau_index][key][i], hard_aj_cent[pp_index][key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, hardPave, "Au+Au HT", "p+p HT #oplus Au+Au MB",
-                hopts, copts, out_loc, "aj_hard", "", "A_{J}", "fraction");
+                hopts, copts, out_loc, "aj_hard", "", "|A_{J}|", "fraction");
       AjPrintout(match_aj_cent[auau_index][key][i], match_aj_cent[pp_index][key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, matchPave, "Au+Au HT", "p+p HT #oplus Au+Au MB",
-                 hopts, copts, out_loc, "aj_match", "", "A_{J}", "fraction");
+                 hopts, copts, out_loc, "aj_match", "", "|A_{J}|", "fraction");
       
       // now print off-axis AJ with the matched
       std::vector<TH1D*> off_axis_match_compare{match_aj_cent[auau_index][key][i], match_aj_cent[pp_index][key][i], off_axis_aj_cent[auau_index][key][i]};
