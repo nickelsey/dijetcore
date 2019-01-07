@@ -1299,107 +1299,107 @@ int main(int argc, char* argv[]) {
     }
     
     Overlay1D(auau_npart_cent[key], refcent_string, hopts, copts, out_loc, "auau_npart_cent",
-              "", "N_{part}", "fraction", "Centrality");
+              "", "N_{part}", "event fraction", "Centrality");
     Overlay1D(auau_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_aj",
-              "", "|A_{J}|", "fraction", "Centrality");
+              "", "|A_{J}|", "event fraction", "Centrality");
     Overlay1D(auau_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_aj",
-              "", "|A_{J}|", "fraction", "Centrality");
+              "", "|A_{J}|", "event fraction", "Centrality");
     Overlay1D(auau_off_axis_aj_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_aj",
-              "", "|A_{J}|", "fraction", "Centrality");
+              "", "|A_{J}|", "event fraction", "Centrality");
     Overlay1D(auau_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(auau_match_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(auau_hard_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(auau_match_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(auau_off_axis_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(auau_off_axis_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     
     Overlay1D(pp_npart_cent[key], refcent_string, hopts, copts, out_loc, "pp_npart_cent",
-              "", "N_{part}", "fraction", "Centrality");
+              "", "N_{part}", "event fraction", "Centrality");
     Overlay1D(pp_hard_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_aj",
-              "", "|A_{J}|", "fraction", "Centrality");
+              "", "|A_{J}|", "event fraction", "Centrality");
     Overlay1D(pp_match_aj_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_aj",
-              "", "|A_{J}|", "fraction", "Centrality");
+              "", "|A_{J}|", "event fraction", "Centrality");
     Overlay1D(pp_hard_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(pp_match_lead_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(pp_hard_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     Overlay1D(pp_match_sub_pt_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_pt",
-              "", "p_{T}", "fraction", "Centrality");
+              "", "p_{T}", "event fraction", "Centrality");
     
     Overlay1D(auau_hard_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(auau_hard_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(auau_match_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(auau_match_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(auau_off_axis_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(auau_off_axis_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     
     Overlay1D(pp_hard_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(pp_hard_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(pp_match_lead_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     Overlay1D(pp_match_sub_const_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_const",
-              "", "N_{constituents}", "fraction");
+              "", "N_{constituents}", "event fraction");
     
     Overlay1D(auau_hard_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(auau_hard_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(auau_match_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(auau_match_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     
     Overlay1D(pp_hard_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(pp_hard_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(pp_match_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(pp_match_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     
     Overlay1D(auau_hard_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_lead_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     Overlay1D(auau_hard_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_hard_sub_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     Overlay1D(auau_match_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_lead_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     Overlay1D(auau_match_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_match_sub_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     
     Overlay1D(pp_hard_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_lead_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     Overlay1D(pp_hard_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_hard_sub_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     Overlay1D(pp_match_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_lead_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     Overlay1D(pp_match_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "pp_match_sub_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     
     Overlay1D(auau_off_axis_lead_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(auau_off_axis_sub_rho_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_sub_rho",
-              "", "#rho", "fraction");
+              "", "#rho", "event fraction");
     Overlay1D(auau_off_axis_lead_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_lead_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     Overlay1D(auau_off_axis_sub_sig_cent[key], refcent_string, hopts, copts, out_loc, "auau_off_axis_sub_sig",
-              "", "#sigma", "fraction");
+              "", "#sigma", "event fraction");
     
     for (int i = 0; i < auau_hard_aj_cent[key].size(); ++i) {
       std::vector<string> cent_name{"AuAu", "pp"};
@@ -1416,16 +1416,16 @@ int main(int argc, char* argv[]) {
       Print2DSimple(pp_match_lead_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppleadmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
       Print2DSimple(pp_match_sub_pp_3d_cent[key][i], hopts, coptslogz, out_loc_cent, "ppsubmatchpt2d", "", "pp p_{T}", "embedded pp p_{T}");
       
-      Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj_with_off_axis", "", "|A_{J}|", "fraction");
+      Overlay1D(cent_list_match, cent_name_match, hopts, copts, out_loc_cent, "match_aj_with_off_axis", "", "|A_{J}|", "event fraction");
       
       Overlay1D(pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "tow",
-                "", "AJ", "fraction");
+                "", "AJ", "event fraction");
       Overlay1D(pp_hard_aj_track_p_cent[key][i], pp_hard_aj_track_m_cent[key][i], "pp track_p", "pp track_m", hopts, copts, out_loc_cent, "track",
-                "", "AJ", "fraction");
+                "", "AJ", "event fraction");
       Overlay1D(pp_match_aj_tow_p_cent[key][i], pp_match_aj_tow_m_cent[key][i], "pp tow_p", "pp tow_m", hopts, copts, out_loc_cent, "towmatch",
-                "", "AJ", "fraction");
+                "", "AJ", "event fraction");
       Overlay1D(pp_match_aj_track_p_cent[key][i], pp_match_aj_track_m_cent[key][i], "pp track_p", "pp track_m", hopts, copts, out_loc_cent, "trackmatch",
-                "", "AJ", "fraction");
+                "", "AJ", "event fraction");
       
       systematic_errors_hard[key].push_back( GetSystematic(pp_hard_aj_cent[key][i], pp_hard_aj_tow_p_cent[key][i], pp_hard_aj_tow_m_cent[key][i],
                                              pp_hard_aj_track_p_cent[key][i], pp_hard_aj_track_m_cent[key][i]));
@@ -1433,20 +1433,22 @@ int main(int argc, char* argv[]) {
                                               pp_match_aj_track_p_cent[key][i], pp_match_aj_track_m_cent[key][i]));
       
       Overlay1D(auau_hard_aj_cent[key][i], pp_hard_aj_cent[key][i], systematic_errors_hard[key][i], 0.0, 0.25, 0.0, 0.9, "AuAu hard A_{J}", "PP hard A_{J}",
-                "", hopts, copts, out_loc_cent, "aj_hard", "", "|A_{J}|", "fraction");
+                "", hopts, copts, out_loc_cent, "aj_hard", "", "|A_{J}|", "event fraction");
       Overlay1D(auau_match_aj_cent[key][i], pp_match_aj_cent[key][i], systematic_errors_match[key][i], 0.0, 0.3, 0.0, 0.9, "AuAu matched A_{J}", "PP matched A_{J}",
-                "systematics", hopts, copts, out_loc_cent, "aj_match", "", "|A_{J}|", "fraction");
+                "systematics", hopts, copts, out_loc_cent, "aj_match", "", "|A_{J}|", "event fraction");
+      Overlay1D(auau_match_aj_cent[key][i], auau_off_axis_aj_cent[key][i], 0.0, 0.3, 0.0, 0.9, "AuAu matched A_{J}", "AuAu HC embedded A_{J}",
+                hopts, copts, out_loc_cent, "aj_match", "", "|A_{J}|", "event fraction");
       
       Overlay1D(pp_hard_lead_dpt_cent[key][i], pp_hard_sub_dpt_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt",
-                "", "dp_{T}", "fraction");
+                "", "dp_{T}", "event fraction");
       Overlay1D(pp_hard_lead_dpt_frac_cent[key][i], pp_hard_sub_dpt_frac_cent[key][i], "leading jet", "subleading jet", hopts, copts, out_loc_cent, "pp_dpt_frac",
-                "", "dp_{T}/p_{T}", "fraction");
+                "", "dp_{T}/p_{T}", "event fraction");
       
       // print the fractions of successfully matched jets from embedded pp -> pp
       PrettyPrint1D(pp_lead_hard_match_fraction_cent[key][i], hopts, copts, "", out_loc_cent, "leadhardmatchingfraction", "no match / match",
-                    "fraction", "");
+                    "event fraction", "");
       PrettyPrint1D(pp_sub_hard_match_fraction_cent[key][i], hopts, copts, "", out_loc_cent, "leadsubmatchingfraction", "no match / match",
-                    "fraction", "");
+                    "event fraction", "");
     }
   }
   
