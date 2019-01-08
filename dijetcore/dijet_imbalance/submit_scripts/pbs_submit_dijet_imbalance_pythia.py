@@ -83,7 +83,7 @@ def main(args) :
   
   ## some paths
   execpath = os.getcwd()
-  executable = './bin/differential_aj_pythia'
+  executable = './bin/dijet_imbalance/differential_aj_pythia'
   ## find the qwrap file
   qwrap = execpath + '/submit/qwrap.sh'
   

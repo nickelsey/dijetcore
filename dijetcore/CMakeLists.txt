@@ -16,6 +16,9 @@ add_subdirectory(proto)
 add_subdirectory(worker)
 add_subdirectory(dijet_imbalance)
 add_subdirectory(resources)
+if (BUILD_DATA_QA_BINARIES)
+  add_subdirectory(data)
+endif(BUILD_DATA_QA_BINARIES)
 
 ## compile libraries
 
@@ -25,10 +28,11 @@ if (TARGET dijetcore_proto)
   target_link_libraries(dijetcore PRIVATE dijetcore_proto)
 endif(TARGET dijetcore_proto)
 target_include_directories(dijetcore INTERFACE $<INSTALL_INTERFACE:include>)
-target_compile_options(dijetcore INTERFACE "--std=c++11")
+target_compile_options(dijetcore INTERFACE "--std=c++14")
 install(TARGETS dijetcore EXPORT DCTargets DESTINATION lib)
 link_directories(${CMAKE_INSTALL_PREFIX}/lib)
 
+### declare libraries
 set(DC_LIBS dijetcore)
 if (TARGET dijetcore_proto)
   set(DC_LIBS ${DC_LIBS} dijetcore_proto)
@@ -38,6 +42,13 @@ endif(TARGET dijetcore_proto)
 if (BUILD_BINARIES)
   foreach(bin_src ${DC_BINARY_SRCS})
     get_filename_component(bin_name ${bin_src} NAME_WE)
+
+    ### extract the directory
+    get_filename_component(dir_name ${bin_src} DIRECTORY)
+    ## extract directory relative to dijetcore source structure
+    string(REGEX MATCH "${CMAKE_SOURCE_DIR}/dijetcore/([^ ]*)" TMP_PATH ${dir_name})
+    set(bin_path ${CMAKE_MATCH_1})
+
     add_executable(${bin_name} "${bin_src}")
     add_dependencies(${bin_name} ${DC_LIBS})
     target_link_libraries(${bin_name} ${DC_LIBS}
@@ -46,7 +57,7 @@ if (BUILD_BINARIES)
       target_compile_features(${bin_name} PRIVATE cxx_range_for)
     endif()
     add_test(NAME ${bin_name} COMMAND $<TARGET_FILE:${bin_name}>)
-    install(TARGETS ${bin_name} DESTINATION bin)
+    install(TARGETS ${bin_name} DESTINATION bin/${bin_path})
   endforeach()
 endif()
 
