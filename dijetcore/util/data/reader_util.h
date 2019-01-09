@@ -1,5 +1,5 @@
-#ifndef DIJETCORE_UTIL_DATA_READER_UTIL_HH
-#define DIJETCORE_UTIL_DATA_READER_UTIL_HH
+#ifndef DIJETCORE_UTIL_DATA_READER_UTIL_H
+#define DIJETCORE_UTIL_DATA_READER_UTIL_H
 
 #include <string>
 #include <set>
@@ -391,4 +391,4 @@ namespace dijetcore {
   
 } // namespace dijetcore
 
-#endif // DIJETCORE_UTIL_DATA_READER_UTIL_HH
+#endif // DIJETCORE_UTIL_DATA_READER_UTIL_H

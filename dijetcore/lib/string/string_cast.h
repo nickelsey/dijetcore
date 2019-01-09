@@ -1,5 +1,5 @@
-#ifndef DIJETCORE_LIB_STRING_STRING_CAST_HH
-#define DIJETCORE_LIB_STRING_STRING_CAST_HH
+#ifndef DIJETCORE_LIB_STRING_STRING_CAST_H
+#define DIJETCORE_LIB_STRING_STRING_CAST_H
 
 #include <string>
 #include <sstream>
@@ -24,4 +24,4 @@ namespace dijetcore {
   
 } // namespace dijetcore
 
-#endif // DIJETCORE_LIB_STRING_STRING_CAST_HH
+#endif // DIJETCORE_LIB_STRING_STRING_CAST_H

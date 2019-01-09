@@ -1,6 +1,6 @@
 
-#ifndef DIJETCORE_CORE_LOGGING_HH
-#define DIJETCORE_CORE_LOGGING_HH
+#ifndef DIJETCORE_LIB_LOGGING_HH
+#define DIJETCORE_LIB_LOGGING_HH
 
 /* dijetcore uses GLog for logging, style is 
  * LOG(INFO) <<... LOG(ERROR) << ... etc
@@ -36,4 +36,4 @@ namespace dijetcore {
   
 } // namespace dijetcore
 
-#endif // DIJETCORE_CORE_LOGGING_HH
+#endif // DIJETCORE_LIB_LOGGING_HH

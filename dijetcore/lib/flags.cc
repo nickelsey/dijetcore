@@ -1,4 +1,3 @@
-
 #include "dijetcore/lib/flags.h"
 
 namespace dijetcore {

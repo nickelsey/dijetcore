@@ -1,5 +1,5 @@
-#ifndef DIJETCORE_UTIL_ASSERT_H
-#define DIJETCORE_UTIL_ASSERT_H
+#ifndef DIJETCORE_LIB_ASSERT_H
+#define DIJETCORE_LIB_ASSERT_H
 
 // verbose exception handling for dijetcore
 
@@ -48,4 +48,4 @@ if (!(assertion)) {                                                        \
     
 } // namespace dijetcore
 
-#endif // DIJETCORE_UTIL_ASSERT_H
+#endif // DIJETCORE_LIB_ASSERT_H

@@ -1,6 +1,5 @@
-
-#ifndef DIJETCORE_CORE_FLAGS_HH
-#define DIJETCORE_CORE_FLAGS_HH
+#ifndef DIJETCORE_LIB_FLAGS_HH
+#define DIJETCORE_LIB_FLAGS_HH
 
 /* implementation of command line argument parser
  * using gflags
@@ -65,4 +64,4 @@ namespace dijetcore {
   DIJETCORE_GFLAGS_DECLARE(string, name)
   
 
-#endif // DIJETCORE_CORE_FLAGS_HH
+#endif // DIJETCORE_LIB_FLAGS_HH
