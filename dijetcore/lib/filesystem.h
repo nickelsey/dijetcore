@@ -4,13 +4,14 @@
 // functions pertaining to filesystem manipulation
 // such as creating directories
 
-#include "boost/filesystem.hpp"
-
 #include "dijetcore/lib/types.h"
 
 namespace dijetcore {
 
   bool CreateDirectory(const string& path);
+
+  // can concatenate two paths or path & file
+  string ConcatenatePath(const string& path1, const string& path2);
 
 } // namespace dijetcore
 

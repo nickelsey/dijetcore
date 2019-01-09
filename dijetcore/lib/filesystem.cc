@@ -9,4 +9,10 @@ namespace dijetcore {
     return boost::filesystem::create_directories(dir);
   }
 
+  string ConcatenatePath(const string& path1, const string& path2) {
+    boost::filesystem::path concat_path(path1.c_str());
+    concat_path /= path2;
+    return concat_path.string();
+  }
+
 } // namespace dijetcore
