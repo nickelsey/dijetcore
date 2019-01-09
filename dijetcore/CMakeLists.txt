@@ -5,6 +5,7 @@
 ## DC_BIN_SRCS contains binary source files
 
 set(DC_SRCS)
+set(DC_HDRS)
 set(DC_TEST_SRCS)
 set(DC_BENCH_SRCS)
 set(DC_BINARY_SRCS)
@@ -22,7 +23,7 @@ endif(BUILD_DATA_QA_BINARIES)
 
 ## compile libraries
 
-add_library(dijetcore ${DC_SRCS})
+add_library(dijetcore ${DC_SRCS} ${DC_HDRS})
 target_link_libraries(dijetcore PRIVATE ${DC_DEPENDENCY_LIBS})
 if (TARGET dijetcore_proto)
   target_link_libraries(dijetcore PRIVATE dijetcore_proto)

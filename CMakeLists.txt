@@ -1,15 +1,10 @@
 cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 cmake_policy(SET CMP0042 NEW)
+cmake_policy(SET CMP0048 NEW) ## version defined in project()
 
-## project title
-project(dijetcore)
-
-## project version
-set(DC_VERSION_MAJOR 0)
-set(DC_VERSION_MINOR 1)
-set(DC_VERSION_PATCH 0)
-set(DC_VERSION
-    "${DC_VERSION_MAJOR}.${DC_VERSION_MINOR}.${DC_VERSION_PATCH}")
+## project title and version
+project(dijetcore
+        VERSION 0.1.0)
 
 set(CMAKE_BUILD_TYPE RELEASE)
 

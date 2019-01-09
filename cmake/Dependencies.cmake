@@ -64,10 +64,10 @@ endif(Protobuf_FOUND)
 if(BUILD_TEST)
   set(TEMP_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
   set(BUILD_SHARED_LIBS OFF)
-  set(BUILD_GTEST ON)
-  set(INSTALL_GTEST OFF)
+  set(BUILD_GTEST ON CACHE BOOL "build core gtest")
+  set(INSTALL_GTEST OFF CACHE BOOL "do not install gtest to install directory")
   ## gmock currently not used
-  set(BUILD_GMOCK OFF)
+  set(BUILD_GMOCK OFF CACHE BOOL "do not build gmock")
   add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/googletest)
   dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/googletest/googletest/include)
 
