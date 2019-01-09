@@ -12,6 +12,7 @@ set(CMAKE_BUILD_TYPE RELEASE)
 option(BUILD_SHARED_LIBS "Build libdijetcore.so" ON)
 option(BUILD_TEST "Build test suite binaries" OFF)
 option(BUILD_BINARIES "Build analysis binaries" ON)
+option(BUILD_EXPENSIVE "Build certain routines that have large compile times" ON)
 option(BUILD_DATA_QA_BINARIES "Routines used to analyze data quality and QA productions" ON)
 
 ## compiler & system checks
