@@ -29,6 +29,7 @@ install(FILES ${DC_HDRS} DESTINATION include/dijetcore/worker)
 
 ## add subdirectories
 add_subdirectory(dijet_worker)
+add_subdirectory(data)
 
 
 ## export file lists to parent scope
