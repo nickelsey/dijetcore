@@ -11,6 +11,7 @@
 #include "dijetcore/util/data/trigger_lookup.h"
 
 #include <string>
+#include <set>
 
 #include "TFile.h"
 #include "TH1.h"
@@ -103,7 +104,7 @@ int main(int argc, char* argv[]) {
 
   // get selected triggers
   std::set<unsigned> triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
-  
+
   // start the event loop
   // --------------------
   try {
@@ -128,6 +129,10 @@ int main(int argc, char* argv[]) {
   } catch(std::exception& e) {
     std::cerr << "Caught: " << e.what() << " during analysis loop." << std::endl;
   }
+
+  // write to file
+  worker.WriteTo(outputFile);
+  outputFile.Close();
 
   return 0;
 }
