@@ -29,8 +29,7 @@ def updatestatus(jobstatus, outdir, name):
     # get the qstat job listing
     proccommand = 'qstat | grep dx5412'
     proc = subprocess.Popen(proccommand, stdout=subprocess.PIPE, shell=True)
-    qstat_result = proc.stdout
-    qstat_text = open(qstat_result, 'r')
+    qstat_result = proc.stdout.read()
 
     for i in range(len(jobstatus)):
 
@@ -39,7 +38,7 @@ def updatestatus(jobstatus, outdir, name):
             continue
         
         # check if the job is still underway
-        jobinprocess = qstat_text.find(name + str(i))
+        jobinprocess = qstat_text.find(b(name + str(i)))
         if jobinprocess >= 0:
             jobstatus[i] = 1
             continue
