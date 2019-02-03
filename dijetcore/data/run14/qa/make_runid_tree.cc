@@ -33,13 +33,14 @@ int main(int argc, char* argv[]) {
     LOG(FATAL) << "Could not create output directory: " << FLAGS_outputDir;
   };
 
+  LOG(INFO) << "Got here";
   // build our input chain of ROOT tree(s)
   TChain* chain = dijetcore::NewChainFromInput(FLAGS_tree);
-
+  LOG(INFO) << "Got here";
   // initialize the reader
   TTreeReader reader(chain);
   TTreeReaderValue<int> runid_value(reader, "fEventHeader.fRunId");
-    
+  LOG(INFO) << "Got here reader: " << reader.GetEntries();
   // create file name from job name and (conditionally) the job id 
   std::string filename = FLAGS_jobName;
   if (FLAGS_id < 0)
@@ -53,9 +54,10 @@ int main(int argc, char* argv[]) {
 
   // create set to contain all runids
   std::set<unsigned> all_runids;
-
+  LOG(INFO) << "Got here loop";
   try {
     while (reader.Next()) {
+      LOG(INFO) << "in loop";
       all_runids.insert(*runid_value);
     }
   } catch(std::exception& e) {
