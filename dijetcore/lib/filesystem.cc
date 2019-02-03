@@ -6,7 +6,9 @@ namespace dijetcore {
 
   bool CreateDirectory(const string& path) {
     boost::filesystem::path dir(path.c_str());
-    return boost::filesystem::create_directories(dir);
+    boost::filesystem::create_directories(dir);
+
+    return boost::filesystem::is_directory(dir);
   }
 
   string ConcatenatePath(const string& path1, const string& path2) {
