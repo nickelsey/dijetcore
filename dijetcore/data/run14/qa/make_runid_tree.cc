@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
   // initialize the reader
   TTreeReader reader(chain);
   TTreeReaderValue<int> runid_value(reader, "fEventHeader.fRunId");
-  LOG(INFO) << "Got here reader: " << reader.GetEntries();
+  LOG(INFO) << "Got here reader: " << reader.GetEntries(true);
   // create file name from job name and (conditionally) the job id 
   std::string filename = FLAGS_jobName;
   if (FLAGS_id < 0)
