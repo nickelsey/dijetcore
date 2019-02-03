@@ -12,10 +12,8 @@
 
 #include "TFile.h"
 #include "TTree.h"
-
-#include "TStarJetPicoReader.h"
-#include "TStarJetPicoEvent.h"
-#include "TStarJetPicoEventHeader.h"
+#include "TTreeReader.h"
+#include "TTreeReaderValue.h"
 
 DIJETCORE_DEFINE_string(tree, "", "input root TFile (or txt file with TFile list) with JetTree(s)");
 DIJETCORE_DEFINE_string(outputDir, "tmp", "directory to write output TFile in");
@@ -38,18 +36,9 @@ int main(int argc, char* argv[]) {
   // build our input chain of ROOT tree(s)
   TChain* chain = dijetcore::NewChainFromInput(FLAGS_tree);
 
-  // initialize the reader(s)
-  TStarJetPicoReader* reader = new TStarJetPicoReader();
-  dijetcore::InitReaderWithDefaults(reader, chain, "submit/empty_list.txt", "");
-  reader->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
-  reader->GetTrackCuts()->SetMinNFitPointsCut(15);       // minimum fit points in track reco
-  reader->GetTrackCuts()->SetFitOverMaxPointsCut(0.52);  // minimum ratio of fit points used over possible
-  reader->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
-  reader->GetTowerCuts()->SetMaxEtCut(1000);             // essentially infinity - cut in eventcuts
-  reader->GetEventCuts()->SetMaxEventPtCut(1000);        // Set Maximum track Pt
-  reader->GetEventCuts()->SetMaxEventEtCut(1000);        // Set Maximum tower Et
-  reader->GetEventCuts()->SetVertexZCut(30);             // vertex z range (z = beam axis)
-  reader->GetEventCuts()->SetVertexZDiffCut(3);          // cut on Vz - VPD Vz
+  // initialize the reader
+  TTreeReader reader(chain);
+  TTreeReaderValue<int> runid_value(reader, "fEventHeader.fRunId");
     
   // create file name from job name and (conditionally) the job id 
   std::string filename = FLAGS_jobName;
@@ -66,8 +55,8 @@ int main(int argc, char* argv[]) {
   std::set<unsigned> all_runids;
 
   try {
-    while(reader->NextEvent()) {
-      all_runids.insert(reader->GetEvent()->GetHeader()->GetRunId());
+    while (reader.Next()) {
+      all_runids.insert(*runid_value);
     }
   } catch(std::exception& e) {
     std::cerr << "Caught: " << e.what() << " during analysis loop." << std::endl;
