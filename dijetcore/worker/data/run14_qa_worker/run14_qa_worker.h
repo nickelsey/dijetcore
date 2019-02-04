@@ -87,6 +87,7 @@ namespace dijetcore {
     unique_ptr<TH2F> vz_vy_;
     unique_ptr<TH2F> zdc_refmult_;
     unique_ptr<TH2F> bbc_refmult_;
+    unique_ptr<TH1F> n_vertices_;
 
     // track QA
     unique_ptr<TH2F> px_py_;

@@ -9,6 +9,8 @@
 #include "TStarJetPicoPrimaryTrack.h"
 #include "TStarJetPicoTower.h"
 
+#include "TDirectory.h"
+
 namespace dijetcore {
 
   // defaults set in header
@@ -104,6 +106,11 @@ namespace dijetcore {
     double tower_low = 0.5;
     double tower_high = 4800.5;
 
+    // vertex binning
+    unsigned bin_vertices = 30;
+    unsigned vertices_low = 0;
+    unsigned vertices_high = 30;
+
     // Histograms will calculate gaussian errors
     TH1::SetDefaultSumw2();
     TH2::SetDefaultSumw2();
@@ -115,7 +122,7 @@ namespace dijetcore {
     vz_vy_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "vzvy").c_str(), ";V_{z};V_{y}", bin_vz, vz_low, vz_high, bin_vxy, vxy_low, vxy_high);
     zdc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcref").c_str(), ";zdc [kHz];refmult", bin_zdc, zdc_low, zdc_high, bin_refmult, refmult_low, refmult_high);
     bbc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "bbcref").c_str(), ";bbc [kHz];refmult", bin_bbc, bbc_low, bbc_high, bin_refmult, refmult_low, refmult_high);
-
+    n_vertices_ = std::make_unique<TH1F>(dijetcore(hist_prefix, "nvertex").c_str(), bin_vertices, vertices_low, vertices_high);
 
     // initialize histograms
     if (bin_runid > 0) {
@@ -185,6 +192,11 @@ namespace dijetcore {
       return false;
     }
 
+    // record current directory
+    TDirectory* current_dir = TDirectory::CurrentDirectory();
+    // change to TFile to write out
+    file.cd();
+
     // write event histograms after checking for initialization
     if (zdc_vz_ == nullptr) {
       LOG(ERROR) << "histograms do not exist: was Init() called?";
@@ -196,6 +208,7 @@ namespace dijetcore {
     vz_vy_->Write();
     zdc_refmult_->Write();
     bbc_refmult_->Write();
+    n_vertices_->Write();
 
     // check if we have runid observables
     if (run_id_refmult_ != nullptr) {
@@ -253,6 +266,9 @@ namespace dijetcore {
       }
     }
 
+    // change back to current_dir
+    current_dir->cd();
+
     return true;
   }
 
@@ -281,6 +297,7 @@ namespace dijetcore {
     vz_vy_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexY());
     zdc_refmult_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
     bbc_refmult_->Fill(header->GetBbcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
+    n_vertices_->Fill(header->GetNumberOfVertices());
     
     // check if we are doing run-by-run QA
     if (run_id_map_.size() > 0 && run_id_refmult_ != nullptr) {

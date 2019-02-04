@@ -25,11 +25,11 @@ list(REMOVE_ITEM DC_BINARY_SRCS ${DC_BENCH_SRCS})
 endif(DC_BENCH_SRCS)
 
 ## install headers
-### no headers in data directory
+install(FILES ${DC_HDRS} DESTINATION include/dijetcore/data/run14/qa/print)
 
 ## add subdirectories
-add_subdirectory(submit)
-add_subdirectory(print)
+## none
+
 
 ## export file lists to parent scope
 set(DC_BINARY_SRCS ${DC_BINARY_SRCS} PARENT_SCOPE)

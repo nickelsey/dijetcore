@@ -25,7 +25,7 @@ list(REMOVE_ITEM DC_BINARY_SRCS ${DC_BENCH_SRCS})
 endif(DC_BENCH_SRCS)
 
 ## install headers
-install(FILES ${DC_HDRS} DESTINATION include/dijetcore/dijet_imbalance)
+install(FILES ${DC_HDRS} DESTINATION include/dijetcore/dijet_imbalance/print)
 
 ## add subdirectories
 ## none
