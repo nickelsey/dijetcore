@@ -209,7 +209,7 @@ if __name__ == "__main__":
                         help='turns on tower level QA')
     parser.add_argument('--runIDFile', default='',
                         help='file with TTree containing all runids in the dataset being analyzed')
-    parser.add_argument('--histPrefix ', default='',
+    parser.add_argument('--histPrefix', default='',
                         help='sets a prefix to be added to every histogram name')                    
 
     main(parser.parse_args())
