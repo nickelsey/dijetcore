@@ -11,6 +11,7 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
+#include "THnSparse.h"
 
 #include "TStarJetPicoReader.h"
 
@@ -77,9 +78,9 @@ namespace dijetcore {
     unique_ptr<TH2F> run_id_track_nhit_;
     unique_ptr<TH2F> run_id_track_nhitposs_;
     unique_ptr<TH2F> run_id_track_nhitfrac_;
-    unique_ptr<TH3F> run_id_tower_e_;
-    unique_ptr<TH3F> run_id_tower_et_;
-    unique_ptr<TH3F> run_id_tower_adc_;
+    unique_ptr<THnSparseS> run_id_tower_e_;
+    unique_ptr<THnSparseS> run_id_tower_et_;
+    unique_ptr<THnSparseS> run_id_tower_adc_;
 
     // event QA
     unique_ptr<TH2F> zdc_vz_;

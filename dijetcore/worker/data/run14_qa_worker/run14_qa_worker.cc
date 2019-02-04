@@ -176,9 +176,21 @@ namespace dijetcore {
       tow_eta_phi_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "towetaphi").c_str(), ";eta;phi", bin_eta, eta_low, eta_high, bin_phi, phi_low, phi_high);
       // tower runID variables
       if (run_id_map_.size() > 0) {
-        run_id_tower_e_ = std::make_unique<TH3F>(dijetcore::MakeString(hist_prefix, "runide").c_str(), ";run ID;tower ID;E", bin_runid, runid_low, runid_high, bin_tower, tower_low, tower_high, bin_energy, energy_low, energy_high);
-        run_id_tower_et_ = std::make_unique<TH3F>(dijetcore::MakeString(hist_prefix, "runidet").c_str(), ";run ID;tower ID;E_{T}", bin_runid, runid_low, runid_high, bin_tower, tower_low, tower_high, bin_energy, energy_low, energy_high);
-        run_id_tower_adc_ = std::make_unique<TH3F>(dijetcore::MakeString(hist_prefix, "runidadc").c_str(), ";run ID;tower ID;ADC", bin_runid, runid_low, runid_high, bin_tower, tower_low, tower_high, bin_adc, adc_low, adc_high);
+        // create THnSparse
+        int tow_dims = 3;
+        int tow_bins[] = {bin_runid, bin_tower, bin_energy};
+        double tow_dims_low[] = {runid_low, tower_low, energy_low};
+        double tow_dims_high[] = {runid_high, tower_high, energy_high};
+        int tow_bins_adc[] = {bin_runid, bin_tower, bin_adc};
+        double tow_dims_low_adc[] = {runid_low, tower_low, adc_low};
+        double tow_dims_high_adc[] = {runid_high, tower_high, adc_high};
+        run_id_tower_e_ = std::make_unique<THnSparseS>(dijetcore::MakeString(hist_prefix, "runide").c_str(), ";run ID;tower ID;E", tow_dims, tow_bins, tow_dims_low, tow_dims_high);
+        run_id_tower_et_ = std::make_unique<THnSparseS>(dijetcore::MakeString(hist_prefix, "runidet").c_str(), ";run ID;tower ID;E_{T}", tow_dims, tow_bins, tow_dims_low, tow_dims_high);
+        run_id_tower_adc_ = std::make_unique<THnSparseS>(dijetcore::MakeString(hist_prefix, "runidadc").c_str(), ";run ID;tower ID;ADC", tow_dims, tow_bins_adc, tow_dims_low_adc, tow_dims_high_adc);
+
+        run_id_tower_e_->Sumw2();
+        run_id_tower_et_->Sumw2();
+        run_id_tower_adc_->Sumw2();
       }
     }
 
@@ -263,22 +275,15 @@ namespace dijetcore {
       tow_eta_phi_->Write();
       if (run_id_tower_e_ != nullptr) {
         LOG(ERROR) << "writing tower runid?";
-        LOG(ERROR) << "tower: " << run_id_tower_e_->GetXaxis()->GetNbins();
-        LOG(ERROR) << "tower: " << run_id_tower_e_->GetYaxis()->GetNbins();
-        LOG(ERROR) << "tower: " << run_id_tower_e_->GetZaxis()->GetNbins();
-        //run_id_tower_e_->Write();
-        LOG(ERROR) << "done1";
-        //run_id_tower_et_->Write();
-        LOG(ERROR) << "done2";
-        //run_id_tower_adc_->Write();
-        LOG(ERROR) << "success";
+        run_id_tower_e_->Write();
+        run_id_tower_et_->Write();
+        run_id_tower_adc_->Write();
       }
     }
 
     // change back to current_dir
-    LOG(ERROR) << "cd back";
     current_dir->cd();
-    LOG(ERROR) << "done";
+
     return true;
   }
 
@@ -362,9 +367,12 @@ namespace dijetcore {
       tow_eta_phi_->Fill(tower->GetEta(), tower->GetPhi());
       if (run_id_tower_e_ != nullptr) {
         unsigned runid_idx = run_id_map_[header->GetRunId()];
-        run_id_tower_e_->Fill(runid_idx, tower->GetId(), tower->GetEnergy());
-        run_id_tower_et_->Fill(runid_idx, tower->GetId(), tower->GetEnergy()/cosh(tower->GetEtaCorrected()));
-        run_id_tower_adc_->Fill(runid_idx, tower->GetId(),tower->GetADC());
+        double e_[] = {runid_idx, tower->GetId(), tower->GetEnergy()};
+        double et_[] = {runid_idx, tower->GetId(), tower->GetEnergy()/cosh(tower->GetEtaCorrected())};
+        double adc_[] = {runid_idx, tower->GetId(),tower->GetADC()};
+        run_id_tower_e_->Fill(e_);
+        run_id_tower_et_->Fill(et_);
+        run_id_tower_adc_->Fill(adc_);
       }
     }
     
