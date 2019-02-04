@@ -263,11 +263,12 @@ namespace dijetcore {
       tow_eta_phi_->Write();
       if (run_id_tower_e_ != nullptr) {
         LOG(ERROR) << "writing tower runid?";
-        run_id_tower_e_->Write();
+        LOG(ERROR) << "tower: " << run_id_tower_e_->GetEntries();
+        //run_id_tower_e_->Write();
         LOG(ERROR) << "done1";
-        run_id_tower_et_->Write();
+        //run_id_tower_et_->Write();
         LOG(ERROR) << "done2";
-        run_id_tower_adc_->Write();
+        //run_id_tower_adc_->Write();
         LOG(ERROR) << "success";
       }
     }
