@@ -36,7 +36,7 @@ def updatestatus(jobstatus, outdir, name):
             continue
 
         # check if the job is still underway
-        jobinprocess = qstat_result.find(name + str(i))
+        jobinprocess = qstat_result.find((name + str(i)).encode())
         if jobinprocess >= 0:
             jobstatus[i] = 1
             continue
@@ -197,11 +197,11 @@ if __name__ == "__main__":
                         help=' max number of jobs to have in running or queue states')
     parser.add_argument('--output', default='out',
                         help=' directory for output root files')
-    parser.add_argument('--badTowers', default='resources/bad_tower_lists/y14_y6_bad_tower.txt',
+    parser.add_argument('--badTowers', default='resources/bad_tower_lists/empty_list.txt',
                         help=' csv file containing towers to mask')
-    parser.add_argument('--badRuns', default='resources/bad_run_lists/y14_bad_run.txt',
+    parser.add_argument('--badRuns', default='',
                         help=' csv file containing runs to mask')
-    parser.add_argument('--triggers', default='y14ht',
+    parser.add_argument('--triggers', default='y14vpdmb30',
                         help=' event triggers to consider: [y7, y10, y11, y14, y6pp, y9pp, y12pp] + [HT, MB, HT2, HT3, VPDMB30, VPDMB5, MBMON, ALL] (default "ALL": accept all events)')
     parser.add_argument('--trackQA', default='true',
                         help='turns on track level QA')
