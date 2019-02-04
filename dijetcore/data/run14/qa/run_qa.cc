@@ -28,15 +28,16 @@
 #include "TStarJetPicoTrackCuts.h"
 #include "TStarJetPicoTowerCuts.h"
 
-DIJETCORE_DEFINE_string(tree, "", "input root TFile (or txt file with TFile list) with JetTree(s)");
+DIJETCORE_DEFINE_string(input, "", "input root TFile (or txt file with TFile list) with JetTree(s)");
 DIJETCORE_DEFINE_string(outputDir, "tmp", "directory to write output TFile in");
-DIJETCORE_DEFINE_string(jobName, "run14_qa", "name for output files");
+DIJETCORE_DEFINE_string(name, "run14_qa", "name for output files");
 DIJETCORE_DEFINE_int(id, -1, "job id: used for batch jobs: keep negative to ignore for output file naming");
 DIJETCORE_DEFINE_bool(doTrackQA, true, "flag to turn on/off track QA histograms");
 DIJETCORE_DEFINE_bool(doTowerQA, true, "flag to turn on/off tower QA histograms");
 DIJETCORE_DEFINE_string(histogramPrefix, "", "can be used to set a prefix for all histogram names");
 DIJETCORE_DEFINE_string(runIDFile, "", "file containing TTree 'runid' that contains list of run 14 runids");
 DIJETCORE_DEFINE_string(triggers, "y14vpdmb30", "trigger selection for accepted events - defaults to VPD MB 30, a minbias trigger");
+DIJETCORE_DEFINE_string(towList, "resources/bad_tower_lists/empty_list.txt", "bad tower list");
 
 int main(int argc, char* argv[]) {
   // setup command line flags
@@ -56,7 +57,7 @@ int main(int argc, char* argv[]) {
   };
 
   // build our input chain of ROOT tree(s)
-  TChain* chain = dijetcore::NewChainFromInput(FLAGS_tree);
+  TChain* chain = dijetcore::NewChainFromInput(FLAGS_input);
 
   // initialize the reader(s)
   TStarJetPicoReader* reader = new TStarJetPicoReader();
@@ -66,13 +67,14 @@ int main(int argc, char* argv[]) {
   reader->GetTrackCuts()->SetFitOverMaxPointsCut(0.52);  // minimum ratio of fit points used over possible
   reader->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
   reader->GetTowerCuts()->SetMaxEtCut(1000);             // essentially infinity - cut in eventcuts
+  reader->GetTowerCuts()->AddBadTowers(FLAGS_towList.c_str()); // bad tower list
   reader->GetEventCuts()->SetMaxEventPtCut(1000);        // Set Maximum track Pt
   reader->GetEventCuts()->SetMaxEventEtCut(1000);        // Set Maximum tower Et
   reader->GetEventCuts()->SetVertexZCut(30);             // vertex z range (z = beam axis)
   reader->GetEventCuts()->SetVertexZDiffCut(3);          // cut on Vz - VPD Vz
     
   // create file name from job name and (conditionally) the job id 
-  std::string filename = FLAGS_jobName;
+  std::string filename = FLAGS_name;
   if (FLAGS_id < 0)
     filename += ".root";
   else 

@@ -138,7 +138,6 @@ def main(args):
             clargs = clargs + ' --name=' + args.name
             clargs = clargs + ' --towList=' + args.badTowers
             clargs = clargs + ' --triggers=' + args.triggers 
-            clargs = clargs + ' --runList=' + args.badRuns
             clargs = clargs + ' --doTrackQA=' + args.trackQA
             clargs = clargs + ' --doTowerQA=' + args.towerQA
             clargs = clargs + ' --runIDFile=' + args.runIDFile
@@ -199,8 +198,6 @@ if __name__ == "__main__":
                         help=' directory for output root files')
     parser.add_argument('--badTowers', default='resources/bad_tower_lists/empty_list.txt',
                         help=' csv file containing towers to mask')
-    parser.add_argument('--badRuns', default='',
-                        help=' csv file containing runs to mask')
     parser.add_argument('--triggers', default='y14vpdmb30',
                         help=' event triggers to consider: [y7, y10, y11, y14, y6pp, y9pp, y12pp] + [HT, MB, HT2, HT3, VPDMB30, VPDMB5, MBMON, ALL] (default "ALL": accept all events)')
     parser.add_argument('--trackQA', default='true',
