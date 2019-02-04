@@ -266,8 +266,11 @@ namespace dijetcore {
       if (run_id_tower_e_ != nullptr) {
         LOG(ERROR) << "Writing runid tower";
         run_id_tower_e_->Write();
+        LOG(ERROR) << "Writing runid tower";
         run_id_tower_et_->Write();
+        LOG(ERROR) << "Writing runid tower";
         run_id_tower_adc_->Write();
+        LOG(ERROR) << "Writing runid tower";
       }
     }
     LOG(ERROR) << "cd back";
