@@ -265,16 +265,13 @@ namespace dijetcore {
     }
 
     // check if we have tower observables
-    LOG(ERROR) << "writing tower?";
     if (e_et_ != nullptr) {
-      LOG(ERROR) << "writing tower";
       e_et_->Write();
       zdc_e_->Write();
       zdc_et_->Write();
       zdc_adc_->Write();
       tow_eta_phi_->Write();
       if (run_id_tower_e_ != nullptr) {
-        LOG(ERROR) << "writing tower runid?";
         run_id_tower_e_->Write();
         run_id_tower_et_->Write();
         run_id_tower_adc_->Write();
