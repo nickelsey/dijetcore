@@ -268,7 +268,7 @@ namespace dijetcore {
         LOG(ERROR) << "done1";
         //run_id_tower_et_->Write();
         LOG(ERROR) << "done2";
-        //run_id_tower_adc_->Write();
+        run_id_tower_adc_->Write();
         LOG(ERROR) << "success";
       }
     }
