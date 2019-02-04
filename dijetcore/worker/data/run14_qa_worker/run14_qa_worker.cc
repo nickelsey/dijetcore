@@ -346,9 +346,9 @@ namespace dijetcore {
 
     while(TStarJetPicoTower* tower = (TStarJetPicoTower*) nextTower()) {
       e_et_->Fill(tower->GetEnergy(), tower->GetEnergy()/cosh(tower->GetEtaCorrected()));
-      zdc_e_->Fill(header->GetZdcCoincidenceRate(), tower->GetEnergy());
-      zdc_et_->Fill(header->GetZdcCoincidenceRate(), tower->GetEnergy()/cosh(tower->GetEtaCorrected()));
-      zdc_adc_->Fill(header->GetZdcCoincidenceRate(), tower->GetADC());
+      zdc_e_->Fill(header->GetZdcCoincidenceRate()/1000, tower->GetEnergy());
+      zdc_et_->Fill(header->GetZdcCoincidenceRate()/1000, tower->GetEnergy()/cosh(tower->GetEtaCorrected()));
+      zdc_adc_->Fill(header->GetZdcCoincidenceRate()/1000, tower->GetADC());
       tow_eta_phi_->Fill(tower->GetEta(), tower->GetPhi());
       if (run_id_tower_e_ != nullptr) {
         unsigned runid_idx = run_id_map_[header->GetRunId()];
@@ -370,16 +370,16 @@ namespace dijetcore {
       px_py_->Fill(track->GetPx(), track->GetPy());
       pz_px_->Fill(track->GetPz(), track->GetPx());
       pz_py_->Fill(track->GetPz(), track->GetPy());
-      zdc_px_->Fill(header->GetZdcCoincidenceRate(), track->GetPx());
-      zdc_py_->Fill(header->GetZdcCoincidenceRate(), track->GetPy());
-      zdc_pz_->Fill(header->GetZdcCoincidenceRate(), track->GetPz());
-      zdc_pt_->Fill(header->GetZdcCoincidenceRate(), track->GetPt());
-      zdc_dca_->Fill(header->GetZdcCoincidenceRate(), track->GetDCA());
-      zdc_nhit_->Fill(header->GetZdcCoincidenceRate(), track->GetNOfFittedHits());
-      zdc_nhitposs_->Fill(header->GetZdcCoincidenceRate(), track->GetNOfPossHits());
-      zdc_nhitfrac_->Fill(header->GetZdcCoincidenceRate(), ((double)track->GetNOfFittedHits())/track->GetNOfPossHits());
-      zdc_eta_->Fill(header->GetZdcCoincidenceRate(), track->GetEta());
-      zdc_phi_->Fill(header->GetZdcCoincidenceRate(), track->GetPhi());
+      zdc_px_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetPx());
+      zdc_py_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetPy());
+      zdc_pz_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetPz());
+      zdc_pt_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetPt());
+      zdc_dca_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetDCA());
+      zdc_nhit_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetNOfFittedHits());
+      zdc_nhitposs_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetNOfPossHits());
+      zdc_nhitfrac_->Fill(header->GetZdcCoincidenceRate()/1000, ((double)track->GetNOfFittedHits())/track->GetNOfPossHits());
+      zdc_eta_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetEta());
+      zdc_phi_->Fill(header->GetZdcCoincidenceRate()/1000, track->GetPhi());
       eta_phi_->Fill(track->GetEta(), track->GetPhi());
       if (run_id_track_pt_ != nullptr) {
         unsigned runid_idx = run_id_map_[header->GetRunId()];
