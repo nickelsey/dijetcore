@@ -191,18 +191,18 @@ namespace dijetcore {
       LOG(ERROR) << "input file " << file.GetName() << " is not open, failed to write histograms to disk";
       return false;
     }
-
+    LOG(ERROR) << "cd to new dir";
     // record current directory
     TDirectory* current_dir = TDirectory::CurrentDirectory();
     // change to TFile to write out
     file.cd();
-
+    LOG(ERROR) << "checkign histograms";
     // write event histograms after checking for initialization
     if (zdc_vz_ == nullptr) {
       LOG(ERROR) << "histograms do not exist: was Init() called?";
       return false;
     }
-
+    LOG(ERROR) << "Writing";
     zdc_vz_->Write();
     vz_vx_->Write();
     vz_vy_->Write();
@@ -212,6 +212,7 @@ namespace dijetcore {
 
     // check if we have runid observables
     if (run_id_refmult_ != nullptr) {
+      LOG(ERROR) << "Writing runid";
       run_id_refmult_->Write();
       run_id_grefmult_->Write();
       run_id_nprim_nglob_->Write();
@@ -224,6 +225,7 @@ namespace dijetcore {
 
     // check if we have track observables 
     if (px_py_ != nullptr) {
+      LOG(ERROR) << "Writing track";
       px_py_->Write();
       pz_px_->Write();
       pz_py_->Write();
@@ -239,6 +241,7 @@ namespace dijetcore {
       zdc_phi_->Write();
       eta_phi_->Write();
       if (run_id_track_pt_ != nullptr) {
+        LOG(ERROR) << "Writing runid track";
         run_id_track_pt_->Write();
         run_id_track_px_->Write();
         run_id_track_py_->Write();
@@ -254,21 +257,23 @@ namespace dijetcore {
 
     // check if we have tower observables
     if (e_et_ != nullptr) {
+      LOG(ERROR) << "Writing tower";
       e_et_->Write();
       zdc_e_->Write();
       zdc_et_->Write();
       zdc_adc_->Write();
       tow_eta_phi_->Write();
       if (run_id_tower_e_ != nullptr) {
+        LOG(ERROR) << "Writing runid tower";
         run_id_tower_e_->Write();
         run_id_tower_et_->Write();
         run_id_tower_adc_->Write();
       }
     }
-
+    LOG(ERROR) << "cd back";
     // change back to current_dir
     current_dir->cd();
-
+    LOG(ERROR) << "done";
     return true;
   }
 

@@ -104,6 +104,9 @@ int main(int argc, char* argv[]) {
     worker.DoRunQA(runid_set);
   }
 
+  // initialize worker
+  worker.Init(FLAGS_histogramPrefix);
+
   // get selected triggers
   std::set<unsigned> triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
 
