@@ -28,7 +28,7 @@ endif(DC_BENCH_SRCS)
 ### no headers in data directory
 
 ## add subdirectories
-
+add_subdirectory(submit)
 
 ## export file lists to parent scope
 set(DC_BINARY_SRCS ${DC_BINARY_SRCS} PARENT_SCOPE)
