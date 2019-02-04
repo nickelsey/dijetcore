@@ -136,8 +136,8 @@ def main(args):
             clargs = '--outputDir=' + args.output + \
                 ' --input=' + files[i] + ' --id=' + str(i)
             clargs = clargs + ' --name=' + args.name
-            clargs = clargs + ' --towList=' + args.badTowers + ' --triggers='
-            clargs = clargs + args.triggers + ' --constEta=' + args.constEta
+            clargs = clargs + ' --towList=' + args.badTowers
+            clargs = clargs + ' --triggers=' + args.triggers 
             clargs = clargs + ' --runList=' + args.badRuns
             clargs = clargs + ' --doTrackQA=' + args.trackQA
             clargs = clargs + ' --doTowerQA=' + args.towerQA
