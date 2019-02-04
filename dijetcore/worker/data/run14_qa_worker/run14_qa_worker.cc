@@ -122,7 +122,7 @@ namespace dijetcore {
     vz_vy_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "vzvy").c_str(), ";V_{z};V_{y}", bin_vz, vz_low, vz_high, bin_vxy, vxy_low, vxy_high);
     zdc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcref").c_str(), ";zdc [kHz];refmult", bin_zdc, zdc_low, zdc_high, bin_refmult, refmult_low, refmult_high);
     bbc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "bbcref").c_str(), ";bbc [kHz];refmult", bin_bbc, bbc_low, bbc_high, bin_refmult, refmult_low, refmult_high);
-    n_vertices_ = std::make_unique<TH1F>(dijetcore(hist_prefix, "nvertex").c_str(), bin_vertices, vertices_low, vertices_high);
+    n_vertices_ = std::make_unique<TH1F>(dijetcore::MakeString(hist_prefix, "nvertex").c_str(), bin_vertices, vertices_low, vertices_high);
 
     // initialize histograms
     if (bin_runid > 0) {
@@ -298,7 +298,7 @@ namespace dijetcore {
     zdc_refmult_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
     bbc_refmult_->Fill(header->GetBbcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
     n_vertices_->Fill(header->GetNumberOfVertices());
-    
+
     // check if we are doing run-by-run QA
     if (run_id_map_.size() > 0 && run_id_refmult_ != nullptr) {
       if (RunQA(reader) == false) {
