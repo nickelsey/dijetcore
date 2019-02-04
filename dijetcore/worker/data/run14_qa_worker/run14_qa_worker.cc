@@ -122,7 +122,7 @@ namespace dijetcore {
     vz_vy_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "vzvy").c_str(), ";V_{z};V_{y}", bin_vz, vz_low, vz_high, bin_vxy, vxy_low, vxy_high);
     zdc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcref").c_str(), ";zdc [kHz];refmult", bin_zdc, zdc_low, zdc_high, bin_refmult, refmult_low, refmult_high);
     bbc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "bbcref").c_str(), ";bbc [kHz];refmult", bin_bbc, bbc_low, bbc_high, bin_refmult, refmult_low, refmult_high);
-    n_vertices_ = std::make_unique<TH1F>(dijetcore::MakeString(hist_prefix, "nvertex").c_str(), bin_vertices, vertices_low, vertices_high);
+    n_vertices_ = std::make_unique<TH1F>(dijetcore::MakeString(hist_prefix, "nvertex").c_str(), ";N_{vertices};fraction", bin_vertices, vertices_low, vertices_high);
 
     // initialize histograms
     if (bin_runid > 0) {
