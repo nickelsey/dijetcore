@@ -142,6 +142,7 @@ def main(args):
             clargs = clargs + ' --doTowerQA=' + args.towerQA
             clargs = clargs + ' --runIDFile=' + args.runIDFile
             clargs = clargs + ' --histogramPrefix=' + args.histPrefix
+            clargs = clargs + ' --nEvents=' + args.nEvents
 
             qsub = 'qsub -V -p ' + \
                 str(args.priority) + ' -l mem=' + str(args.mem) + \
@@ -207,6 +208,8 @@ if __name__ == "__main__":
     parser.add_argument('--runIDFile', default='',
                         help='file with TTree containing all runids in the dataset being analyzed')
     parser.add_argument('--histPrefix', default='',
-                        help='sets a prefix to be added to every histogram name')                    
+                        help='sets a prefix to be added to every histogram name')    
+    parser.add_argument('--nEvents', default='-1',
+                        help='number of events to run over')                    
 
     main(parser.parse_args())
