@@ -61,13 +61,12 @@ int main(int argc, char* argv[]) {
 
   // initialize the reader(s)
   TStarJetPicoReader* reader = new TStarJetPicoReader();
-  dijetcore::InitReaderWithDefaults(reader, chain, "submit/empty_list.txt", "");
+  dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList, "");
   reader->GetTrackCuts()->SetDCACut(3.0);                // distance of closest approach to primary vtx
   reader->GetTrackCuts()->SetMinNFitPointsCut(15);       // minimum fit points in track reco
   reader->GetTrackCuts()->SetFitOverMaxPointsCut(0.52);  // minimum ratio of fit points used over possible
   reader->GetTrackCuts()->SetMaxPtCut(1000);             // essentially infinity - cut in eventcuts
   reader->GetTowerCuts()->SetMaxEtCut(1000);             // essentially infinity - cut in eventcuts
-  reader->GetTowerCuts()->AddBadTowers(FLAGS_towList.c_str()); // bad tower list
   reader->GetEventCuts()->SetMaxEventPtCut(1000);        // Set Maximum track Pt
   reader->GetEventCuts()->SetMaxEventEtCut(1000);        // Set Maximum tower Et
   reader->GetEventCuts()->SetVertexZCut(30);             // vertex z range (z = beam axis)
