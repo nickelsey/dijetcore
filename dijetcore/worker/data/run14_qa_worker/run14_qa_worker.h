@@ -26,7 +26,7 @@ namespace dijetcore {
     //  Init(). hist_prefix is an optional name that can be tagged on to the front of 
     // each histogram's root identifier, to keep different jobs separate after adding
     // root files
-    bool Init(const std::string& hist_prefix);
+    bool Init(const std::string& hist_prefix = "");
 
     // Writes all initialized histograms to specified TFile
     bool WriteTo(TFile& file);
@@ -43,6 +43,8 @@ namespace dijetcore {
     bool Run(TStarJetPicoReader& reader);
 
   private:
+
+    bool initialized_ = false;
 
     bool RunQA(TStarJetPicoReader& reader);
     bool TowerQA(TStarJetPicoReader& event);

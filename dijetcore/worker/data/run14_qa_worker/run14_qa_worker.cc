@@ -175,6 +175,7 @@ namespace dijetcore {
       }
     }
 
+    initialized_ = true;
     return true;
   }
 
@@ -189,6 +190,7 @@ namespace dijetcore {
       LOG(ERROR) << "histograms do not exist: was Init() called?";
       return false;
     }
+
     zdc_vz_->Write();
     vz_vx_->Write();
     vz_vy_->Write();
@@ -269,29 +271,33 @@ namespace dijetcore {
 
     // first do event level QA
     TStarJetPicoEventHeader* header = reader.GetEvent()->GetHeader();
-
+    
+    // make sure initialization has happened
+    if (initialized_ == false)
+      Init();
+    
     zdc_vz_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetPrimaryVertexZ());
     vz_vx_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexX());
     vz_vy_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexY());
     zdc_refmult_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
     bbc_refmult_->Fill(header->GetBbcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
-
+    
     // check if we are doing run-by-run QA
     if (run_id_map_.size() > 0 && run_id_refmult_ != nullptr) {
       if (RunQA(reader) == false) {
         LOG(ERROR) << "failure in RunQA";
       }
     }
-
+    
     // check if we are doing tower QA
     if (e_et_ != nullptr) {
       if (!TowerQA(reader)) {
         LOG(ERROR) << "failure in TowerQA";
       }
     }
-
+    
     if (px_py_ != nullptr) {
-      if (TrackQA(reader)) {
+      if (!TrackQA(reader)) {
         LOG(ERROR) << "failure in TrackQA";
       }
     }
