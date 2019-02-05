@@ -122,6 +122,7 @@ namespace dijetcore {
     vz_vx_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "vzvx").c_str(), ";V_{z};V_{x}", bin_vz, vz_low, vz_high, bin_vxy, vxy_low, vxy_high);
     vz_vy_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "vzvy").c_str(), ";V_{z};V_{y}", bin_vz, vz_low, vz_high, bin_vxy, vxy_low, vxy_high);
     zdc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcref").c_str(), ";zdc [kHz];refmult", bin_zdc, zdc_low, zdc_high, bin_refmult, refmult_low, refmult_high);
+    zdc_grefmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcgref").c_str(), ";zdc [kHz];grefmult", bin_zdc, zdc_low, zdc_high, bin_refmult, refmult_low, refmult_high);
     bbc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "bbcref").c_str(), ";bbc [kHz];refmult", bin_bbc, bbc_low, bbc_high, bin_refmult, refmult_low, refmult_high);
     n_vertices_ = std::make_unique<TH1F>(dijetcore::MakeString(hist_prefix, "nvertex").c_str(), ";N_{vertices};fraction", bin_vertices, vertices_low, vertices_high);
 
@@ -219,6 +220,7 @@ namespace dijetcore {
     vz_vx_->Write();
     vz_vy_->Write();
     zdc_refmult_->Write();
+    zdc_grefmult_->Write();
     bbc_refmult_->Write();
     n_vertices_->Write();
 
@@ -307,6 +309,7 @@ namespace dijetcore {
     vz_vx_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexX());
     vz_vy_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexY());
     zdc_refmult_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
+    zdc_grefmult_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetGReferenceMultiplicity());
     bbc_refmult_->Fill(header->GetBbcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());
     n_vertices_->Fill(header->GetNumberOfVertices());
 

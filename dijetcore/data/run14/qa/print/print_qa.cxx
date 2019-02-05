@@ -166,7 +166,18 @@ int main(int argc, char *argv[]) {
 
   // start by printing the general, event level QA
 
-  // first, vertex position
+  TProfile* zdc_vz_ave = zdc_vz->ProfileX();
+  TProfile* vz_vx_ave = vz_vx->ProfileX();
+  TProfile* vz_vy_ave = vz_vy->ProfileX();
+  TProfile* zdc_ref_ave = zdc_refmult->ProfileX();
+
+  // unique_ptr<TH2F> zdc_vz_;
+  // unique_ptr<TH2F> vz_vx_;
+  // unique_ptr<TH2F> vz_vy_;
+  // unique_ptr<TH2F> zdc_refmult_;
+  // unique_ptr<TH2F> bbc_refmult_;
+  // unique_ptr<TH1F> n_vertices_;
+
 
   gflags::ShutDownCommandLineFlags();
   return 0;
