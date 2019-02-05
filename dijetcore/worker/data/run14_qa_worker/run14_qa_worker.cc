@@ -83,6 +83,7 @@ namespace dijetcore {
 
     // binning for phi
     unsigned bin_phi = 40;
+    unsigned bin_phi_tow = 120;
     double phi_low = -math::pi;
     double phi_high = math::pi;
 
@@ -172,7 +173,7 @@ namespace dijetcore {
       zdc_e_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdce").c_str(), ";zdc [kHz];E", bin_zdc, zdc_low, zdc_high, bin_energy, energy_low, energy_high);
       zdc_et_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcet").c_str(), ";zdc [kHz];E_{T}", bin_zdc, zdc_low, zdc_high, bin_energy, energy_low, energy_high);
       zdc_adc_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcadc").c_str(), ";zdc [kHz];ADC", bin_zdc, zdc_low, zdc_high, bin_adc, adc_low, adc_high);
-      tow_eta_phi_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "towetaphi").c_str(), ";eta;phi", bin_eta, eta_low, eta_high, bin_phi, phi_low, phi_high);
+      tow_eta_phi_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "towetaphi").c_str(), ";eta;phi", bin_eta, eta_low, eta_high, bin_phi_tow, phi_low, phi_high);
       // tower runID variables
       if (run_id_map_.size() > 0) {
         // create THnSparse

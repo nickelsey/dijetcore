@@ -1,6 +1,6 @@
 #include "dijetcore/lib/flags.h"
 #include "dijetcore/lib/logging.h"
-#include "dijetcore/lib/map.h"
+#include "dijetcore/lib/filesystem.h"
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/util/fastjet/dijet_key.h"
 #include "dijetcore/util/root/root_print_routines.h"
@@ -11,19 +11,21 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TH3.h"
+#include "THnSparse.h"
 #include "TProfile.h"
 #include "TStyle.h"
 
 DIJETCORE_DEFINE_string(input, "", "root file with results from run_qa");
 DIJETCORE_DEFINE_string(outputDir, "results", "directory for output");
-DIJETCORE_DEFINE_string(histPrefixes, "",
-                        "histogram prefixes, separated by commas");
+DIJETCORE_DEFINE_string(histPrefix, "", "histogram prefix");
+DIJETCORE_DEFINE_string(legendLabel, "P18ih", "label for histogram legends");
 
-using dijetcore::dijetcore_map;
+using dijetcore::MakeString;
 using std::string;
 
 int main(int argc, char *argv[]) {
-  string usage = "Run 7 differential di-jet imbalance print routine";
+  string usage = "Run 14 QA print routines";
 
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
@@ -46,6 +48,11 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  // attempt to build directory for output files, if it does not already exist
+  if (!dijetcore::CreateDirectory(FLAGS_outputDir)) {
+    LOG(FATAL) << "Could not create output directory: " << FLAGS_outputDir;
+  };
+
   TFile input_file(FLAGS_input.c_str(), "READ");
 
   if (!input_file.IsOpen()) {
@@ -53,114 +60,113 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  // first, parse all histogram prefixes
-  std::set<string> prefixes;
-  dijetcore::SplitString(FLAGS_histPrefixes, prefixes, ",");
-  prefixes.insert("");
+  // load histograms, account for any histogram name prefix
+  string prefix = FLAGS_histPrefix;
 
-  // we'll store each histogram in a map - key will be the prefix
-  dijetcore_map<string, TH2F *> run_id_refmult;
-  dijetcore_map<string, TH2F *> run_id_grefmult;
-  dijetcore_map<string, TH3F *> run_id_nprim_nglob;
-  dijetcore_map<string, TH2F *> run_id_zdc;
-  dijetcore_map<string, TH2F *> run_id_bbc;
-  dijetcore_map<string, TH2F *> run_id_vzvpdvz;
-  dijetcore_map<string, TH2F *> run_id_vz;
-  dijetcore_map<string, TH3F *> run_id_vx_vy;
-  dijetcore_map<string, TH2F *> run_id_track_pt;
-  dijetcore_map<string, TH2F *> run_id_track_px;
-  dijetcore_map<string, TH2F *> run_id_track_py;
-  dijetcore_map<string, TH2F *> run_id_track_pz;
-  dijetcore_map<string, TH2F *> run_id_track_eta;
-  dijetcore_map<string, TH2F *> run_id_track_phi;
-  dijetcore_map<string, TH2F *> run_id_track_dca;
-  dijetcore_map<string, TH2F *> run_id_track_nhit;
-  dijetcore_map<string, TH2F *> run_id_track_nhitposs;
-  dijetcore_map<string, TH2F *> run_id_track_nhitfrac;
-  dijetcore_map<string, TH3F *> run_id_tower_e;
-  dijetcore_map<string, TH3F *> run_id_tower_et;
-  dijetcore_map<string, TH3F *> run_id_tower_adc;
+  TH3F *run_id_refgref =
+      (TH3F *)input_file.Get(MakeString(prefix, "runidrefgref").c_str());
+  TH3F *run_id_nprim_nglob =
+      (TH3F *)input_file.Get(MakeString(prefix, "runidnprimnglob").c_str());
+  TH2F *run_id_zdc =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidzdc").c_str());
+  TH2F *run_id_bbc =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidbbc").c_str());
+  TH2F *run_id_vzvpdvz =
+      (TH2F *)input_file.Get(MakeString(prefix, "runiddvz").c_str());
+  TH2F *run_id_vz =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidvz").c_str());
+  TH3F *run_id_vx_vy =
+      (TH3F *)input_file.Get(MakeString(prefix, "runidvxvy").c_str());
+  TH2F *run_id_track_pt =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidpt").c_str());
+  TH2F *run_id_track_px =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidpx").c_str());
+  TH2F *run_id_track_py =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidpy").c_str());
+  TH2F *run_id_track_pz =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidpz").c_str());
+  TH2F *run_id_track_eta =
+      (TH2F *)input_file.Get(MakeString(prefix, "runideta").c_str());
+  TH2F *run_id_track_phi =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidphi").c_str());
+  TH2F *run_id_track_dca =
+      (TH2F *)input_file.Get(MakeString(prefix, "runiddca").c_str());
+  TH2F *run_id_track_nhit =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidnhit").c_str());
+  TH2F *run_id_track_nhitposs =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidnhitposs").c_str());
+  TH2F *run_id_track_nhitfrac =
+      (TH2F *)input_file.Get(MakeString(prefix, "runidnhitfrac").c_str());
+  THnSparseS *run_id_tower_e =
+      (THnSparseS *)input_file.Get(MakeString(prefix, "runide").c_str());
+  THnSparseS *run_id_tower_et =
+      (THnSparseS *)input_file.Get(MakeString(prefix, "runidet").c_str());
+  THnSparseS *run_id_tower_adc =
+      (THnSparseS *)input_file.Get(MakeString(prefix, "runidadc").c_str());
+  TH2F *zdc_vz = (TH2F *)input_file.Get(MakeString(prefix, "zdcvz").c_str());
+  TH2F *vz_vx = (TH2F *)input_file.Get(MakeString(prefix, "vzvx").c_str());
+  TH2F *vz_vy = (TH2F *)input_file.Get(MakeString(prefix, "vzvy").c_str());
+  TH2F *zdc_refmult =
+      (TH2F *)input_file.Get(MakeString(prefix, "zdcref").c_str());
+  TH2F *bbc_refmult =
+      (TH2F *)input_file.Get(MakeString(prefix, "bbcref").c_str());
+  TH1F *n_vertices =
+      (TH1F *)input_file.Get(MakeString(prefix, "nvertex").c_str());
+  TH2F *px_py = (TH2F *)input_file.Get(MakeString(prefix, "pxpy").c_str());
+  TH2F *pz_px = (TH2F *)input_file.Get(MakeString(prefix, "pzpx").c_str());
+  TH2F *pz_py = (TH2F *)input_file.Get(MakeString(prefix, "pzpy").c_str());
+  TH2F *zdc_px = (TH2F *)input_file.Get(MakeString(prefix, "zdcpx").c_str());
+  TH2F *zdc_py = (TH2F *)input_file.Get(MakeString(prefix, "zdcpy").c_str());
+  TH2F *zdc_pz = (TH2F *)input_file.Get(MakeString(prefix, "zdcpz").c_str());
+  TH2F *zdc_pt = (TH2F *)input_file.Get(MakeString(prefix, "zdcpt").c_str());
+  TH2F *zdc_dca = (TH2F *)input_file.Get(MakeString(prefix, "zdcdca").c_str());
+  TH2F *zdc_nhit =
+      (TH2F *)input_file.Get(MakeString(prefix, "zdcnhit").c_str());
+  TH2F *zdc_nhitposs =
+      (TH2F *)input_file.Get(MakeString(prefix, "zdcnhitposs").c_str());
+  TH2F *zdc_nhitfrac =
+      (TH2F *)input_file.Get(MakeString(prefix, "zdcnhitfrac").c_str());
+  TH2F *zdc_eta = (TH2F *)input_file.Get(MakeString(prefix, "zdceta").c_str());
+  TH2F *zdc_phi = (TH2F *)input_file.Get(MakeString(prefix, "zdcphi").c_str());
+  TH2F *eta_phi =
+      (TH2F *)input_file.Get(MakeString(prefix, "tracketaphi").c_str());
+  TH2F *e_et = (TH2F *)input_file.Get(MakeString(prefix, "eet").c_str());
+  TH2F *zdc_e = (TH2F *)input_file.Get(MakeString(prefix, "zdce").c_str());
+  TH2F *zdc_et = (TH2F *)input_file.Get(MakeString(prefix, "zdcet").c_str());
+  TH2F *zdc_adc = (TH2F *)input_file.Get(MakeString(prefix, "zdcadc").c_str());
+  TH2F *tow_eta_phi =
+      (TH2F *)input_file.Get(MakeString(prefix, "towetaphi").c_str());
 
-  // event QA
-  dijetcore_map<string, TH2F *> zdc_vz;
-  dijetcore_map<string, TH2F *> vz_vx;
-  dijetcore_map<string, TH2F *> vz_vy;
-  dijetcore_map<string, TH2F *> zdc_refmult;
-  dijetcore_map<string, TH2F *> bbc_refmult;
-  dijetcore_map<string, TH1F *> n_vertices;
+  // create our histogram and canvas options
+  dijetcore::histogramOpts hopts;
+  dijetcore::canvasOpts copts;
+  dijetcore::canvasOpts coptslogz;
+  coptslogz.log_z = true;
+  dijetcore::canvasOpts coptslogy;
+  coptslogy.log_y = true;
+  dijetcore::canvasOpts cOptsBottomLeg;
+  cOptsBottomLeg.leg_upper_bound = 0.4;
+  cOptsBottomLeg.leg_lower_bound = 0.18;
+  cOptsBottomLeg.leg_right_bound = 0.9;
+  cOptsBottomLeg.leg_left_bound = 0.7;
+  dijetcore::canvasOpts cOptsBottomLeftLeg;
+  cOptsBottomLeftLeg.leg_upper_bound = 0.4;
+  cOptsBottomLeftLeg.leg_lower_bound = 0.18;
+  cOptsBottomLeftLeg.leg_right_bound = 0.18;
+  cOptsBottomLeftLeg.leg_left_bound = 0.4;
+  dijetcore::canvasOpts cOptsBottomLeftLegLogy;
+  cOptsBottomLeftLegLogy.log_y = true;
+  cOptsBottomLeftLegLogy.leg_upper_bound = 0.4;
+  cOptsBottomLeftLegLogy.leg_lower_bound = 0.18;
+  cOptsBottomLeftLegLogy.leg_right_bound = 0.18;
+  cOptsBottomLeftLegLogy.leg_left_bound = 0.4;
+  dijetcore::canvasOpts cOptsTopLeftLeg;
+  cOptsTopLeftLeg.leg_right_bound = 0.18;
+  cOptsTopLeftLeg.leg_left_bound = 0.4;
 
-  // track QA
-  dijetcore_map<string, TH2F *> px_py;
-  dijetcore_map<string, TH2F *> pz_px;
-  dijetcore_map<string, TH2F *> pz_py;
-  dijetcore_map<string, TH2F *> zdc_px;
-  dijetcore_map<string, TH2F *> zdc_py;
-  dijetcore_map<string, TH2F *> zdc_pz;
-  dijetcore_map<string, TH2F *> zdc_pt;
-  dijetcore_map<string, TH2F *> zdc_dca;
-  dijetcore_map<string, TH2F *> zdc_nhit;
-  dijetcore_map<string, TH2F *> zdc_nhitposs;
-  dijetcore_map<string, TH2F *> zdc_nhitfrac;
-  dijetcore_map<string, TH2F *> zdc_eta;
-  dijetcore_map<string, TH2F *> zdc_phi;
-  dijetcore_map<string, TH2F *> eta_phi;
+  // start by printing the general, event level QA
 
-  // tower QA
-  dijetcore_map<string, TH2F *> e_et;
-  dijetcore_map<string, TH2F *> zdc_e;
-  dijetcore_map<string, TH2F *> zdc_et;
-  dijetcore_map<string, TH2F *> zdc_adc;
-  dijetcore_map<string, TH2F *> tow_eta_phi;
-
-  // load histograms for each prefix
-  for (auto &prefix : prefixes) {
-    run_id_refmult[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidref").c_str());
-    run_id_grefmult[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidgref").c_str());
-    run_id_nprim_nglob[prefix] = (TH3F*) input_file.Get(dijetcore::MakeString(prefix, "runidnprimnglob").c_str());
-    run_id_zdc[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidzdc").c_str());
-    run_id_bbc[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidbbc").c_str());
-    run_id_vzvpdvz[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runiddvz").c_str());
-    run_id_vz[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidvz").c_str());
-    run_id_vx_vy[prefix] = (TH3F*) input_file.Get(dijetcore::MakeString(prefix, "runidvxvy").c_str());
-    run_id_track_pt[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidpt").c_str());
-    run_id_track_px[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidpx").c_str());
-    run_id_track_py[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidpy").c_str());
-    run_id_track_pz[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidpz").c_str());
-    run_id_track_eta[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runideta").c_str());
-    run_id_track_phi[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidphi").c_str());
-    run_id_track_dca[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runiddca").c_str());
-    run_id_track_nhit[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidnhit").c_str());
-    run_id_track_nhitposs[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidnhitposs").c_str());
-    run_id_track_nhitfrac[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "runidnhitfrac").c_str());
-    run_id_tower_e[prefix] = (TH3F*) input_file.Get(dijetcore::MakeString(prefix, "runide").c_str());
-    run_id_tower_et[prefix] = (TH3F*) input_file.Get(dijetcore::MakeString(prefix, "runidet").c_str());
-    run_id_tower_adc[prefix] = (TH3F*) input_file.Get(dijetcore::MakeString(prefix, "runidadc").c_str());
-    zdc_vz[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcvz").c_str());
-    vz_vx[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "vzvx").c_str());
-    vz_vy[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "vzvy").c_str());
-    zdc_refmult[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcref").c_str());
-    bbc_refmult[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "bbcref").c_str());
-    n_vertices[prefix] = (TH1F*) input_file.Get(dijetcore::MakeString(prefix, "nvertex").c_str());
-    px_py[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "pxpy").c_str());
-    pz_px[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "pzpx").c_str());
-    pz_py[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "pzpy").c_str());
-    zdc_px[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcpx").c_str());
-    zdc_py[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcpy").c_str());
-    zdc_pz[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcpz").c_str());
-    zdc_pt[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcpt").c_str());
-    zdc_dca[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcdca").c_str());
-    zdc_nhit[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcnhit").c_str());
-    zdc_nhitposs[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcnhitposs").c_str());
-    zdc_nhitfrac[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcnhitfrac").c_str());
-    zdc_eta[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdceta").c_str());
-    zdc_phi[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcphi").c_str());
-    eta_phi[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "tracketaphi").c_str());
-    e_et[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "eet").c_str());
-    zdc_e[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdce").c_str());
-    zdc_et[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcet").c_str());
-    zdc_adc[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "zdcadc").c_str());
-    tow_eta_phi[prefix] = (TH2F*) input_file.Get(dijetcore::MakeString(prefix, "towetaphi").c_str());
-  }
+  // first, vertex position
 
   gflags::ShutDownCommandLineFlags();
   return 0;
