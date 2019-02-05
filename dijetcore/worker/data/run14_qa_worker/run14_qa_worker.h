@@ -60,8 +60,7 @@ namespace dijetcore {
     // histograms
 
     // run-by-run
-    unique_ptr<TH2F> run_id_refmult_;
-    unique_ptr<TH2F> run_id_grefmult_;
+    unique_ptr<TH3F> run_id_ref_gref_;
     unique_ptr<TH3F> run_id_nprim_nglob_;
     unique_ptr<TH2F> run_id_zdc_;
     unique_ptr<TH2F> run_id_bbc_;

@@ -126,8 +126,7 @@ namespace dijetcore {
 
     // initialize histograms
     if (bin_runid > 0) {
-      run_id_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "runidref").c_str(), ";run ID;refmult", bin_runid, runid_low, runid_high, bin_refmult, refmult_low, refmult_high);
-      run_id_grefmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "runidgref").c_str(), ";run ID;grefmult", bin_runid, runid_low, runid_high, bin_refmult, refmult_low, refmult_high);
+      run_id_ref_gref_ = std::make_unique<TH3F>(dijetcore::MakeString(hist_prefix, "runidrefgref").c_str(), ";run ID;Refmult;GRefmult", bin_runid, runid_low, runid_high, bin_refmult, refmult_low, refmult_high, bin_refmult, refmult_low, refmult_high);
       run_id_nprim_nglob_ = std::make_unique<TH3F>(dijetcore::MakeString(hist_prefix, "runidnprimnglob").c_str(), ";run ID;N_{prim};N_{glob}", bin_runid, runid_low, runid_high, bin_nprim, nprim_low, nprim_high, bin_nglob, nglob_low, nglob_high);
       run_id_zdc_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "runidzdc").c_str(), ";run ID; zdc [kHz]", bin_runid, runid_low, runid_high, bin_zdc, zdc_low, zdc_high);
       run_id_bbc_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "runidbbc").c_str(), ";run ID; bbc [kHz]", bin_runid, runid_low, runid_high, bin_bbc, bbc_low, bbc_high);
@@ -223,9 +222,8 @@ namespace dijetcore {
     n_vertices_->Write();
 
     // check if we have runid observables
-    if (run_id_refmult_ != nullptr) {
-      run_id_refmult_->Write();
-      run_id_grefmult_->Write();
+    if (run_id_ref_gref_ != nullptr) {
+      run_id_ref_gref_->Write();
       run_id_nprim_nglob_->Write();
       run_id_zdc_->Write();
       run_id_bbc_->Write();
@@ -312,7 +310,7 @@ namespace dijetcore {
     n_vertices_->Fill(header->GetNumberOfVertices());
 
     // check if we are doing run-by-run QA
-    if (run_id_map_.size() > 0 && run_id_refmult_ != nullptr) {
+    if (run_id_map_.size() > 0 && run_id_ref_gref_ != nullptr) {
       if (RunQA(reader) == false) {
         LOG(ERROR) << "failure in RunQA";
       }
@@ -338,10 +336,8 @@ namespace dijetcore {
     TStarJetPicoEventHeader* header = event.GetEvent()->GetHeader();
 
     unsigned runid_idx = run_id_map_[header->GetRunId()];
-
-    run_id_refmult_->Fill(runid_idx, header->GetReferenceMultiplicity());
-    run_id_grefmult_->Fill(runid_idx, header->GetGReferenceMultiplicity());
-    run_id_nprim_nglob_->Fill(runid_idx, header->GetReferenceMultiplicity(), header->GetGReferenceMultiplicity());
+    run_id_ref_gref_->Fill(runid_idx, header->GetReferenceMultiplicity(), header->GetGReferenceMultiplicity());
+    run_id_nprim_nglob_->Fill(runid_idx, header->GetNOfPrimaryTracks(), header->GetNGlobalTracks());
     run_id_zdc_->Fill(runid_idx, header->GetZdcCoincidenceRate()/1000.0);
     run_id_bbc_->Fill(runid_idx, header->GetBbcCoincidenceRate()/1000.0);
     run_id_vzvpdvz_->Fill(runid_idx, header->GetPrimaryVertexZ() - header->GetVpdVz());
