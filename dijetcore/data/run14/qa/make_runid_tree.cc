@@ -5,7 +5,6 @@
 #include "dijetcore/lib/logging.h"
 #include "dijetcore/lib/flags.h"
 #include "dijetcore/lib/string/string_utils.h"
-#include "dijetcore/util/data/reader_util.h"
 
 #include <string>
 #include <set>
