@@ -108,6 +108,8 @@ int main(int argc, char *argv[]) {
   TH2F *vz_vy = (TH2F *)input_file.Get(MakeString(prefix, "vzvy").c_str());
   TH2F *zdc_refmult =
       (TH2F *)input_file.Get(MakeString(prefix, "zdcref").c_str());
+  TH2F *zdc_grefmult =
+      (TH2F *)input_file.Get(MakeString(prefix, "zdcgref").c_str());
   TH2F *bbc_refmult =
       (TH2F *)input_file.Get(MakeString(prefix, "bbcref").c_str());
   TH1F *n_vertices =
@@ -165,20 +167,65 @@ int main(int argc, char *argv[]) {
   cOptsTopLeftLeg.leg_left_bound = 0.4;
 
   // start by printing the general, event level QA
-
+  LOG(INFO) << "Printing results for event QA";
   TProfile* zdc_vz_ave = zdc_vz->ProfileX();
   TProfile* vz_vx_ave = vz_vx->ProfileX();
   TProfile* vz_vy_ave = vz_vy->ProfileX();
   TProfile* zdc_ref_ave = zdc_refmult->ProfileX();
+  TProfile* zdc_gref_ave = zdc_grefmult->ProfileX();
+  TProfile* bbc_ref_ave = bbc_refmult->ProfileX();
 
-  // unique_ptr<TH2F> zdc_vz_;
-  // unique_ptr<TH2F> vz_vx_;
-  // unique_ptr<TH2F> vz_vy_;
-  // unique_ptr<TH2F> zdc_refmult_;
-  // unique_ptr<TH2F> bbc_refmult_;
-  // unique_ptr<TH1F> n_vertices_;
+  dijetcore::PrettyPrint1D(zdc_vz_ave, hopts, copts, FLAGS_legendLabel,
+                           FLAGS_outputDir, "zdc_avg_vz", "", "zdcX [kHz]", "<V_{z}> [cm]");
+  dijetcore::PrettyPrint1D(vz_vx_ave, hopts, copts, FLAGS_legendLabel,
+                           FLAGS_outputDir, "vz_ave_vx", "", "V_{z} [cm]", "<V_{x}> [cm]");
+  dijetcore::PrettyPrint1D(vz_vy_ave, hopts, copts, FLAGS_legendLabel,
+                           FLAGS_outputDir, "vz_ave_vy", "", "V_{z} [cm]", "<V_{y}> [cm]");
+  dijetcore::PrettyPrint1D(zdc_ref_ave, hopts, copts, FLAGS_legendLabel,
+                           FLAGS_outputDir, "zdc_ave_ref", "", "zdcX [kHz]", "<refmult>");
+  dijetcore::PrettyPrint1D(zdc_gref_ave, hopts, copts, FLAGS_legendLabel,
+                           FLAGS_outputDir, "zdc_ave_gref", "", "zdcX [kHz]", "<grefmult>");
+  dijetcore::PrettyPrint1D(bbc_ref_ave, hopts, copts, FLAGS_legendLabel,
+                           FLAGS_outputDir, "bbc_ave_ref", "", "bbcX [kHz]", "<refmult>");
+
+  // do runid QA if its present in the TFile
+  if (run_id_refgref != nullptr) {
+    LOG(INFO) << "Printing results for RunID QA";
+
+    TProfile* runid_ref_ave = ((TH2D*)run_id_refgref->Project3D("YX"))->ProfileX();
+    TProfile* runid_gref_ave = ((TH2D*)run_id_refgref->Project3D("ZX"))->ProfileX();
+
+
+
+    dijetcore::PrettyPrint1D(runid_ref_ave, hopts, cOptsBottomLeg, FLAGS_legendLabel,
+                           FLAGS_outputDir, "runid_ave_ref", "", "Run ID", "<refmult>");
+    dijetcore::PrettyPrint1D(runid_ref_ave, hopts, cOptsBottomLeg, FLAGS_legendLabel,
+                           FLAGS_outputDir, "runid_ave_ref", "", "Run ID", "<refmult>");
+  }
+
+
+  // do track QA if its present in the TFile
+  if (px_py != nullptr) {
+    LOG(INFO) << "Printing results for track QA";
+  }
+
+  // do tower QA if its present in the TFile
+  if (e_et != nullptr) {
+    LOG(INFO) << "Printing results for track QA";
+  }
 
 
   gflags::ShutDownCommandLineFlags();
   return 0;
 }
+
+// void PrettyPrint1D(H* h,
+//                      histogramOpts hopts,
+//                      canvasOpts copts,
+//                      std::string hist_title,
+//                      std::string output_loc,
+//                      std::string output_name,
+//                      std::string canvas_title,
+//                      std::string x_axis_label,
+//                      std::string y_axis_label,
+//                      std::string legend_title = "")
