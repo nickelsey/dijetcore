@@ -5,8 +5,8 @@
 #include "dijetcore/lib/memory.h"
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/util/fastjet/dijet_key.h"
-#include "dijetcore/util/root/root_print_utils.h"
 #include "dijetcore/util/root/histogram_utils.h"
+#include "dijetcore/util/root/root_print_utils.h"
 
 #include <set>
 #include <string>
@@ -31,39 +31,14 @@ DIJETCORE_DEFINE_string(legendLabel1, "P18ih",
 DIJETCORE_DEFINE_string(legendLabel2, "P17id",
                         "label for histogram legends for input1");
 
+using dijetcore::Diff;
 using dijetcore::dijetcore_map;
 using dijetcore::make_unique;
 using dijetcore::MakeString;
+using dijetcore::Norm;
+using dijetcore::RelativeDiff;
 using dijetcore::unique_ptr;
 using std::string;
-
-template<class H>
-H* Norm(H* h) {
-  h->Scale(1.0 / h->Integral());
-  return h;
-}
-
-template<class H1, class H2>
-TH1D* Diff(H1* h1, H2* h2) {
-  if (h1->GetNbins() != h2->GetNbins() ||
-      h1->GetXaxis()->GetXmax() != h2->GetXaxis()->GetXmax() ||
-      h1->GetXaxis()->GetXmin() != h2->GetXaxis()->GetXmin()) {
-    LOG(ERROR) << "can't subtract histograms with different bins";
-  }
-  string name = MakeString(h1->GetName(), "minus", h2->GetName());
-  TH1D* diff = new TH1D(name.c_str(), "", h1->GetNbins(), h1->GetXaxis()->GetXmin(), h1->GetXaxis()->GetXmax());
-
-  for (int i = 1; i <= h1->GetNbins(); ++i) {
-    double binContent = h1->GetBinContent(i) - h2->GetBinContent(i);
-    double error1 = h1->GetBinError(i);
-    double error2 = h2->GetBinError(i);
-    double binError = sqrt(pow(error1, 2.0) + pow(error2, 2.0));
-
-    diff->SetBinContent(i, binContent);
-    diff->SetBinError(i, binError);
-  }
-  return diff;
-}
 
 int main(int argc, char *argv[]) {
   string usage = "Run 14 QA print routines";
@@ -100,8 +75,10 @@ int main(int argc, char *argv[]) {
     return 1;
   };
 
-  unique_ptr<TFile> input_file1 = make_unique<TFile>(FLAGS_input1.c_str(), "READ");
-  unique_ptr<TFile> input_file2 = make_unique<TFile>(FLAGS_input2.c_str(), "READ");
+  unique_ptr<TFile> input_file1 =
+      make_unique<TFile>(FLAGS_input1.c_str(), "READ");
+  unique_ptr<TFile> input_file2 =
+      make_unique<TFile>(FLAGS_input2.c_str(), "READ");
 
   dijetcore_map<string, unique_ptr<TFile>> files;
   files[FLAGS_histPrefix1] = std::move(input_file1);
@@ -215,8 +192,8 @@ int main(int argc, char *argv[]) {
         (TH1F *)files[prefix]->Get(MakeString(prefix, "nvertex").c_str());
 
     if (do_runid_qa) {
-      run_id_refgref[prefix] =
-          (TH3F *)files[prefix]->Get(MakeString(prefix, "runidrefgref").c_str());
+      run_id_refgref[prefix] = (TH3F *)files[prefix]->Get(
+          MakeString(prefix, "runidrefgref").c_str());
       run_id_nprim_nglob[prefix] = (TH3F *)files[prefix]->Get(
           MakeString(prefix, "runidnprimnglob").c_str());
       run_id_zdc[prefix] =
@@ -311,6 +288,8 @@ int main(int argc, char *argv[]) {
   // create our histogram and canvas options
   dijetcore::histogramOpts hopts;
   dijetcore::canvasOpts copts;
+  dijetcore::canvasOpts coptsNoLeg;
+  coptsNoLeg.do_legend = false;
   dijetcore::canvasOpts coptslogz;
   coptslogz.log_z = true;
   dijetcore::canvasOpts coptslogy;
@@ -350,33 +329,102 @@ int main(int argc, char *argv[]) {
     vx.push_back(Norm(vz_vx[prefix]->ProjectionY()));
     vy.push_back(Norm(vz_vy[prefix]->ProjectionY()));
     vz.push_back(Norm(vz_vx[prefix]->ProjectionX()));
-    //dvz.push_back(Norm(zdc_dvz[prefix]->ProjectionY()));
+    dvz.push_back(Norm(zdc_dvz[prefix]->ProjectionY()));
     zdc.push_back(Norm(zdc_refmult[prefix]->ProjectionX()));
-    nvertices.push_back(Norm((TH1F*)n_vertices[prefix]->Clone(MakeString(prefix, "nvert_clone").c_str())));
+    nvertices.push_back(Norm((TH1F *)n_vertices[prefix]->Clone(
+        MakeString(prefix, "nvert_clone").c_str())));
     refmult.push_back(Norm(zdc_refmult[prefix]->ProjectionY()));
     grefmult.push_back(Norm(zdc_grefmult[prefix]->ProjectionY()));
   }
 
   // print comparisons and ratios between the two datasets
-  dijetcore::PrintWithRatio(vx, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "vx", "V_{x} [cm]", "fraction");
-  dijetcore::PrintWithRatio(vy, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "vy", "V_{y} [cm]", "fraction");
+  dijetcore::PrintWithRatio(vx, legend_labels, hopts, coptslogy,
+                            FLAGS_outputDir, "vx", "V_{x} [cm]", "fraction");
+  dijetcore::PrintWithRatio(vy, legend_labels, hopts, coptslogy,
+                            FLAGS_outputDir, "vy", "V_{y} [cm]", "fraction");
   dijetcore::PrintWithRatio(vz, legend_labels, hopts, copts, FLAGS_outputDir,
-              "vz", "V_{z} [cm]", "fraction");
+                            "vz", "V_{z} [cm]", "fraction");
   dijetcore::PrintWithRatio(zdc, legend_labels, hopts, copts, FLAGS_outputDir,
-              "zdc", "zdcX [kHz]", "fraction");
-  dijetcore::PrintWithRatio(nvertices, legend_labels, hopts, copts, FLAGS_outputDir,
-              "nvertices", "N_{vertices}", "fraction");
-  dijetcore::PrintWithRatio(refmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "refmult", "refmult", "fraction");
-  dijetcore::PrintWithRatio(grefmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "grefmult", "grefmult", "fraction");
-  // PrintRatios(dvz, legend_labels, hopts, copts, FLAGS_outputDir,
-  //             "dvz", "#DeltaV_{z}^{TPC, VPD} [cm]", "fraction");
+                            "zdc", "zdcX [kHz]", "fraction");
+  dijetcore::PrintWithRatio(nvertices, legend_labels, hopts, copts,
+                            FLAGS_outputDir, "nvertices", "N_{vertices}",
+                            "fraction");
+  dijetcore::PrintWithRatio(refmult, legend_labels, hopts, coptslogy,
+                            FLAGS_outputDir, "refmult", "refmult", "fraction");
+  dijetcore::PrintWithRatio(grefmult, legend_labels, hopts, coptslogy,
+                            FLAGS_outputDir, "grefmult", "grefmult",
+                            "fraction");
+  dijetcore::PrintWithRatio(dvz, legend_labels, hopts, copts, FLAGS_outputDir,
+                            "dvz", "#DeltaV_{z}^{TPC, VPD} [cm]", "fraction");
 
+  // start runid QA if info is present for both datasets
+  if (do_runid_qa) {
+    std::vector<TProfile *> runid_ref;
+    std::vector<TProfile *> runid_gref;
+    std::vector<TProfile *> runid_nprim;
+    std::vector<TProfile *> runid_nglob;
+    std::vector<TProfile *> runid_zdc;
+    std::vector<TProfile *> runid_dvz;
+    std::vector<TProfile *> runid_vz;
+    std::vector<TProfile *> runid_vx;
+    std::vector<TProfile *> runid_vy;
 
-  
+    for (auto &prefix : prefixes) {
+      runid_ref.push_back(
+          ((TH2D *)run_id_refgref[prefix]->Project3D("YX"))->ProfileX());
+      runid_gref.push_back(
+          ((TH2D *)run_id_refgref[prefix]->Project3D("ZX"))->ProfileX());
+      runid_nprim.push_back(
+          ((TH2D *)run_id_nprim_nglob[prefix]->Project3D("YX"))->ProfileX());
+      runid_nglob.push_back(
+          ((TH2D *)run_id_nprim_nglob[prefix]->Project3D("ZX"))->ProfileX());
+      runid_zdc.push_back(run_id_zdc[prefix]->ProfileX());
+      runid_dvz.push_back(run_id_vzvpdvz[prefix]->ProfileX());
+      runid_vz.push_back(run_id_vz[prefix]->ProfileX());
+      runid_vx.push_back(
+          ((TH2D *)run_id_vx_vy[prefix]->Project3D("YX"))->ProfileX());
+      runid_vy.push_back(
+          ((TH2D *)run_id_vx_vy[prefix]->Project3D("ZX"))->ProfileX());
+    }
+
+    TH1D *runid_ref_diff = RelativeDiff(runid_ref[0], runid_ref[1]);
+    TH1D *runid_gref_diff = RelativeDiff(runid_gref[0], runid_gref[1]);
+    TH1D *runid_npart_diff = RelativeDiff(runid_nprim[0], runid_nprim[1]);
+    TH1D *runid_nglob_diff = RelativeDiff(runid_nglob[0], runid_nglob[1]);
+    TH1D *runid_zdc_diff = RelativeDiff(runid_zdc[0], runid_zdc[1]);
+    TH1D *runid_dvz_diff = RelativeDiff(runid_dvz[0], runid_dvz[1]);
+    TH1D *runid_vz_diff = RelativeDiff(runid_vz[0], runid_vz[1]);
+    TH1D *runid_vx_diff = RelativeDiff(runid_vx[0], runid_vx[1]);
+    TH1D *runid_vy_diff = RelativeDiff(runid_vy[0], runid_vy[1]);
+
+    dijetcore::PrettyPrint1D(runid_ref_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_ref", "", "Run ID",
+                             "#Delta <refmult> / refmult");
+    dijetcore::PrettyPrint1D(runid_gref_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_gref", "", "Run ID",
+                             "#Delta <grefmult> / grefmult");
+    dijetcore::PrettyPrint1D(runid_npart_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_npart", "", "Run ID",
+                             "#Delta <N_{Primary}> / N_{Primary}");
+    dijetcore::PrettyPrint1D(runid_nglob_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_nglob", "", "Run ID",
+                             "#Delta <N_{Global}> / N_{Global}");
+    dijetcore::PrettyPrint1D(runid_zdc_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_zdc", "", "Run ID",
+                             "#Delta <zdc> / zdc");
+    dijetcore::PrettyPrint1D(runid_dvz_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_dvz", "", "Run ID",
+                             "#Delta <#Delta V_{z}> / #Delta V_{z}");
+    dijetcore::PrettyPrint1D(runid_vz_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_vz", "", "Run ID",
+                             "#Delta <V_{z}> / V_{z}");
+    dijetcore::PrettyPrint1D(runid_vx_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_vx", "", "Run ID",
+                             "#Delta <V_{x}> / V_{x}");
+    dijetcore::PrettyPrint1D(runid_vy_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "runid_rel_vy", "", "Run ID",
+                             "#Delta <V_{y}> / V_{y}");
+  }
 
   google::ShutDownCommandLineFlags();
   return 0;
