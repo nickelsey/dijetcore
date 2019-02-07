@@ -119,6 +119,7 @@ namespace dijetcore {
 
     // event QA
     zdc_vz_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcvz").c_str(), ";zdc [kHz];V_{z}", bin_zdc, zdc_low, zdc_high, bin_vz, vz_low, vz_high);
+    zdc_dvz_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcdvz").c_str(), ";zdc [kHz];#Delta V_{z}", bin_zdc, zdc_low, zdc_high, bin_dvz, dvz_low, dvz_high);
     vz_vx_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "vzvx").c_str(), ";V_{z};V_{x}", bin_vz, vz_low, vz_high, bin_vxy, vxy_low, vxy_high);
     vz_vy_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "vzvy").c_str(), ";V_{z};V_{y}", bin_vz, vz_low, vz_high, bin_vxy, vxy_low, vxy_high);
     zdc_refmult_ = std::make_unique<TH2F>(dijetcore::MakeString(hist_prefix, "zdcref").c_str(), ";zdc [kHz];refmult", bin_zdc, zdc_low, zdc_high, bin_refmult, refmult_low, refmult_high);
@@ -217,6 +218,7 @@ namespace dijetcore {
     }
 
     zdc_vz_->Write();
+    zdc_dvz_->Write();
     vz_vx_->Write();
     vz_vy_->Write();
     zdc_refmult_->Write();
@@ -306,6 +308,7 @@ namespace dijetcore {
       Init();
     
     zdc_vz_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetPrimaryVertexZ());
+    zdc_dvz_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetPrimaryVertexZ() - header->GetVpdVz());
     vz_vx_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexX());
     vz_vy_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexY());
     zdc_refmult_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetReferenceMultiplicity());

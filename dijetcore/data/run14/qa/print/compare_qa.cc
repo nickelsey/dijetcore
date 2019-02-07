@@ -36,6 +36,24 @@ using dijetcore::MakeString;
 using dijetcore::unique_ptr;
 using std::string;
 
+template<class H>
+void PrintRatios(std::vector<H*>& histograms, std::vector<string>& legend_entries,
+                dijetcore::histogramOpts hopts, dijetcore::canvasOpts copts,
+                string loc, string name, string x_axis, string y_axis, 
+                string leg_title = "") {
+    if (histograms.size() != 2 ) {
+      LOG(ERROR) << "wrong number of histograms, PrintRatios requires 2";
+      return;
+    }
+    if (legend_entries.size() != 2) {
+      LOG(ERROR) << "wrong number of legend entries, PrintRatios requires 2";
+      return ;
+    }
+    dijetcore::PrintWithRatio(histograms[0], histograms[1], legend_entries[0],
+                              legend_entries[1], hopts, copts, loc, name, "",
+                              x_axis, y_axis, leg_title);
+};
+
 int main(int argc, char *argv[]) {
   string usage = "Run 14 QA print routines";
 
@@ -305,53 +323,66 @@ int main(int argc, char *argv[]) {
 
   // ***************************************************
   // event level QA
-  std::vector<TH1D *> refmult;
-  std::vector<TH1D *> grefmult;
-  std::vector<TH1D *> zdc;
+
+  //   dijetcore_map<string, TH2F *> zdc_vz;
+  // dijetcore_map<string, TH2F *> vz_vx;
+  // dijetcore_map<string, TH2F *> vz_vy;
+  // dijetcore_map<string, TH2F *> zdc_refmult;
+  // dijetcore_map<string, TH2F *> zdc_grefmult;
+  // dijetcore_map<string, TH2F *> bbc_refmult;
+  // dijetcore_map<string, TH1F *> n_vertices;
   std::vector<TH1D *> vx;
   std::vector<TH1D *> vy;
   std::vector<TH1D *> vz;
+  std::vector<TH1D *> zdc;
+  std::vector<TH1F *> nvertices;
+  std::vector<TH1D *> refmult;
+  std::vector<TH1D *> grefmult;
+  for (auto &prefix : prefixes) {
+    vx.push_back(vz_vx[prefix]->ProjectionY());
+    vx.back()->Scale(1.0 / vx.back()->Integral());
+    vy.push_back(vz_vy[prefix]->ProjectionY());
+    vy.back()->Scale(1.0 / vy.back()->Integral());
+    vz.push_back(vz_vx[prefix]->ProjectionX());
+    vz.back()->Scale(1.0 / vz.back()->Integral());
+    zdc.push_back(zdc_refmult[prefix]->ProjectionX());
+    zdc.back()->Scale(1.0 / zdc.back()->Integral());
+    nvertices.push_back((TH1F*)n_vertices[prefix]->Clone(MakeString(prefix, "nvert_clone").c_str()));
+    nvertices.back()->Scale(1.0 / nvertices.back()->Integral());
+    refmult.push_back(zdc_refmult[prefix]->ProjectionY());
+    refmult.back()->Scale(1.0 / refmult.back()->Integral());
+    grefmult.push_back(zdc_grefmult[prefix]->ProjectionY());
+    grefmult.back()->Scale(1.0 / grefmult.back()->Integral());
+  }
+
+  PrintRatios(vx, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "vx", "V_{x} [cm]", "fraction");
+  PrintRatios(vy, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "vy", "V_{y} [cm]", "fraction");
+  PrintRatios(vz, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "vz", "V_{z} [cm]", "fraction");
+  PrintRatios(zdc, legend_labels, hopts, copts, FLAGS_outputDir,
+              "zdc", "zdcX [kHz]", "fraction");
+  PrintRatios(nvertices, legend_labels, hopts, copts, FLAGS_outputDir,
+              "nvertices", "N_{vertices}", "fraction");
+  PrintRatios(refmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "refmult", "refmult", "fraction");
+  PrintRatios(grefmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "grefmult", "grefmult", "fraction");
+
+  
   std::vector<TH1D *> dvz;
   for (auto &prefix : prefixes) {
-    refmult.push_back(run_id_refgref[prefix]->ProjectionY());
-    refmult.back()->Scale(1.0 / refmult.back()->Integral());
-    grefmult.push_back(run_id_refgref[prefix]->ProjectionZ());
-    grefmult.back()->Scale(1.0 / grefmult.back()->Integral());
-    zdc.push_back(run_id_zdc[prefix]->ProjectionY());
-    zdc.back()->Scale(1.0 / zdc.back()->Integral());
-    vx.push_back(run_id_vx_vy[prefix]->ProjectionY());
-    vx.back()->Scale(1.0 / vx.back()->Integral());
-    vy.push_back(run_id_vx_vy[prefix]->ProjectionZ());
-    vy.back()->Scale(1.0 / vy.back()->Integral());
-    vz.push_back(run_id_vz[prefix]->ProjectionY());
-    vz.back()->Scale(1.0 / vz.back()->Integral());
     dvz.push_back(run_id_vzvpdvz[prefix]->ProjectionY());
     dvz.back()->Scale(1.0 / dvz.back()->Integral());
   }
 
   // print comparisons and ratios between the two datasets
+  PrintRatios(dvz, legend_labels, hopts, copts, FLAGS_outputDir,
+              "dvz", "#DeltaV_{z}^{TPC, VPD} [cm]", "fraction");
+
+  
 
   google::ShutDownCommandLineFlags();
   return 0;
 }
-
-template<class H>
-void PrintRatios(std::vector<H*> histograms, std::vector<string>& legend_entries,
-                dijetcore::histogramOpts hopts, dijetcore::canvasOpts copts,
-                string& loc, string& name, string& x_axis, string& y_axis, 
-                string leg_title = "") {
-
-};
-
-// void PrintWithRatio(H* h1,
-//                       H* h2,
-//                       std::string h1_title,
-//                       std::string h2_title,
-//                       histogramOpts hopts,
-//                       canvasOpts copts,
-//                       std::string output_loc,
-//                       std::string output_name,
-//                       std::string canvas_title,
-//                       std::string x_axis_label,
-//                       std::string y_axis_label,
-//                       std::string legend_title = "")

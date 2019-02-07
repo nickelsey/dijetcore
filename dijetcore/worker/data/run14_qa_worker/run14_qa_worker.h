@@ -83,6 +83,7 @@ namespace dijetcore {
 
     // event QA
     unique_ptr<TH2F> zdc_vz_;
+    unique_ptr<TH2F> zdc_dvz_;
     unique_ptr<TH2F> vz_vx_;
     unique_ptr<TH2F> vz_vy_;
     unique_ptr<TH2F> zdc_refmult_;
