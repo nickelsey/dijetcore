@@ -3,7 +3,7 @@
 #include "dijetcore/lib/logging.h"
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/util/fastjet/dijet_key.h"
-#include "dijetcore/util/root/root_print_routines.h"
+#include "dijetcore/util/root/root_print_utils.h"
 
 #include <set>
 #include <string>

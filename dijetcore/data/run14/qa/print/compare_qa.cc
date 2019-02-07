@@ -5,7 +5,8 @@
 #include "dijetcore/lib/memory.h"
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/util/fastjet/dijet_key.h"
-#include "dijetcore/util/root/root_print_routines.h"
+#include "dijetcore/util/root/root_print_utils.h"
+#include "dijetcore/util/root/histogram_utils.h"
 
 #include <set>
 #include <string>
@@ -37,22 +38,32 @@ using dijetcore::unique_ptr;
 using std::string;
 
 template<class H>
-void PrintRatios(std::vector<H*>& histograms, std::vector<string>& legend_entries,
-                dijetcore::histogramOpts hopts, dijetcore::canvasOpts copts,
-                string loc, string name, string x_axis, string y_axis, 
-                string leg_title = "") {
-    if (histograms.size() != 2 ) {
-      LOG(ERROR) << "wrong number of histograms, PrintRatios requires 2";
-      return;
-    }
-    if (legend_entries.size() != 2) {
-      LOG(ERROR) << "wrong number of legend entries, PrintRatios requires 2";
-      return ;
-    }
-    dijetcore::PrintWithRatio(histograms[0], histograms[1], legend_entries[0],
-                              legend_entries[1], hopts, copts, loc, name, "",
-                              x_axis, y_axis, leg_title);
-};
+H* Norm(H* h) {
+  h->Scale(1.0 / h->Integral());
+  return h;
+}
+
+template<class H1, class H2>
+TH1D* Diff(H1* h1, H2* h2) {
+  if (h1->GetNbins() != h2->GetNbins() ||
+      h1->GetXaxis()->GetXmax() != h2->GetXaxis()->GetXmax() ||
+      h1->GetXaxis()->GetXmin() != h2->GetXaxis()->GetXmin()) {
+    LOG(ERROR) << "can't subtract histograms with different bins";
+  }
+  string name = MakeString(h1->GetName(), "minus", h2->GetName());
+  TH1D* diff = new TH1D(name.c_str(), "", h1->GetNbins(), h1->GetXaxis()->GetXmin(), h1->GetXaxis()->GetXmax());
+
+  for (int i = 1; i <= h1->GetNbins(); ++i) {
+    double binContent = h1->GetBinContent(i) - h2->GetBinContent(i);
+    double error1 = h1->GetBinError(i);
+    double error2 = h2->GetBinError(i);
+    double binError = sqrt(pow(error1, 2.0) + pow(error2, 2.0));
+
+    diff->SetBinContent(i, binContent);
+    diff->SetBinError(i, binError);
+  }
+  return diff;
+}
 
 int main(int argc, char *argv[]) {
   string usage = "Run 14 QA print routines";
@@ -156,6 +167,7 @@ int main(int argc, char *argv[]) {
   dijetcore_map<string, THnSparseS *> run_id_tower_et;
   dijetcore_map<string, THnSparseS *> run_id_tower_adc;
   dijetcore_map<string, TH2F *> zdc_vz;
+  dijetcore_map<string, TH2F *> zdc_dvz;
   dijetcore_map<string, TH2F *> vz_vx;
   dijetcore_map<string, TH2F *> vz_vy;
   dijetcore_map<string, TH2F *> zdc_refmult;
@@ -187,6 +199,8 @@ int main(int argc, char *argv[]) {
     // load all default histograms
     zdc_vz[prefix] =
         (TH2F *)files[prefix]->Get(MakeString(prefix, "zdcvz").c_str());
+    zdc_dvz[prefix] =
+        (TH2F *)files[prefix]->Get(MakeString(prefix, "zdcdvz").c_str());
     vz_vx[prefix] =
         (TH2F *)files[prefix]->Get(MakeString(prefix, "vzvx").c_str());
     vz_vy[prefix] =
@@ -324,62 +338,43 @@ int main(int argc, char *argv[]) {
   // ***************************************************
   // event level QA
 
-  //   dijetcore_map<string, TH2F *> zdc_vz;
-  // dijetcore_map<string, TH2F *> vz_vx;
-  // dijetcore_map<string, TH2F *> vz_vy;
-  // dijetcore_map<string, TH2F *> zdc_refmult;
-  // dijetcore_map<string, TH2F *> zdc_grefmult;
-  // dijetcore_map<string, TH2F *> bbc_refmult;
-  // dijetcore_map<string, TH1F *> n_vertices;
   std::vector<TH1D *> vx;
   std::vector<TH1D *> vy;
   std::vector<TH1D *> vz;
+  std::vector<TH1D *> dvz;
   std::vector<TH1D *> zdc;
   std::vector<TH1F *> nvertices;
   std::vector<TH1D *> refmult;
   std::vector<TH1D *> grefmult;
   for (auto &prefix : prefixes) {
-    vx.push_back(vz_vx[prefix]->ProjectionY());
-    vx.back()->Scale(1.0 / vx.back()->Integral());
-    vy.push_back(vz_vy[prefix]->ProjectionY());
-    vy.back()->Scale(1.0 / vy.back()->Integral());
-    vz.push_back(vz_vx[prefix]->ProjectionX());
-    vz.back()->Scale(1.0 / vz.back()->Integral());
-    zdc.push_back(zdc_refmult[prefix]->ProjectionX());
-    zdc.back()->Scale(1.0 / zdc.back()->Integral());
-    nvertices.push_back((TH1F*)n_vertices[prefix]->Clone(MakeString(prefix, "nvert_clone").c_str()));
-    nvertices.back()->Scale(1.0 / nvertices.back()->Integral());
-    refmult.push_back(zdc_refmult[prefix]->ProjectionY());
-    refmult.back()->Scale(1.0 / refmult.back()->Integral());
-    grefmult.push_back(zdc_grefmult[prefix]->ProjectionY());
-    grefmult.back()->Scale(1.0 / grefmult.back()->Integral());
-  }
-
-  PrintRatios(vx, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "vx", "V_{x} [cm]", "fraction");
-  PrintRatios(vy, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "vy", "V_{y} [cm]", "fraction");
-  PrintRatios(vz, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "vz", "V_{z} [cm]", "fraction");
-  PrintRatios(zdc, legend_labels, hopts, copts, FLAGS_outputDir,
-              "zdc", "zdcX [kHz]", "fraction");
-  PrintRatios(nvertices, legend_labels, hopts, copts, FLAGS_outputDir,
-              "nvertices", "N_{vertices}", "fraction");
-  PrintRatios(refmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "refmult", "refmult", "fraction");
-  PrintRatios(grefmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
-              "grefmult", "grefmult", "fraction");
-
-  
-  std::vector<TH1D *> dvz;
-  for (auto &prefix : prefixes) {
-    dvz.push_back(run_id_vzvpdvz[prefix]->ProjectionY());
-    dvz.back()->Scale(1.0 / dvz.back()->Integral());
+    vx.push_back(Norm(vz_vx[prefix]->ProjectionY()));
+    vy.push_back(Norm(vz_vy[prefix]->ProjectionY()));
+    vz.push_back(Norm(vz_vx[prefix]->ProjectionX()));
+    //dvz.push_back(Norm(zdc_dvz[prefix]->ProjectionY()));
+    zdc.push_back(Norm(zdc_refmult[prefix]->ProjectionX()));
+    nvertices.push_back(Norm((TH1F*)n_vertices[prefix]->Clone(MakeString(prefix, "nvert_clone").c_str())));
+    refmult.push_back(Norm(zdc_refmult[prefix]->ProjectionY()));
+    grefmult.push_back(Norm(zdc_grefmult[prefix]->ProjectionY()));
   }
 
   // print comparisons and ratios between the two datasets
-  PrintRatios(dvz, legend_labels, hopts, copts, FLAGS_outputDir,
-              "dvz", "#DeltaV_{z}^{TPC, VPD} [cm]", "fraction");
+  dijetcore::PrintWithRatio(vx, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "vx", "V_{x} [cm]", "fraction");
+  dijetcore::PrintWithRatio(vy, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "vy", "V_{y} [cm]", "fraction");
+  dijetcore::PrintWithRatio(vz, legend_labels, hopts, copts, FLAGS_outputDir,
+              "vz", "V_{z} [cm]", "fraction");
+  dijetcore::PrintWithRatio(zdc, legend_labels, hopts, copts, FLAGS_outputDir,
+              "zdc", "zdcX [kHz]", "fraction");
+  dijetcore::PrintWithRatio(nvertices, legend_labels, hopts, copts, FLAGS_outputDir,
+              "nvertices", "N_{vertices}", "fraction");
+  dijetcore::PrintWithRatio(refmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "refmult", "refmult", "fraction");
+  dijetcore::PrintWithRatio(grefmult, legend_labels, hopts, coptslogy, FLAGS_outputDir,
+              "grefmult", "grefmult", "fraction");
+  // PrintRatios(dvz, legend_labels, hopts, copts, FLAGS_outputDir,
+  //             "dvz", "#DeltaV_{z}^{TPC, VPD} [cm]", "fraction");
+
 
   
 

@@ -1,6 +1,6 @@
 
-#ifndef DIJETCORE_UTIL_ROOT_ROOT_PRINT_ROUTINES_H
-#define DIJETCORE_UTIL_ROOT_ROOT_PRINT_ROUTINES_H
+#ifndef DIJETCORE_UTIL_ROOT_ROOT_PRINT_UTILS_H
+#define DIJETCORE_UTIL_ROOT_ROOT_PRINT_UTILS_H
 
 #include <iostream>
 #include <vector>
@@ -506,6 +506,25 @@ namespace dijetcore {
     
     c.SaveAs(canvas_name.c_str());
   }
+
+  // convenience wrapper to PrintWithRatio above
+  template<class H>
+  void PrintWithRatio(std::vector<H*>& histograms, std::vector<string>& legend_entries,
+                      dijetcore::histogramOpts hopts, dijetcore::canvasOpts copts,
+                      string loc, string name, string x_axis, string y_axis, 
+                      string leg_title = "") {
+    if (histograms.size() != 2 ) {
+      LOG(ERROR) << "wrong number of histograms, PrintRatios requires 2";
+      return;
+    }
+    if (legend_entries.size() != 2) {
+      LOG(ERROR) << "wrong number of legend entries, PrintRatios requires 2";
+      return ;
+    }
+    dijetcore::PrintWithRatio(histograms[0], histograms[1], legend_entries[0],
+                              legend_entries[1], hopts, copts, loc, name, "",
+                              x_axis, y_axis, leg_title);
+};
   
   
   // print histograms & their ratios
@@ -680,4 +699,4 @@ namespace dijetcore {
 
 } // namespace dijetcore
 
-#endif // DIJETCORE_UTIL_ROOT_ROOT_PRINT_ROUTINES_H
+#endif // DIJETCORE_UTIL_ROOT_ROOT_PRINT_UTILS_H
