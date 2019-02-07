@@ -1,6 +1,6 @@
+#include "dijetcore/lib/filesystem.h"
 #include "dijetcore/lib/flags.h"
 #include "dijetcore/lib/logging.h"
-#include "dijetcore/lib/filesystem.h"
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/util/fastjet/dijet_key.h"
 #include "dijetcore/util/root/root_print_routines.h"
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   // set drawing preferences for histograms and graphs
   gStyle->SetOptStat(false);
   gStyle->SetOptFit(false);
-  gStyle->SetOptTitle(1);
+  gStyle->SetOptTitle(0);
   gStyle->SetLegendBorderSize(0);
   gStyle->SetHatchesSpacing(1.0);
   gStyle->SetHatchesLineWidth(2);
@@ -142,10 +142,13 @@ int main(int argc, char *argv[]) {
   // create our histogram and canvas options
   dijetcore::histogramOpts hopts;
   dijetcore::canvasOpts copts;
+  copts.do_legend = false;
   dijetcore::canvasOpts coptslogz;
   coptslogz.log_z = true;
+  coptslogz.do_legend = false;
   dijetcore::canvasOpts coptslogy;
   coptslogy.log_y = true;
+  coptslogy.do_legend = false;
   dijetcore::canvasOpts cOptsBottomLeg;
   cOptsBottomLeg.leg_upper_bound = 0.4;
   cOptsBottomLeg.leg_lower_bound = 0.18;
@@ -168,52 +171,271 @@ int main(int argc, char *argv[]) {
 
   // start by printing the general, event level QA
   LOG(INFO) << "Printing results for event QA";
-  TProfile* zdc_vz_ave = zdc_vz->ProfileX();
-  TProfile* vz_vx_ave = vz_vx->ProfileX();
-  TProfile* vz_vy_ave = vz_vy->ProfileX();
-  TProfile* zdc_ref_ave = zdc_refmult->ProfileX();
-  TProfile* zdc_gref_ave = zdc_grefmult->ProfileX();
-  TProfile* bbc_ref_ave = bbc_refmult->ProfileX();
+  TProfile *zdc_vz_ave = zdc_vz->ProfileX();
+  TProfile *vz_vx_ave = vz_vx->ProfileX();
+  TProfile *vz_vy_ave = vz_vy->ProfileX();
+  TProfile *zdc_ref_ave = zdc_refmult->ProfileX();
+  TProfile *zdc_gref_ave = zdc_grefmult->ProfileX();
+  TProfile *bbc_ref_ave = bbc_refmult->ProfileX();
 
   dijetcore::PrettyPrint1D(zdc_vz_ave, hopts, copts, FLAGS_legendLabel,
-                           FLAGS_outputDir, "zdc_avg_vz", "", "zdcX [kHz]", "<V_{z}> [cm]");
+                           FLAGS_outputDir, "zdc_avg_vz", "", "zdcX [kHz]",
+                           "<V_{z}> [cm]");
   dijetcore::PrettyPrint1D(vz_vx_ave, hopts, copts, FLAGS_legendLabel,
-                           FLAGS_outputDir, "vz_ave_vx", "", "V_{z} [cm]", "<V_{x}> [cm]");
+                           FLAGS_outputDir, "vz_ave_vx", "", "V_{z} [cm]",
+                           "<V_{x}> [cm]");
   dijetcore::PrettyPrint1D(vz_vy_ave, hopts, copts, FLAGS_legendLabel,
-                           FLAGS_outputDir, "vz_ave_vy", "", "V_{z} [cm]", "<V_{y}> [cm]");
+                           FLAGS_outputDir, "vz_ave_vy", "", "V_{z} [cm]",
+                           "<V_{y}> [cm]");
   dijetcore::PrettyPrint1D(zdc_ref_ave, hopts, copts, FLAGS_legendLabel,
-                           FLAGS_outputDir, "zdc_ave_ref", "", "zdcX [kHz]", "<refmult>");
+                           FLAGS_outputDir, "zdc_ave_ref", "", "zdcX [kHz]",
+                           "<refmult>");
   dijetcore::PrettyPrint1D(zdc_gref_ave, hopts, copts, FLAGS_legendLabel,
-                           FLAGS_outputDir, "zdc_ave_gref", "", "zdcX [kHz]", "<grefmult>");
+                           FLAGS_outputDir, "zdc_ave_gref", "", "zdcX [kHz]",
+                           "<grefmult>");
   dijetcore::PrettyPrint1D(bbc_ref_ave, hopts, copts, FLAGS_legendLabel,
-                           FLAGS_outputDir, "bbc_ave_ref", "", "bbcX [kHz]", "<refmult>");
+                           FLAGS_outputDir, "bbc_ave_ref", "", "bbcX [kHz]",
+                           "<refmult>");
 
   // do runid QA if its present in the TFile
   if (run_id_refgref != nullptr) {
     LOG(INFO) << "Printing results for RunID QA";
 
-    TProfile* runid_ref_ave = ((TH2D*)run_id_refgref->Project3D("YX"))->ProfileX();
-    TProfile* runid_gref_ave = ((TH2D*)run_id_refgref->Project3D("ZX"))->ProfileX();
+    TProfile *runid_ref_ave =
+        ((TH2D *)run_id_refgref->Project3D("YX"))->ProfileX();
+    TProfile *runid_gref_ave =
+        ((TH2D *)run_id_refgref->Project3D("ZX"))->ProfileX();
+    TProfile *runid_nprim_ave =
+        ((TH2D *)run_id_nprim_nglob->Project3D("YX"))->ProfileX();
+    TProfile *runid_nglob_ave =
+        ((TH2D *)run_id_nprim_nglob->Project3D("ZX"))->ProfileX();
+    TProfile *runid_zdc_ave = run_id_zdc->ProfileX();
+    TProfile *runid_bbc_ave = run_id_bbc->ProfileX();
+    TProfile *runid_dvz_ave = run_id_vzvpdvz->ProfileX();
+    TProfile *runid_vz_ave = run_id_vz->ProfileX();
+    TProfile *runid_vx_ave =
+        ((TH2D *)run_id_vx_vy->Project3D("YX"))->ProfileX();
+    TProfile *runid_vy_ave =
+        ((TH2D *)run_id_vx_vy->Project3D("ZX"))->ProfileX();
 
-
-
-    dijetcore::PrettyPrint1D(runid_ref_ave, hopts, cOptsBottomLeg, FLAGS_legendLabel,
-                           FLAGS_outputDir, "runid_ave_ref", "", "Run ID", "<refmult>");
-    dijetcore::PrettyPrint1D(runid_ref_ave, hopts, cOptsBottomLeg, FLAGS_legendLabel,
-                           FLAGS_outputDir, "runid_ave_ref", "", "Run ID", "<refmult>");
+    dijetcore::PrettyPrint1D(runid_ref_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_ref", "", "Run ID",
+                             "<refmult>");
+    dijetcore::PrettyPrint1D(runid_gref_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_gref", "", "Run ID",
+                             "<refmult>");
+    dijetcore::PrettyPrint1D(runid_nprim_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_nprim", "", "Run ID",
+                             "<N_{primary}>");
+    dijetcore::PrettyPrint1D(runid_nglob_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_nglob", "", "Run ID",
+                             "<N_{global}>");
+    dijetcore::PrettyPrint1D(runid_zdc_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_zdc", "", "Run ID",
+                             "<zdcX> [kHz]");
+    dijetcore::PrettyPrint1D(runid_bbc_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_bbc", "", "Run ID",
+                             "<bbcX> [kHz]");
+    dijetcore::PrettyPrint1D(runid_dvz_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_dvz", "", "Run ID",
+                             "<V_{z}-V_{z}^{vpd}> [cm]");
+    dijetcore::PrettyPrint1D(runid_vz_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_vz", "", "Run ID",
+                             "<V_{z}> [cm]");
+    dijetcore::PrettyPrint1D(runid_vx_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_vx", "", "Run ID",
+                             "<V_{x}> [cm]");
+    dijetcore::PrettyPrint1D(runid_vy_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "runid_ave_vy", "", "Run ID",
+                             "<V_{y}> [cm]");
   }
-
 
   // do track QA if its present in the TFile
   if (px_py != nullptr) {
     LOG(INFO) << "Printing results for track QA";
+
+    dijetcore::Print2DSimple(px_py, hopts, coptslogz, FLAGS_outputDir,
+                             "track_pxpy", "", "p_{X} [GeV/c]",
+                             "p_{y} [GeV/c]");
+    dijetcore::Print2DSimple(pz_px, hopts, coptslogz, FLAGS_outputDir,
+                             "track_pzpx", "", "p_{Z} [GeV/c]",
+                             "p_{X} [GeV/c]");
+    dijetcore::Print2DSimple(pz_py, hopts, coptslogz, FLAGS_outputDir,
+                             "track_pzpy", "", "p_{Z} [GeV/c]",
+                             "p_{Y} [GeV/c]");
+    dijetcore::Print2DSimple(eta_phi, hopts, copts, FLAGS_outputDir,
+                             "track_etaphi", "", "#eta", "#phi");
+
+    TProfile *zdc_px_ave = zdc_px->ProfileX();
+    TProfile *zdc_py_ave = zdc_py->ProfileX();
+    TProfile *zdc_pz_ave = zdc_pz->ProfileX();
+    TProfile *zdc_pt_ave = zdc_pt->ProfileX();
+    TProfile *zdc_dca_ave = zdc_dca->ProfileX();
+    TProfile *zdc_nhit_ave = zdc_nhit->ProfileX();
+    TProfile *zdc_nhitposs_ave = zdc_nhitposs->ProfileX();
+    TProfile *zdc_nhitfrac_ave = zdc_nhitfrac->ProfileX();
+    TProfile *zdc_eta_ave = zdc_eta->ProfileX();
+    TProfile *zdc_phi_ave = zdc_phi->ProfileX();
+
+    dijetcore::PrettyPrint1D(zdc_px_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_px", "", "zdcX [kHz]",
+                             "<p_{X}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_py_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_py", "", "zdcX [kHz]",
+                             "<p_{Y}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_pz_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_pz", "", "zdcX [kHz]",
+                             "<p_{Z}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_pt_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_pt", "", "zdcX [kHz]",
+                             "<p_{T}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_nhit_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_nhit", "", "zdcX [kHz]",
+                             "<N_{hits fit}>");
+    dijetcore::PrettyPrint1D(zdc_nhitposs_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_nhitposs", "",
+                             "zdcX [kHz]", "<N_{hits possible}>");
+    dijetcore::PrettyPrint1D(zdc_nhitfrac_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_nhitfrac", "",
+                             "zdcX [kHz]", "<N_{hits fit}/N_{hits possible}>");
+    dijetcore::PrettyPrint1D(zdc_eta_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_eta", "", "zdcX [kHz]",
+                             "<#eta>");
+    dijetcore::PrettyPrint1D(zdc_phi_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_phi", "", "zdcX [kHz]",
+                             "<#phi>");
+
+    if (run_id_track_pt != nullptr) {
+      LOG(INFO) << "Printing results for run ID dependent track QA";
+
+      TProfile *runid_pt_ave = run_id_track_pt->ProfileX();
+      TProfile *runid_px_ave = run_id_track_px->ProfileX();
+      TProfile *runid_py_ave = run_id_track_py->ProfileX();
+      TProfile *runid_pz_ave = run_id_track_pz->ProfileX();
+      TProfile *runid_eta_ave = run_id_track_eta->ProfileX();
+      TProfile *runid_phi_ave = run_id_track_phi->ProfileX();
+      TProfile *runid_dca_ave = run_id_track_dca->ProfileX();
+      TProfile *runid_nhit_ave = run_id_track_nhit->ProfileX();
+      TProfile *runid_nhitposs_ave = run_id_track_nhitposs->ProfileX();
+      TProfile *runid_nhitfrac_ave = run_id_track_nhitfrac->ProfileX();
+
+      dijetcore::PrettyPrint1D(runid_pt_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_pt", "", "Run ID",
+                               "<p_{T}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_px_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_px", "", "Run ID",
+                               "<p_{X}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_py_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_py", "", "Run ID",
+                               "<p_{Y}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_pz_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_pz", "", "Run ID",
+                               "<p_{Z}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_eta_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_eta", "", "Run ID",
+                               "<#eta>");
+      dijetcore::PrettyPrint1D(runid_phi_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_phi", "", "Run ID",
+                               "<#phi>");
+      dijetcore::PrettyPrint1D(runid_dca_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_dca", "", "Run ID",
+                               "<DCA> [cm]");
+      dijetcore::PrettyPrint1D(runid_nhit_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_nhit", "", "Run ID",
+                               "<N_{hits fit}>");
+      dijetcore::PrettyPrint1D(
+          runid_nhitposs_ave, hopts, copts, FLAGS_legendLabel, FLAGS_outputDir,
+          "runid_ave_nhitposs", "", "Run ID", "<N_{hits possible}>");
+      dijetcore::PrettyPrint1D(runid_nhitfrac_ave, hopts, copts,
+                               FLAGS_legendLabel, FLAGS_outputDir,
+                               "runid_ave_nhitfrac", "", "Run ID",
+                               "<N_{hits fit}/N_{hits possible}>");
+    }
   }
 
   // do tower QA if its present in the TFile
   if (e_et != nullptr) {
     LOG(INFO) << "Printing results for track QA";
-  }
 
+    dijetcore::Print2DSimple(tow_eta_phi, hopts, copts, FLAGS_outputDir,
+                             "tower_etaphi", "", "#eta", "#phi");
+
+    TH1D *e = e_et->ProjectionX();
+    TH1D *et = e_et->ProjectionY();
+    TProfile *zdc_e_ave = zdc_e->ProfileX();
+    TProfile *zdc_et_ave = zdc_et->ProfileX();
+    TProfile *zdc_adc_ave = zdc_adc->ProfileX();
+
+    dijetcore::PrettyPrint1D(e, hopts, coptslogy, FLAGS_legendLabel,
+                             FLAGS_outputDir, "tower_e_spectrum", "", "E [GeV]",
+                             "counts");
+    dijetcore::PrettyPrint1D(et, hopts, coptslogy, FLAGS_legendLabel,
+                             FLAGS_outputDir, "tower_et_spectrum", "",
+                             "E_{T} [GeV]", "counts");
+    dijetcore::PrettyPrint1D(zdc_e_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_tow_e", "", "zdcX [kHz]",
+                             "<E> [GeV]");
+    dijetcore::PrettyPrint1D(zdc_et_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_tow_et", "",
+                             "zdcX [kHz]", "<E_{T}> [GeV]");
+    dijetcore::PrettyPrint1D(zdc_adc_ave, hopts, copts, FLAGS_legendLabel,
+                             FLAGS_outputDir, "zdc_ave_tow_adc", "",
+                             "zdcX [kHz]", "<ADC>");
+
+    if (run_id_tower_e != nullptr) {
+      LOG(INFO) << "Printing results for run ID dependent tower QA";
+      TH2D *runid_e = run_id_tower_e->Projection(2, 0);
+      TH2D *runid_et = run_id_tower_et->Projection(2, 0);
+      TH2D *runid_adc = run_id_tower_adc->Projection(2, 0);
+      TH2D *towerid_e = run_id_tower_e->Projection(2, 1);
+      TH2D *towerid_et = run_id_tower_et->Projection(2, 1);
+      TH2D *towerid_adc = run_id_tower_adc->Projection(2, 1);
+
+      TH1D *towerid_activity = run_id_tower_e->Projection(1);
+
+      dijetcore::Print2DSimple(runid_e, hopts, coptslogz, FLAGS_outputDir,
+                               "runid_e", "", "Run ID", "E [GeV]");
+      dijetcore::Print2DSimple(runid_et, hopts, coptslogz, FLAGS_outputDir,
+                               "runid_et", "", "Run ID", "E_{T} [GeV]");
+      dijetcore::Print2DSimple(runid_adc, hopts, coptslogz, FLAGS_outputDir,
+                               "runid_adc", "", "Run ID", "ADC");
+      dijetcore::Print2DSimple(towerid_e, hopts, coptslogz, FLAGS_outputDir,
+                               "towerid_e", "", "Tower ID", "E [GeV]");
+      dijetcore::Print2DSimple(towerid_et, hopts, coptslogz, FLAGS_outputDir,
+                               "towerid_et", "", "Tower ID", "E_{T} [GeV]");
+      dijetcore::Print2DSimple(towerid_adc, hopts, coptslogz, FLAGS_outputDir,
+                               "towerid_adc", "", "TowerID", "ADC");
+      dijetcore::PrettyPrint1D(towerid_activity, hopts, copts,
+                               FLAGS_legendLabel, FLAGS_outputDir,
+                               "towerid_activity", "", "Tower ID", "Counts");
+
+      TProfile *runid_e_ave = runid_e->ProfileX();
+      TProfile *runid_et_ave = runid_et->ProfileX();
+      TProfile *runid_adc_ave = runid_adc->ProfileX();
+      TProfile *towerid_e_ave = towerid_e->ProfileX();
+      TProfile *towerid_et_ave = towerid_et->ProfileX();
+      TProfile *towerid_adc_ave = towerid_adc->ProfileX();
+
+      dijetcore::PrettyPrint1D(runid_e_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_e", "", "Run ID",
+                               "<E> [GeV]");
+      dijetcore::PrettyPrint1D(runid_et_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_et", "", "Run ID",
+                               "<E_{T}> [GeV]");
+      dijetcore::PrettyPrint1D(runid_adc_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "runid_ave_adc", "", "Run ID",
+                               "<ADC> [GeV]");
+      dijetcore::PrettyPrint1D(towerid_e_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "towerid_ave_e", "", "Tower ID",
+                               "<E> [GeV]");
+      dijetcore::PrettyPrint1D(towerid_et_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "towerid_ave_et", "",
+                               "Tower ID", "<E_{T}> [GeV]");
+      dijetcore::PrettyPrint1D(towerid_adc_ave, hopts, copts, FLAGS_legendLabel,
+                               FLAGS_outputDir, "towerid_ave_adc", "",
+                               "Tower ID", "<ADC> [GeV]");
+    }
+  }
 
   gflags::ShutDownCommandLineFlags();
   return 0;

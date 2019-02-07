@@ -72,9 +72,9 @@ namespace dijetcore {
     double nhitfrac_high = 1.0;
 
     // binning for ADC
-    unsigned bin_adc = 50;
+    unsigned bin_adc = 300;
     double adc_low = 0;
-    double adc_high = 500;
+    double adc_high = 3000;
 
     // binning for eta
     unsigned bin_eta = 40;

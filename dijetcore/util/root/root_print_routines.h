@@ -95,7 +95,7 @@ namespace dijetcore {
     canvasOpts() {
       left_margin = 0.13;
       bottom_margin = 0.15;
-      right_margin = 0.08;
+      right_margin = 0.10;
       upper_margin = 0.10;
       
       do_legend = true;
