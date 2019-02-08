@@ -72,6 +72,11 @@ int main(int argc, char* argv[]) {
       refmult = *refmult_value;
       grefmult = *grefmult_value;
       tree->Fill();
+
+      if (*grefmult_value > 1000) {
+        LOG(INFO) << "grefmult above 1000: " << *grefmult_value;
+        LOG(INFO) << "runid: " << *runid_value << " eventid: " << *eventid_value;
+      }
     }
   } catch(std::exception& e) {
     std::cerr << "Caught: " << e.what() << " during analysis loop." << std::endl;
