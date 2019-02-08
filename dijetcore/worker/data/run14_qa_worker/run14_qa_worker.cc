@@ -24,35 +24,35 @@ namespace dijetcore {
     double runid_high = runid_low + bin_runid;
 
     // binning for refmult/grefmult
-    unsigned bin_refmult = 100;
+    unsigned bin_refmult = 800;
     double refmult_low = 0;
     double refmult_high = 800;
 
     // binning for nprim/nglobal
-    unsigned bin_nprim = 100;
-    unsigned bin_nglob = 100;
+    unsigned bin_nprim = 140;
+    unsigned bin_nglob = 140;
     double nprim_low = 0;
     double nprim_high = 1400;
     double nglob_low = 0;
     double nglob_high = 4500;
 
     // binning for zdc
-    unsigned bin_zdc = 50;
+    unsigned bin_zdc = 100;
     double zdc_low = 0;
     double zdc_high = 100;
 
     // binnning for bbc
-    unsigned bin_bbc = 50;
+    unsigned bin_bbc = 100;
     double bbc_low = 0;
     double bbc_high = 100;
 
     // binning for momentum
-    unsigned bin_momentum = 200;
+    unsigned bin_momentum = 400;
     double momentum_low = 0;
     double momentum_high = 100;
 
     // binning for energy
-    unsigned bin_energy = 200;
+    unsigned bin_energy = 400;
     double energy_low = 0;
     double energy_high = 100;
 
@@ -93,12 +93,12 @@ namespace dijetcore {
     double vz_high = 30;
 
     // vertex xy binning
-    unsigned bin_vxy = 50;
+    unsigned bin_vxy = 100;
     double vxy_low = -5.0;
     double vxy_high = 5.0;
 
     // vertex dvz binning
-    unsigned bin_dvz = 30;
+    unsigned bin_dvz = 60;
     double dvz_low = -3.0;
     double dvz_high = 3.0;
 

@@ -40,6 +40,11 @@ using dijetcore::RelativeDiff;
 using dijetcore::unique_ptr;
 using std::string;
 
+template <class H>
+TH1D *RelativeDiff(std::vector<H *> vec) {
+  return RelativeDiff(vec[0], vec[1]);
+}
+
 int main(int argc, char *argv[]) {
   string usage = "Run 14 QA print routines";
 
@@ -387,43 +392,476 @@ int main(int argc, char *argv[]) {
           ((TH2D *)run_id_vx_vy[prefix]->Project3D("ZX"))->ProfileX());
     }
 
-    TH1D *runid_ref_diff = RelativeDiff(runid_ref[0], runid_ref[1]);
-    TH1D *runid_gref_diff = RelativeDiff(runid_gref[0], runid_gref[1]);
-    TH1D *runid_npart_diff = RelativeDiff(runid_nprim[0], runid_nprim[1]);
-    TH1D *runid_nglob_diff = RelativeDiff(runid_nglob[0], runid_nglob[1]);
-    TH1D *runid_zdc_diff = RelativeDiff(runid_zdc[0], runid_zdc[1]);
-    TH1D *runid_dvz_diff = RelativeDiff(runid_dvz[0], runid_dvz[1]);
-    TH1D *runid_vz_diff = RelativeDiff(runid_vz[0], runid_vz[1]);
-    TH1D *runid_vx_diff = RelativeDiff(runid_vx[0], runid_vx[1]);
-    TH1D *runid_vy_diff = RelativeDiff(runid_vy[0], runid_vy[1]);
+    TH1D *runid_ref_diff = RelativeDiff(runid_ref);
+    TH1D *runid_gref_diff = RelativeDiff(runid_gref);
+    TH1D *runid_npart_diff = RelativeDiff(runid_nprim);
+    TH1D *runid_nglob_diff = RelativeDiff(runid_nglob);
+    TH1D *runid_zdc_diff = RelativeDiff(runid_zdc);
+    TH1D *runid_dvz_diff = RelativeDiff(runid_dvz);
+    TH1D *runid_vz_diff = RelativeDiff(runid_vz);
+    TH1D *runid_vx_diff = RelativeDiff(runid_vx);
+    TH1D *runid_vy_diff = RelativeDiff(runid_vy);
 
+    dijetcore::PrintWithRatio(runid_ref, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_ref", "Run ID",
+                              "<refmult>");
     dijetcore::PrettyPrint1D(runid_ref_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_ref", "", "Run ID",
-                             "#Delta <refmult> / refmult");
+                             "#Delta <refmult> / <refmult>");
+
+    dijetcore::PrintWithRatio(runid_gref, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_gref", "Run ID",
+                              "<grefmult>");
     dijetcore::PrettyPrint1D(runid_gref_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_gref", "", "Run ID",
-                             "#Delta <grefmult> / grefmult");
+                             "#Delta <grefmult> / <grefmult>");
+
+    dijetcore::PrintWithRatio(runid_nprim, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_npart", "Run ID",
+                              "<N_{Primary}>");
     dijetcore::PrettyPrint1D(runid_npart_diff, hopts, coptsNoLeg, "",
-                             FLAGS_outputDir, "runid_rel_npart", "", "Run ID",
-                             "#Delta <N_{Primary}> / N_{Primary}");
+                             FLAGS_outputDir, "runid_rel_nprim", "", "Run ID",
+                             "#Delta <N_{Primary}> / <N_{Primary}>");
+
+    dijetcore::PrintWithRatio(runid_nglob, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_nglob", "Run ID",
+                              "<N_{Global}>");
     dijetcore::PrettyPrint1D(runid_nglob_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_nglob", "", "Run ID",
-                             "#Delta <N_{Global}> / N_{Global}");
+                             "#Delta <N_{Global}> / <N_{Global}>");
+
+    dijetcore::PrintWithRatio(runid_zdc, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_zdc", "Run ID",
+                              "<zdcX> [kHz]");
     dijetcore::PrettyPrint1D(runid_zdc_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_zdc", "", "Run ID",
-                             "#Delta <zdc> / zdc");
+                             "#Delta <zdc> / <zdc>");
+
+    dijetcore::PrintWithRatio(runid_dvz, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_dvz", "Run ID",
+                              "<#Delta V_{z}> [cm]");
     dijetcore::PrettyPrint1D(runid_dvz_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_dvz", "", "Run ID",
-                             "#Delta <#Delta V_{z}> / #Delta V_{z}");
+                             "#Delta <#Delta V_{z}> / <#Delta V_{z}>");
+
+    dijetcore::PrintWithRatio(runid_vz, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_vz", "Run ID",
+                              "<V_{z}> [cm]");
     dijetcore::PrettyPrint1D(runid_vz_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_vz", "", "Run ID",
-                             "#Delta <V_{z}> / V_{z}");
+                             "#Delta <V_{z}> / <V_{z}>");
+
+    dijetcore::PrintWithRatio(runid_vx, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_vx", "Run ID",
+                              "<V_{x}> [cm]");
     dijetcore::PrettyPrint1D(runid_vx_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_vx", "", "Run ID",
-                             "#Delta <V_{x}> / V_{x}");
+                             "#Delta <V_{x}> / <V_{x}>");
+
+    dijetcore::PrintWithRatio(runid_vy, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "runid_vy", "Run ID",
+                              "<V_{y}> [cm]");
     dijetcore::PrettyPrint1D(runid_vy_diff, hopts, coptsNoLeg, "",
                              FLAGS_outputDir, "runid_rel_vy", "", "Run ID",
-                             "#Delta <V_{y}> / V_{y}");
+                             "#Delta <V_{y}> / <V_{y}>");
+  }
+
+  // start track QA if info is present in both datasets
+  if (do_track_qa) {
+    std::vector<TH1D *> track_px;
+    std::vector<TH1D *> track_py;
+    std::vector<TH1D *> track_pz;
+    std::vector<TH1D *> track_pt;
+    std::vector<TH1D *> track_dca;
+    std::vector<TH1D *> track_nhit;
+    std::vector<TH1D *> track_nhitposs;
+    std::vector<TH1D *> track_nhitfrac;
+    std::vector<TH1D *> track_eta;
+    std::vector<TH1D *> track_phi;
+    std::vector<TProfile *> zdc_px_ave;
+    std::vector<TProfile *> zdc_py_ave;
+    std::vector<TProfile *> zdc_pz_ave;
+    std::vector<TProfile *> zdc_pt_ave;
+    std::vector<TProfile *> zdc_dca_ave;
+    std::vector<TProfile *> zdc_nhit_ave;
+    std::vector<TProfile *> zdc_nhitposs_ave;
+    std::vector<TProfile *> zdc_nhitfrac_ave;
+    std::vector<TProfile *> zdc_eta_ave;
+    std::vector<TProfile *> zdc_phi_ave;
+
+    for (auto &prefix : prefixes) {
+      track_px.push_back(Norm(px_py[prefix]->ProjectionX()));
+      track_py.push_back(Norm(px_py[prefix]->ProjectionY()));
+      track_pz.push_back(Norm(pz_px[prefix]->ProjectionX()));
+      track_pt.push_back(Norm(zdc_pt[prefix]->ProjectionY()));
+      track_dca.push_back(Norm(zdc_dca[prefix]->ProjectionY()));
+      track_nhit.push_back(Norm(zdc_nhit[prefix]->ProjectionY()));
+      track_nhitposs.push_back(Norm(zdc_nhitposs[prefix]->ProjectionY()));
+      track_nhitfrac.push_back(Norm(zdc_nhitfrac[prefix]->ProjectionY()));
+      track_eta.push_back(Norm(zdc_eta[prefix]->ProjectionY()));
+      track_phi.push_back(Norm(zdc_phi[prefix]->ProjectionY()));
+      zdc_px_ave.push_back(zdc_px[prefix]->ProfileX());
+      zdc_py_ave.push_back(zdc_py[prefix]->ProfileX());
+      zdc_pz_ave.push_back(zdc_pz[prefix]->ProfileX());
+      zdc_pt_ave.push_back(zdc_pt[prefix]->ProfileX());
+      zdc_dca_ave.push_back(zdc_dca[prefix]->ProfileX());
+      zdc_nhit_ave.push_back(zdc_nhit[prefix]->ProfileX());
+      zdc_nhitposs_ave.push_back(zdc_nhitposs[prefix]->ProfileX());
+      zdc_nhitfrac_ave.push_back(zdc_nhitfrac[prefix]->ProfileX());
+      zdc_eta_ave.push_back(zdc_eta[prefix]->ProfileX());
+      zdc_phi_ave.push_back(zdc_phi[prefix]->ProfileX());
+    }
+
+    dijetcore::PrintWithRatio(track_px, legend_labels, hopts, coptslogy,
+                              FLAGS_outputDir, "track_px", "p_{X} [GeV/c]",
+                              "fraction");
+    dijetcore::PrintWithRatio(track_py, legend_labels, hopts, coptslogy,
+                              FLAGS_outputDir, "track_py", "p_{Y} [GeV/c]",
+                              "fraction");
+    dijetcore::PrintWithRatio(track_pz, legend_labels, hopts, coptslogy,
+                              FLAGS_outputDir, "track_pz", "p_{z} [GeV/c]",
+                              "fraction");
+    dijetcore::PrintWithRatio(track_pt, legend_labels, hopts, coptslogy,
+                              FLAGS_outputDir, "track_pt", "p_{T} [GeV/c]",
+                              "fraction");
+    dijetcore::PrintWithRatio(track_dca, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "track_dca", "DCA [cm]",
+                              "fraction");
+    dijetcore::PrintWithRatio(track_nhit, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "track_nhit", "N_{fitted hits}",
+                              "fraction");
+    dijetcore::PrintWithRatio(track_nhitposs, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "track_nhitposs",
+                              "N_{possible hits}", "fraction");
+    dijetcore::PrintWithRatio(track_nhitfrac, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "track_nhitfrac",
+                              "N_{fitted hits}/N_{possible}", "fraction");
+    dijetcore::PrintWithRatio(track_eta, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "track_eta", "#eta", "fraction");
+    dijetcore::PrintWithRatio(track_phi, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "track_phi", "#phi", "fraction");
+
+    TH1D *zdc_px_diff = RelativeDiff(zdc_px_ave);
+    TH1D *zdc_py_diff = RelativeDiff(zdc_py_ave);
+    TH1D *zdc_pz_diff = RelativeDiff(zdc_pz_ave);
+    TH1D *zdc_pt_diff = RelativeDiff(zdc_pt_ave);
+    TH1D *zdc_dca_diff = RelativeDiff(zdc_dca_ave);
+    TH1D *zdc_nhit_diff = RelativeDiff(zdc_nhit_ave);
+    TH1D *zdc_nhitposs_diff = RelativeDiff(zdc_nhitposs_ave);
+    TH1D *zdc_nhitfrac_diff = RelativeDiff(zdc_nhitfrac_ave);
+    TH1D *zdc_eta_diff = RelativeDiff(zdc_eta_ave);
+    TH1D *zdc_phi_diff = RelativeDiff(zdc_phi_ave);
+
+    dijetcore::PrintWithRatio(zdc_px_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_px", "zdcX [kHz]",
+                              "<p_{X}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_px_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_px", "", "zdcX [kHz]",
+                             "#Delta <p_{X}> / <p_{X}>");
+
+    dijetcore::PrintWithRatio(zdc_py_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_py", "zdcX [kHz]",
+                              "<p_{Y}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_py_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_py", "", "zdcY [kHz]",
+                             "#Delta <p_{Y}> / <p_{Y}>");
+
+    dijetcore::PrintWithRatio(zdc_pz_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_pz", "zdcX [kHz]",
+                              "<p_{Z}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_pz_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_pz", "", "zdcX [kHz]",
+                             "#Delta <p_{Z}> / <p_{Z}>");
+
+    dijetcore::PrintWithRatio(zdc_pt_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_pt", "zdcX [kHz]",
+                              "<p_{T}> [GeV/c]");
+    dijetcore::PrettyPrint1D(zdc_pt_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_pt", "", "zdcX [kHz]",
+                             "#Delta <p_{T}> / <p_{T}>");
+
+    dijetcore::PrintWithRatio(zdc_dca_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_dca", "zdcX [kHz]",
+                              "<DCA> [cm]");
+    dijetcore::PrettyPrint1D(zdc_dca_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_dca", "", "zdcX [kHz]",
+                             "#Delta <DCA> / <DCA>");
+
+    dijetcore::PrintWithRatio(zdc_nhit_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_nhit", "zdcX [kHz]",
+                              "<N_{hits fit}>");
+    dijetcore::PrettyPrint1D(zdc_nhit_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_nhit", "", "zdcX [kHz]",
+                             "#Delta <N_{hits}> / <N_{hits}>");
+
+    dijetcore::PrintWithRatio(zdc_nhitposs_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_nhitposs", "zdcX [kHz]",
+                              "<N_{hits possible}>");
+    dijetcore::PrettyPrint1D(zdc_nhitposs_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_nhitposs", "",
+                             "zdcX [kHz]",
+                             "#Delta <N_{hits poss}> / <N_{hits poss}>");
+
+    dijetcore::PrintWithRatio(zdc_nhitfrac_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_nhitfrac", "zdcX [kHz]",
+                              "<N_{hit frac}>");
+    dijetcore::PrettyPrint1D(zdc_nhitfrac_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_nhitfrac", "",
+                             "zdcX [kHz]",
+                             "#Delta <N_{hits frac}> / <N_{hits frac}>");
+
+    dijetcore::PrintWithRatio(zdc_eta_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_eta", "zdcX [kHz]",
+                              "<#eta>");
+    dijetcore::PrettyPrint1D(zdc_eta_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_eta", "", "zdcX [kHz]",
+                             "#Delta <#eta> / <#eta>");
+
+    dijetcore::PrintWithRatio(zdc_phi_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_ave_phi", "zdcX [kHz]",
+                              "<#phi>");
+    dijetcore::PrettyPrint1D(zdc_phi_diff, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_phi", "", "zdcX [kHz]",
+                             "#Delta <#phi> / <#phi>");
+
+    // do track qa by run if the information is present
+    if (do_runid_qa) {
+      std::vector<TProfile *> runid_pt;
+      std::vector<TProfile *> runid_px;
+      std::vector<TProfile *> runid_py;
+      std::vector<TProfile *> runid_pz;
+      std::vector<TProfile *> runid_dca;
+      std::vector<TProfile *> runid_nhit;
+      std::vector<TProfile *> runid_nhitposs;
+      std::vector<TProfile *> runid_nhitfrac;
+      std::vector<TProfile *> runid_eta;
+      std::vector<TProfile *> runid_phi;
+
+      for (auto &prefix : prefixes) {
+        runid_pt.push_back(run_id_track_pt[prefix]->ProfileX());
+        runid_px.push_back(run_id_track_px[prefix]->ProfileX());
+        runid_py.push_back(run_id_track_py[prefix]->ProfileX());
+        runid_pz.push_back(run_id_track_pz[prefix]->ProfileX());
+        runid_dca.push_back(run_id_track_dca[prefix]->ProfileX());
+        runid_nhit.push_back(run_id_track_nhit[prefix]->ProfileX());
+        runid_nhitposs.push_back(run_id_track_nhitposs[prefix]->ProfileX());
+        runid_nhitfrac.push_back(run_id_track_nhitfrac[prefix]->ProfileX());
+        runid_eta.push_back(run_id_track_eta[prefix]->ProfileX());
+        runid_phi.push_back(run_id_track_phi[prefix]->ProfileX());
+      }
+
+      TH1D *runid_pt_diff = RelativeDiff(runid_pt);
+      TH1D *runid_px_diff = RelativeDiff(runid_px);
+      TH1D *runid_py_diff = RelativeDiff(runid_py);
+      TH1D *runid_pz_diff = RelativeDiff(runid_pz);
+      TH1D *runid_dca_diff = RelativeDiff(runid_dca);
+      TH1D *runid_nhit_diff = RelativeDiff(runid_nhit);
+      TH1D *runid_nhitposs_diff = RelativeDiff(runid_nhitposs);
+      TH1D *runid_nhitfrac_diff = RelativeDiff(runid_nhitfrac);
+      TH1D *runid_eta_diff = RelativeDiff(runid_eta);
+      TH1D *runid_phi_diff = RelativeDiff(runid_phi);
+
+      dijetcore::PrintWithRatio(runid_pt, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_pt", "Run ID",
+                                "<p_{T}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_pt_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_pt", "", "Run ID",
+                               "#Delta <p_{T}> / <p_{T}>");
+
+      dijetcore::PrintWithRatio(runid_px, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_px", "Run ID",
+                                "<p_{X}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_px_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_px", "", "Run ID",
+                               "#Delta <p_{X}> / <p_{X}>");
+
+      dijetcore::PrintWithRatio(runid_py, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_py", "Run ID",
+                                "<p_{Y}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_py_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_py", "", "Run ID",
+                               "#Delta <p_{Y}> / <p_{Y}>");
+
+      dijetcore::PrintWithRatio(runid_pz, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_pz", "Run ID",
+                                "<p_{Z}> [GeV/c]");
+      dijetcore::PrettyPrint1D(runid_pz_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_pz", "", "Run ID",
+                               "#Delta <p_{Z}> / <p_{Z}>");
+
+      dijetcore::PrintWithRatio(runid_dca, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_dca", "Run ID",
+                                "<DCA> [cm]");
+      dijetcore::PrettyPrint1D(runid_dca_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_dca", "", "Run ID",
+                               "#Delta <DCA> / <DCA>");
+
+      dijetcore::PrintWithRatio(runid_nhit, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_nhit", "Run ID",
+                                "<N_{hit}>");
+      dijetcore::PrettyPrint1D(runid_nhit_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_nhit", "", "Run ID",
+                               "#Delta <N_{hit}> / <N_{hit}>");
+
+      dijetcore::PrintWithRatio(runid_nhitposs, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_nhitposs", "Run ID",
+                                "<N_{hitposs}>");
+      dijetcore::PrettyPrint1D(runid_nhitposs_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_nhitposs", "",
+                               "Run ID",
+                               "#Delta <N_{hitposs}> / <N_{hitposs}>");
+
+      dijetcore::PrintWithRatio(runid_nhitfrac, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_nhitfrac", "Run ID",
+                                "<N_{hit fraction}>");
+      dijetcore::PrettyPrint1D(
+          runid_nhit_diff, hopts, coptsNoLeg, "", FLAGS_outputDir,
+          "runid_rel_nhitfrac", "", "Run ID",
+          "#Delta <N_{hit fraction}> / <N_{hit fraction}>");
+
+      dijetcore::PrintWithRatio(runid_eta, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_eta", "Run ID",
+                                "<#eta>");
+      dijetcore::PrettyPrint1D(runid_eta_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_eta", "", "Run ID",
+                               "#Delta <#eta> / <#eta>");
+
+      dijetcore::PrintWithRatio(runid_phi, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_phi", "Run ID",
+                                "<#phi>");
+      dijetcore::PrettyPrint1D(runid_phi_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_phi", "", "Run ID",
+                               "#Delta <#phi> / <#phi>");
+    }
+  }
+
+  // start tower QA if info is present in both datasets
+  if (do_tower_qa) {
+    std::vector<TH1D *> tower_e;
+    std::vector<TH1D *> tower_et;
+    std::vector<TH1D *> tower_adc;
+    std::vector<TH1D *> zdc_e_ave;
+    std::vector<TH1D *> zdc_et_ave;
+    std::vector<TH1D *> zdc_adc_ave;
+
+    for (auto &prefix : prefixes) {
+      tower_e.push_back(e_et[prefix]->ProjectionX());
+      tower_et.push_back(e_et[prefix]->ProjectionY());
+      tower_adc.push_back(zdc_adc[prefix]->ProjectionY());
+      zdc_e_ave.push_back(zdc_e[prefix]->ProfileX());
+      zdc_et_ave.push_back(zdc_et[prefix]->ProfileX());
+      zdc_adc_ave.push_back(zdc_adc[prefix]->ProfileX());
+    }
+
+    TH1D *zdc_rel_e = RelativeDiff(zdc_e_ave);
+    TH1D *zdc_rel_et = RelativeDiff(zdc_et_ave);
+    TH1D *zdc_rel_adc = RelativeDiff(zdc_adc_ave);
+
+    dijetcore::PrintWithRatio(tower_e, legend_labels, hopts, coptslogy,
+                              FLAGS_outputDir, "tower_e", "E [GeV]",
+                              "fraction");
+    dijetcore::PrintWithRatio(tower_et, legend_labels, hopts, coptslogy,
+                              FLAGS_outputDir, "tower_et", "E_{T} [GeV]",
+                              "fraction");
+    dijetcore::PrintWithRatio(tower_adc, legend_labels, hopts, coptslogy,
+                              FLAGS_outputDir, "tower_adc", "ADC", "fraction");
+
+    dijetcore::PrintWithRatio(zdc_e_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_e_ave", "zdcX [kHz]",
+                              "<E> [GeV]");
+    dijetcore::PrettyPrint1D(zdc_rel_e, hopts, coptsNoLeg, "", FLAGS_outputDir,
+                             "zdc_rel_e", "", "zdcX [kHz]", "#Delta <E> / <E>");
+
+    dijetcore::PrintWithRatio(zdc_et_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_et_ave", "zdcX [kHz]",
+                              "<E_{T}> [GeV]");
+    dijetcore::PrettyPrint1D(zdc_rel_et, hopts, coptsNoLeg, "", FLAGS_outputDir,
+                             "zdc_rel_et", "", "zdcX [kHz]",
+                             "#Delta <E_{T}> / <E_{T}>");
+
+    dijetcore::PrintWithRatio(zdc_adc_ave, legend_labels, hopts, copts,
+                              FLAGS_outputDir, "zdc_adc_ave", "zdcX [kHz]",
+                              "<ADC>");
+    dijetcore::PrettyPrint1D(zdc_rel_adc, hopts, coptsNoLeg, "",
+                             FLAGS_outputDir, "zdc_rel_adc", "", "zdcX [kHz]",
+                             "#Delta <ADC> / <ADC>");
+
+    // do runid/towerid based QA if its present
+    if (do_runid_qa) {
+      //   dijetcore_map<string, THnSparseS *> run_id_tower_e;
+      //   dijetcore_map<string, THnSparseS *> run_id_tower_et;
+      //   dijetcore_map<string, THnSparseS *> run_id_tower_adc;
+      std::vector<TProfile *> runid_e_ave;
+      std::vector<TProfile *> runid_et_ave;
+      std::vector<TProfile *> runid_adc_ave;
+      std::vector<TProfile *> towerid_e_ave;
+      std::vector<TProfile *> towerid_et_ave;
+      std::vector<TProfile *> towerid_adc_ave;
+
+      for (auto &prefix : prefixes) {
+        runid_e_ave.push_back(
+            ((TH2D *)run_id_tower_e[prefix]->Projection(2, 0))->ProfileX());
+        runid_et_ave.push_back(
+            ((TH2D *)run_id_tower_et[prefix]->Projection(2, 0))->ProfileX());
+        runid_adc_ave.push_back(
+            ((TH2D *)run_id_tower_adc[prefix]->Projection(2, 0))->ProfileX());
+        towerid_e_ave.push_back(
+            ((TH2D *)run_id_tower_e[prefix]->Projection(2, 1))->ProfileX());
+        towerid_et_ave.push_back(
+            ((TH2D *)run_id_tower_et[prefix]->Projection(2, 1))->ProfileX());
+        towerid_adc_ave.push_back(
+            ((TH2D *)run_id_tower_adc[prefix]->Projection(2, 1))->ProfileX());
+      }
+
+      TH1D *runid_e_diff = RelativeDiff(runid_e_ave);
+      TH1D *runid_et_diff = RelativeDiff(runid_et_ave);
+      TH1D *runid_adc_diff = RelativeDiff(runid_adc_ave);
+      TH1D *towerid_e_diff = RelativeDiff(towerid_e_ave);
+      TH1D *towerid_et_diff = RelativeDiff(towerid_et_ave);
+      TH1D *towerid_adc_diff = RelativeDiff(towerid_adc_ave);
+
+      dijetcore::PrintWithRatio(runid_e_ave, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_e_ave", "Run ID",
+                                "<E> [GeV]");
+      dijetcore::PrettyPrint1D(runid_e_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_e", "", "Run ID",
+                               "#Delta <E> / <E>");
+
+      dijetcore::PrintWithRatio(runid_et_ave, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_et_ave", "Run ID",
+                                "<E_{T}> [GeV]");
+      dijetcore::PrettyPrint1D(runid_et_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_et", "", "Run ID",
+                               "#Delta <E_{T}> / <E_{T}>");
+
+      dijetcore::PrintWithRatio(runid_adc_ave, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "runid_adc_ave", "Run ID",
+                                "<ADC>");
+      dijetcore::PrettyPrint1D(runid_adc_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "runid_rel_adc", "", "Run ID",
+                               "#Delta <ADC> / <ADC>");
+
+      dijetcore::PrintWithRatio(towerid_e_ave, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "towerid_e_ave", "Tower ID",
+                                "<E> [GeV]");
+      dijetcore::PrettyPrint1D(towerid_e_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "towerid_rel_e", "", "Tower ID",
+                               "#Delta <E> / <E>");
+
+      dijetcore::PrintWithRatio(towerid_et_ave, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "towerid_et_ave", "Tower ID",
+                                "<E_{T}> [GeV]");
+      dijetcore::PrettyPrint1D(towerid_et_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "towerid_rel_et", "", "Tower ID",
+                               "#Delta <E_{T}> / <E_{T}>");
+
+      dijetcore::PrintWithRatio(towerid_adc_ave, legend_labels, hopts, copts,
+                                FLAGS_outputDir, "towerid_adc_ave", "Tower ID",
+                                "<ADC>");
+      dijetcore::PrettyPrint1D(towerid_adc_diff, hopts, coptsNoLeg, "",
+                               FLAGS_outputDir, "towerid_rel_adc", "", "Tower ID",
+                               "#Delta <ADC> / <ADC>");
+    }
   }
 
   google::ShutDownCommandLineFlags();
