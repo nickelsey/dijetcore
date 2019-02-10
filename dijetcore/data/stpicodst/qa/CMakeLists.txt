@@ -25,16 +25,9 @@ list(REMOVE_ITEM DC_BINARY_SRCS ${DC_BENCH_SRCS})
 endif(DC_BENCH_SRCS)
 
 ## install headers
-install(FILES ${DC_HDRS} DESTINATION include/dijetcore/data)
+### no headers in data directory
 
 ## add subdirectories
-add_subdirectory(run14)
-
-## if we have StPicoDstLibrary, add subdirectory
-if (BUILD_STPICODST)
-add_subdirectory(stpicodst)
-endif (BUILD_STPICODST)
-
 
 ## export file lists to parent scope
 set(DC_BINARY_SRCS ${DC_BINARY_SRCS} PARENT_SCOPE)
