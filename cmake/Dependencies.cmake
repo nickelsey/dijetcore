@@ -58,6 +58,13 @@ else(Protobuf_FOUND)
   message(FATAL_ERROR "protobuf library not found")
 endif(Protobuf_FOUND)
 
+## StPicoDst - built internally if requested
+if (BUILD_STPICODST)
+  add_subdirectory(third_party/StPicoDst)
+  list(APPEND SFD_DEPENDENCY_LIBS ${PICO_LIBS})
+  dc_include_directories(${PICO_INCLUDE_DIRS})
+endif(BUILD_STPICODST)
+
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
 ## and embedded in the test binaries
