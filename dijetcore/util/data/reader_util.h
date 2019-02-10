@@ -54,14 +54,14 @@ namespace dijetcore {
   // TStarJetPicoReader, if unknown input format,
   // returns nullptr
   // supports .root, .list, and .txt
-  TChain* NewChainFromInput(std::string str, int seed = 0, int eventThreshold = 0) {
+  TChain* NewChainFromInput(std::string str, std::string name="JetTree", int seed = 0, int eventThreshold = 0) {
     TChain* chain = nullptr;
     
     if (str.empty())
       return chain;
     
     if (HasEnding(str, ".root")) {
-      chain = new TChain("JetTree");
+      chain = new TChain(name.c_str());
       chain->Add(str.c_str());
     }
     else if (HasEnding(str, ".list") || HasEnding(str, ".txt")) {
@@ -80,7 +80,7 @@ namespace dijetcore {
         }
         
         // now shuffle the files and add to the chain
-        chain = new TChain("JetTree");
+        chain = new TChain(name.c_str());
         std::mt19937 g(seed);
         std::shuffle(files.begin(), files.end(), g);
         for (auto& file : files) {

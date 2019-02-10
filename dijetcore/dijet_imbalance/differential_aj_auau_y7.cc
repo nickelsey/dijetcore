@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
   // and a chain for the off axis worker if it exists
   TChain* off_axis_chain = nullptr;
   if (boost::filesystem::exists(FLAGS_offAxisInput)) {
-    off_axis_chain = dijetcore::NewChainFromInput(FLAGS_offAxisInput, FLAGS_id, 10 * chain->GetEntries());
+    off_axis_chain = dijetcore::NewChainFromInput(FLAGS_offAxisInput, "JetTree", FLAGS_id, 10 * chain->GetEntries());
   }
   
   // initialize the OffAxisWorker
