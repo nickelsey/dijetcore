@@ -6,6 +6,7 @@
 
 from __future__ import print_function, division
 
+import sys
 import os
 import argparse
 import subprocess
@@ -354,5 +355,14 @@ if __name__ == "__main__":
     parser.add_argument('--no-forceMatchJetResolutionEquality',
                         dest='forceMatchJetResolutionEquality', action='store_false')
     parser.set_defaults(forceMatchJetResolutionEquality=True)
+
+    if len(sys.argv) < 2:
+        parser.print_usage()
+        sys.exit(1)
+    
+    for entry in sys.argv:
+        if entry == '-h' or entry == '--help':
+            parser.print_usage()
+            sys.exit(0)
 
     main(parser.parse_args())
