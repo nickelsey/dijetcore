@@ -48,8 +48,8 @@ def updatestatus(jobstatus, outdir, name):
         if jobstatus[key][1] == 2:
             continue
 
-        # check if the job is still underway
-        jobinprocess = qstat_result.find(name + str(index) + ' ')
+        # check if the job is still underwa
+        jobinprocess = qstat_result.find((name + str(index) + ' ').encode())
         if jobinprocess >= 0:
             jobstatus[key][1] = 1
             continue
