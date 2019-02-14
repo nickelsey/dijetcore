@@ -304,7 +304,7 @@ if __name__ == "__main__":
     parser.add_argument('--NEmbeddingEvents', type=int, default=15,
                         help='number of times to reuse a p+p event by embedding into different MB events')
     parser.add_argument('--efficiencyFile', default='resources/efficiencies/y7_effic.root',
-                        help=' root file containing run 14 efficiency curves')
+                        help=' root file containing run 7 efficiency curves')
     parser.add_argument('--badRuns', default='',
                         help=' csv file containing runs to mask')
     parser.add_argument('--badTowers', default='resources/bad_tower_lists/y7_y6_bad_tower.txt',
