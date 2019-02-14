@@ -11,7 +11,6 @@ import os
 import argparse
 import subprocess
 import time
-from ROOT import TFile
 
 
 def checkstatus(jobstatus):
@@ -32,6 +31,7 @@ def activejobs(jobstatus):
 
 
 def updatestatus(jobstatus, outdir, name):
+    from ROOT import TFile
     print("Updating job status")
     print("Total: " + str(len(jobstatus)))
 
@@ -359,10 +359,5 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         parser.print_usage()
         sys.exit(1)
-    
-    for entry in sys.argv:
-        if entry == '-h' or entry == '--help':
-            parser.print_usage()
-            sys.exit(0)
 
     main(parser.parse_args())
