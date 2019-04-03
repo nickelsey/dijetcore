@@ -311,7 +311,7 @@ int main(int argc, char* argv[]) {
   gErrorIgnoreLevel = kInfo+1;
 
   // check to make sure we have valid inputs
-  std::vector<string> inputs{FLAGS_auau, FLAGS_ppDir + "/nom.root"};
+  std::vector<string> inputs{FLAGS_auau, FLAGS_ppDir + "/tow_0_track_0.root"};
   for (auto& file : inputs) {
     if (!boost::filesystem::exists(file)) {
       std::cout << "input file " << file;
@@ -328,11 +328,11 @@ int main(int argc, char* argv[]) {
 
   // read in the file
   TFile auau_file(FLAGS_auau.c_str(), "READ");
-  TFile pp_file((FLAGS_ppDir + "/nom.root").c_str(), "READ");
-  TFile tow_p_file((FLAGS_ppDir + "/tow_p.root").c_str(), "READ");
-  TFile tow_m_file((FLAGS_ppDir + "/tow_m.root").c_str(), "READ");
-  TFile track_p_file((FLAGS_ppDir + "/track_p.root").c_str(), "READ");
-  TFile track_m_file((FLAGS_ppDir + "/track_m.root").c_str(), "READ");
+  TFile pp_file((FLAGS_ppDir + "/tow_0_track_0.root").c_str(), "READ");
+  TFile tow_p_file((FLAGS_ppDir + "/tow_1_track_0.root").c_str(), "READ");
+  TFile tow_m_file((FLAGS_ppDir + "/tow_-1_track_0.root").c_str(), "READ");
+  TFile track_p_file((FLAGS_ppDir + "/tow_0_track_1.root").c_str(), "READ");
+  TFile track_m_file((FLAGS_ppDir + "/tow_0_track_-1.root").c_str(), "READ");
   
   // define centralities
   std::vector<unsigned> cent_boundaries;
