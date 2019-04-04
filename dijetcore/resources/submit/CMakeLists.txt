@@ -1,5 +1,5 @@
 ## get all files, assume that if they are in scripts
-## directory, they should be installed into install_path/submit_scripts
+## directory, they should be installed into install_path/submit
 file(GLOB SUBMITSRCS *)
 
 ## get test source files
