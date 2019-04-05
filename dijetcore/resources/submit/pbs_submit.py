@@ -152,9 +152,6 @@ def main(args):
             outstream = "log/" + args.name + str(i) + ".log"
             errstream = "log/" + args.name + str(i) + ".err"
 
-            def generate_submission(executable, config, qwrap, execpath, outstream, errstream,
-                                    name, args, jobid, prio=0, mem=2, nodes=1, ppn=1, queue='wsuq'):
-
             qsub = generate_submission(executable, args.configFile, qwrap, execpath, outstream,
                                        errstream, args.name, i, args.priority, args.memory, args.nodes, 
                                        args.ppn, args.queue)
