@@ -21,10 +21,10 @@ def find_output(configFile):
         if key in json_object:
             return json_object[key]
 
-def generate_submission(executable, config, qwrap, execpath, outstream, errstream,
+def generate_submission(executable, input, config, qwrap, execpath, outstream, errstream,
                         name, jobid, prio=0, mem=2, nodes=1, ppn=1, queue='wsuq'):
-    submit = 'qsub -V -p {} -lmem={}G -lnodes={}:ppn={} -q {} -o {} -e {} -N {}_{} -- {} {} {} --name={} --id={} --config={}'.format(
-        prio, mem, nodes, ppn, queue, outstream, errstream, name, jobid, qwrap, execpath, executable, name, jobid, config)
+    submit = 'qsub -V -p {} -lmem={}G -lnodes={}:ppn={} -q {} -o {} -e {} -N {}_{} -- {} {} {} --name={} --id={} --config={} --input={}'.format(
+        prio, mem, nodes, ppn, queue, outstream, errstream, name, jobid, qwrap, execpath, executable, name, jobid, config, input)
     return submit
 
 
@@ -164,7 +164,7 @@ def main(args):
             outstream = "log/" + args.name + str(i) + ".log"
             errstream = "log/" + args.name + str(i) + ".err"
 
-            qsub = generate_submission(executable, args.configFile, qwrap, execpath, outstream,
+            qsub = generate_submission(executable, files[i], args.configFile, qwrap, execpath, outstream,
                                        errstream, args.name, i, args.priority, args.mem, args.nodes, 
                                        args.ppn, args.queue)
             print("submitting job: ")
