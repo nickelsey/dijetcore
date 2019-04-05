@@ -11,7 +11,15 @@ import os
 import argparse
 import subprocess
 import time
+import json
 
+def find_output(configFile):
+    jsonfile = open(configFile, 'r')
+    json_object = json.load(jsonfile)
+    possible_keys = ['outdir', 'output', 'outputDir', 'output_dir', 'output_directory']
+    for key in possible_keys:
+        if json_object.find(key)
+            return json_object[key]
 
 def generate_submission(executable, config, qwrap, execpath, outstream, errstream,
                         name, jobid, prio=0, mem=2, nodes=1, ppn=1, queue='wsuq'):
@@ -120,10 +128,13 @@ def main(args):
     # count the number of qsub submission failures
     qsubfail = 0
 
+    # find our output directory
+    output = find_output(args.configFile)
+
     while checkstatus(jobstatus):
 
         # update status of all jobs & output
-        jobstatus = updatestatus(jobstatus, args.output, args.name)
+        jobstatus = updatestatus(jobstatus, output, args.name)
 
         # if we have completed all jobs, exit
         if len(jobstatus) == jobstatus.count(2):
@@ -136,7 +147,7 @@ def main(args):
         while jobsactive >= maxjobs:
             print("reached max number of active jobs: pausing")
             time.sleep(60)
-            jobstatus = updatestatus(jobstatus, args.output, args.name)
+            jobstatus = updatestatus(jobstatus, output, args.name)
             jobsactive = jobstatus.count(1)
 
         # now submit jobs up to maxjobs - jobsqueued
