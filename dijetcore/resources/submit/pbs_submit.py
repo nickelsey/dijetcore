@@ -164,7 +164,7 @@ def main(args):
             errstream = "log/" + args.name + str(i) + ".err"
 
             qsub = generate_submission(executable, args.configFile, qwrap, execpath, outstream,
-                                       errstream, args.name, i, args.priority, args.memory, args.nodes, 
+                                       errstream, args.name, i, args.priority, args.mem, args.nodes, 
                                        args.ppn, args.queue)
             print("submitting job: ")
             print(qsub)
