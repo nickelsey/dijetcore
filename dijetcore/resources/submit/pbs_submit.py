@@ -18,7 +18,7 @@ def find_output(configFile):
     json_object = json.load(jsonfile)
     possible_keys = ['outdir', 'output', 'outputDir', 'output_dir', 'output_directory']
     for key in possible_keys:
-        if json_object.find(key):
+        if key in json_object:
             return json_object[key]
 
 def generate_submission(executable, config, qwrap, execpath, outstream, errstream,
