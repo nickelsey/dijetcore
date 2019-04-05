@@ -23,7 +23,7 @@ def find_output(configFile):
 
 def generate_submission(executable, config, qwrap, execpath, outstream, errstream,
                         name, jobid, prio=0, mem=2, nodes=1, ppn=1, queue='wsuq'):
-    submit = 'qsub -V -p {} -lmem={} -lnodes={}:ppn={} -q {} -o {} -e {} -N {}_{} -- {} {} {} --name={} --id={} --config={}'.format(
+    submit = 'qsub -V -p {} -lmem={}G -lnodes={}:ppn={} -q {} -o {} -e {} -N {}_{} -- {} {} {} --name={} --id={} --config={}'.format(
         prio, mem, nodes, ppn, queue, outstream, errstream, name, jobid, qwrap, execpath, executable, name, jobid, config)
     return submit
 
