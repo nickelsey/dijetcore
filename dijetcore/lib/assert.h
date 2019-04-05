@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "dijetcore/lib/types.h"
+#include "dijetcore/lib/string/string_utils.h"
 
 namespace dijetcore {
     // assertion can be anything that will be evaluated to a boolean
