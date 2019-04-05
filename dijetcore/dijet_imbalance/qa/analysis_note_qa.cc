@@ -296,14 +296,15 @@ int main(int argc, char* argv[]) {
       match_bkg_est.set_particles(primary_particles);
       // Subtract A*rho from the original pT
       fastjet::Subtractor match_bkg_sub(&match_bkg_est);
-      match_candidates = fastjet::sorted_by_pt(bkg_sub(match_candidates));
+      match_candidates = fastjet::sorted_by_pt(match_bkg_sub(match_candidates));
 
       // do matching to hard-core in dR
       fastjet::PseudoJet matched_lead = MatchJet(hc_candidates[0], jet_radius, match_candidates);
       fastjet::PseudoJet matched_sub = MatchJet(hc_candidates[1], jet_radius, match_candidates);
 
-      double leadptm, subptm, rhom, sigmam, leadaream, subaream, dphim;
-  double leaddr, subdr;
+      rhom = match_bkg_est.rho();
+      sigmam = match_bkg_est.sigma();
+
       if (matched_lead.pt() == 0.0) {
         leadptm = 0.0;
         leadaream = 0.0;
@@ -330,8 +331,18 @@ int main(int argc, char* argv[]) {
         dphim = matched_lead.delta_phi_to(matched_sub);
       }
       
-
       output->Fill();
+
+      // we have to reset the matched jet here
+      leadptm = 0.0;
+      leadaream = 0.0;
+      leaddr = 0.0;
+      dphim = 0.0;
+      subptm = 0.0;
+      subaream = 0.0;
+      subdr = 0.0;
+      sigmam = 0.0;
+      rhom = 0.0;
     }
   } catch (std::exception& e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
