@@ -131,8 +131,14 @@ int main(int argc, char* argv[]) {
   TTree* output = new TTree("analysis_qa", "analysis_qa");
 
   // saved output for TTree (event level)
-  unsigned runid, eventid, gref, ref, cent;
-  double vx, vy, vz;
+  unsigned runid = 0;
+  unsigned eventid = 0;
+  unsigned gref = 0; 
+  unsigned ref = 0;
+  unsigned cent = 0;
+  double vx = 0.0;
+  double vy = 0.0;
+  double vz = 0.0;
 
   output->Branch("runid", &runid);
   output->Branch("eventid", &eventid);
@@ -152,9 +158,22 @@ int main(int argc, char* argv[]) {
                    &pair.second);
 
   // jet info
-  double leadpt, subpt, rho, sigma, leadarea, subarea, dphi;
-  double leadptm, subptm, rhom, sigmam, leadaream, subaream, dphim;
-  double leaddr, subdr;
+  double leadpt = 0.0;
+  double subpt = 0.0;
+  double rho = 0.0;
+  double sigma = 0.0; 
+  double leadarea = 0.0; 
+  double subarea = 0.0;
+  double dphi = 0.0;
+  double leadptm = 0.0; 
+  double subptm = 0.0;
+  double rhom = 0.0;
+  double sigmam = 0.0;
+  double leadaream = 0.0;
+  double subaream = 0.0;
+  double dphim = 0.0;
+  double leaddr = 0.0;
+  double subdr = 0.0;
 
   output->Branch("leadpt", &leadpt);
   output->Branch("subpt", &subpt);
@@ -259,11 +278,12 @@ int main(int argc, char* argv[]) {
       hc_candidates =
           fastjet::sorted_by_pt(jet_selector(bkg_sub(hc_candidates)));
 
+      rho = bkg_est.rho();
+      sigma = bkg_est.sigma();
+
       if (hc_candidates.size() < 2) {
         leadpt = 0.0;
         subpt = 0.0;
-        rho = bkg_est.rho();
-        sigma = bkg_est.sigma();
         leadarea = 0.0;
         subarea = 0.0;
         dphi = 0.0;
