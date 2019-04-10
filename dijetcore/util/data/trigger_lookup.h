@@ -254,6 +254,20 @@ namespace dijetcore {
       ret = std::set<unsigned>{370011};
     else if (token == "y12pphm")
       ret = std::set<unsigned>{370341};
+    else if (token == "y15pauall")
+      ret = std::set<unsigned>{500205, 500215, 500405, 500412, 500904, 500008, 500018};
+    else if (token == "y15pautriggered")
+      ret = std::set<unsigned>{500205, 500215, 500405, 500412};
+    else if (token == "y15paumb")
+      ret = std::set<unsigned>{500904, 500008, 500018};
+    else if (token == "y15pauht2")
+      ret = std::set<unsigned>{500205, 500215};
+    else if (token == "y15paujp")
+      ret = std::set<unsigned>{500405, 500412};
+    else if (token == "y15pauvpdmb")
+      ret = std::set<unsigned>{500904};
+    else if (token == "y15paubbcmb")
+      ret = std::set<unsigned>{500008, 500018};
     else
       std::cerr << "trigger string unknown: " << token << std::endl;
     
