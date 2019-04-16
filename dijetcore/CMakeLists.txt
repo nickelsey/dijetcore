@@ -31,7 +31,6 @@ endif(TARGET dijetcore_proto)
 target_include_directories(dijetcore INTERFACE $<INSTALL_INTERFACE:include>)
 target_compile_options(dijetcore INTERFACE "--std=c++17")
 install(TARGETS dijetcore EXPORT DCTargets DESTINATION lib)
-link_directories(${CMAKE_INSTALL_PREFIX}/lib)
 
 ### declare libraries
 set(DC_LIBS dijetcore)
