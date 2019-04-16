@@ -22,8 +22,8 @@
 #include "TTreeReader.h"
 #include "TTreeReaderValue.h"
 
-#include <string>
 #include "dijetcore/lib/map.h"
+#include <string>
 
 // include boost for filesystem manipulation
 #include "boost/filesystem.hpp"
@@ -67,15 +67,16 @@ std::unordered_map<DATATYPE, string, dijetcore::EnumClassHash> TYPENAME{
 
 // adds to the map all TTrees that conform to
 // the DijetWorker's naming convention
-void GetTreesFromFile(const TFile& file,
-                      std::unordered_map<string, TTree*>& map) {
-  TKey* key;
+void GetTreesFromFile(const TFile &file,
+                      std::unordered_map<string, TTree *> &map) {
+  TKey *key;
   TIter next(file.GetListOfKeys());
 
-  while ((key = (TKey*)next())) {
+  while ((key = (TKey *)next())) {
     // check if its a TTree
-    TClass* cl = gROOT->GetClass(key->GetClassName());
-    if (!cl->InheritsFrom("TTree")) continue;
+    TClass *cl = gROOT->GetClass(key->GetClassName());
+    if (!cl->InheritsFrom("TTree"))
+      continue;
 
     // check if its produced by the DijetWorker
     // (in a rather handwavy fashion)
@@ -84,45 +85,46 @@ void GetTreesFromFile(const TFile& file,
         tmp.find("SUB_INIT") == string::npos)
       continue;
 
-    map.insert({tmp, (TTree*)key->ReadObj()});
+    map.insert({tmp, (TTree *)key->ReadObj()});
   }
 }
 
-std::vector<TH1D*> SplitByCentrality(TH2D* h) {
-  std::vector<TH1D*> ret;
+std::vector<TH1D *> SplitByCentrality(TH2D *h) {
+  std::vector<TH1D *> ret;
   for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
-    TH1D* tmp = h->ProjectionY(name.c_str(), i, i);
+    TH1D *tmp = h->ProjectionY(name.c_str(), i, i);
     ret.push_back(tmp);
   }
   return ret;
 }
 
-std::vector<TH2D*> SplitByCentrality3D(TH3D* h) {
-  std::vector<TH2D*> ret;
+std::vector<TH2D *> SplitByCentrality3D(TH3D *h) {
+  std::vector<TH2D *> ret;
   for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
     h->GetXaxis()->SetRange(i, i);
-    TH2D* tmp = (TH2D*)h->Project3D("zy");
+    TH2D *tmp = (TH2D *)h->Project3D("zy");
     tmp->SetName(name.c_str());
     ret.push_back(tmp);
   }
   return ret;
 }
 
-std::vector<TH1D*> SplitByCentralityNormalized(TH2D* h, int bins = 9) {
-  std::vector<TH1D*> ret;
+std::vector<TH1D *> SplitByCentralityNormalized(TH2D *h, int bins = 9) {
+  std::vector<TH1D *> ret;
   for (int i = 1; i <= h->GetXaxis()->GetNbins(); ++i) {
     string name = string(h->GetName()) + std::to_string(i);
-    TH1D* tmp = h->ProjectionY(name.c_str(), i, i);
-    if (tmp->Integral() > 0) tmp->Scale(1.0 / tmp->Integral());
+    TH1D *tmp = h->ProjectionY(name.c_str(), i, i);
+    if (tmp->Integral() > 0)
+      tmp->Scale(1.0 / tmp->Integral());
     ret.push_back(tmp);
   }
   return ret;
 }
 
-TGraphErrors* GetSystematic(TH1D* nom, TH1D* var1_a, TH1D* var1_b, TH1D* var2_a,
-                            TH1D* var2_b) {
+TGraphErrors *GetSystematic(TH1D *nom, TH1D *var1_a, TH1D *var1_b, TH1D *var2_a,
+                            TH1D *var2_b) {
   int nBins = nom->GetNbinsX();
   double x_[nBins];
   double y_[nBins];
@@ -147,31 +149,55 @@ TGraphErrors* GetSystematic(TH1D* nom, TH1D* var1_a, TH1D* var1_b, TH1D* var2_a,
         (diff_var_2_a > diff_var_2_b ? diff_var_2_a : diff_var_2_b);
     y_err_[i] = sqrt(max_var_1 * max_var_1 + max_var_2 * max_var_2);
   }
-  TGraphErrors* ret = new TGraphErrors(nBins, x_, y_, x_err_, y_err_);
+  TGraphErrors *ret = new TGraphErrors(nBins, x_, y_, x_err_, y_err_);
   return ret;
 }
 
-template <class T>
-TH1D* GetSystematicFractional(T* nom, TGraphErrors* errors) {
+template <class T1, class T2> TH1D *GetErrorFractional(T1 *nom, T2* variation, std::string ext = "errfrac") {
+  if (nom->GetXaxis()->GetNbins() != variation->GetXaxis()->GetNbins()) {
+    LOG(ERROR) << "bin mismatch: exiting";
+    return nullptr;
+  }
+
+  string name = nom->GetName() + ext;
+  TH1D *ret = new TH1D(name.c_str(), "", nom->GetXaxis()->GetNbins(),
+                       nom->GetXaxis()->GetXmin(), nom->GetXaxis()->GetXmax());
+  ret->GetYaxis()->SetRangeUser(0.000001, 0.599999);
+  for (int i = 1; i < nom->GetXaxis()->GetNbins(); ++i) {
+    double bin_nom = nom->GetBinContent(i);
+    double bin_sys = variation->GetBinContent(i);
+    if (bin_nom != 0)
+        ret->SetBinContent(i, fabs(bin_nom - bin_sys) / bin_nom);
+    else
+        ret->SetBinContent(i, 0.0);
+  }
+  return ret;
+}
+
+template <class T1> TH1D *GetErrorFractional(T1 *nom, TGraphErrors* errors, std::string ext = "errfrac") {
   if (nom->GetXaxis()->GetNbins() != errors->GetN()) {
     LOG(ERROR) << "bin mismatch: exiting";
     return nullptr;
   }
 
-  string name = nom->GetName() + "errfrac";
-  TH1D* ret = new TH1D(name.c_str(), "", nom->GetXaxis()->GetXbins(),
+  string name = nom->GetName() + ext;
+  TH1D *ret = new TH1D(name.c_str(), "", nom->GetXaxis()->GetNbins(),
                        nom->GetXaxis()->GetXmin(), nom->GetXaxis()->GetXmax());
-  for (int i = 1; i < nom->GetXaxis()->GetXbins(); ++i) {
+  ret->GetYaxis()->SetRangeUser(0.000001, 0.599999);
+  for (int i = 1; i < nom->GetXaxis()->GetNbins(); ++i) {
     double bin_content = nom->GetBinContent(i);
     double bin_error = errors->GetErrorY(i - 1);
-    ret->SetBinContent(i, bin_error / bin_content);
+    if (bin_content != 0)
+        ret->SetBinContent(i, bin_error / bin_content);
+    else
+        ret->SetBinContent(i, 0.0);
   }
   return ret;
 }
 
 template <typename H>
-void AjPrintout(H* h1, H* h2, TGraphErrors* sys, double y_min, double y_max,
-                double x_min, double x_max, TPaveText& text,
+void AjPrintout(H *h1, H *h2, TGraphErrors *sys, double y_min, double y_max,
+                double x_min, double x_max, TPaveText &text,
                 std::string h1_title, std::string h2_title,
                 dijetcore::histogramOpts hopts, dijetcore::canvasOpts copts,
                 std::string output_loc, std::string output_name,
@@ -212,7 +238,7 @@ void AjPrintout(H* h1, H* h2, TGraphErrors* sys, double y_min, double y_max,
     sys->Draw("9e2SAME");
   }
 
-  TLegend* leg = copts.Legend();
+  TLegend *leg = copts.Legend();
   if (leg != nullptr) {
     leg->SetHeader(legend_title.c_str());
     leg->SetTextFont(62);
@@ -233,13 +259,13 @@ void AjPrintout(H* h1, H* h2, TGraphErrors* sys, double y_min, double y_max,
   c.SaveAs(canvas_name.c_str());
 }
 
-TLegend* GetLegend(int x_bin, int y_bin, int x_max, int y_max, double radius,
+TLegend *GetLegend(int x_bin, int y_bin, int x_max, int y_max, double radius,
                    double pt, double scale = 1.0) {
   TLatex latex;
   latex.SetNDC();
   latex.SetTextSize(0.05 * scale);
   latex.SetTextColor(kBlack);
-  TLegend* leg;
+  TLegend *leg;
   std::stringstream in;
   in << std::setprecision(2) << radius;
   std::string radius_label = "Radius = " + in.str();
@@ -287,7 +313,7 @@ TLegend* GetLegend(int x_bin, int y_bin, int x_max, int y_max, double radius,
   return leg;
 }
 
-TGraphErrors* MakeGraph(TH1D* h) {
+TGraphErrors *MakeGraph(TH1D *h) {
   int bins = h->GetNbinsX();
   double x[bins];
   double x_err[bins];
@@ -301,11 +327,11 @@ TGraphErrors* MakeGraph(TH1D* h) {
     y_err[i] = h->GetBinError(i + 1);
   }
 
-  TGraphErrors* err = new TGraphErrors(bins, x, y, x_err, y_err);
+  TGraphErrors *err = new TGraphErrors(bins, x, y, x_err, y_err);
   return err;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   string usage = "Run 7 differential di-jet imbalance print routine";
 
   dijetcore::SetUsageMessage(usage);
@@ -325,7 +351,7 @@ int main(int argc, char* argv[]) {
 
   // check to make sure we have valid inputs
   std::vector<string> inputs{FLAGS_auau, FLAGS_ppDir + "/tow_0_track_0.root"};
-  for (auto& file : inputs) {
+  for (auto &file : inputs) {
     if (!boost::filesystem::exists(file)) {
       std::cout << "input file " << file;
       std::cout << "doesn't exist: exiting" << std::endl;
@@ -334,7 +360,8 @@ int main(int argc, char* argv[]) {
   }
 
   // build output directory if it doesn't exist, using boost::filesystem
-  if (FLAGS_outputDir.empty()) FLAGS_outputDir = "tmp";
+  if (FLAGS_outputDir.empty())
+    FLAGS_outputDir = "tmp";
   boost::filesystem::path dir(FLAGS_outputDir.c_str());
   boost::filesystem::create_directories(dir);
 
@@ -369,7 +396,7 @@ int main(int argc, char* argv[]) {
       dijetcore::ParseArgStringToVec<double>(FLAGS_radii);
   std::sort(radii.begin(), radii.end());
   std::vector<string> radii_string;
-  for (auto& val : radii) {
+  for (auto &val : radii) {
     std::stringstream stream;
     stream << val;
     radii_string.push_back(stream.str());
@@ -378,7 +405,7 @@ int main(int argc, char* argv[]) {
       dijetcore::ParseArgStringToVec<double>(FLAGS_constPt);
   std::sort(constpt.begin(), constpt.end());
   std::vector<string> constpt_string;
-  for (auto& val : constpt) {
+  for (auto &val : constpt) {
     std::stringstream stream;
     stream << val;
     constpt_string.push_back(stream.str());
@@ -407,12 +434,21 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // grab datatype indices/cast to int - these are used to access
+  // arrays, later
+  int auau_index = static_cast<int>(DATATYPE::AUAU);
+  int pp_index = static_cast<int>(DATATYPE::PP);
+  int towp_index = static_cast<int>(DATATYPE::TOWP);
+  int towm_index = static_cast<int>(DATATYPE::TOWM);
+  int trkp_index = static_cast<int>(DATATYPE::TRACKP);
+  int trkm_index = static_cast<int>(DATATYPE::TRACKM);
+
   // now we'll get the trees from the files, ignoring any objects
   // in the file that don't conform to the naming conventions from
   // the DijetWorker. There are also coincidence histograms to save
   std::vector<string> keys;
   std::unordered_map<std::string, dijetcore::DijetKey> parsed_keys;
-  std::vector<std::unordered_map<string, TTree*>> trees(TYPEMAP.size());
+  std::vector<std::unordered_map<string, TTree *>> trees(TYPEMAP.size());
 
   GetTreesFromFile(auau_file, trees[TYPEMAP[DATATYPE::AUAU]]);
   GetTreesFromFile(pp_file, trees[TYPEMAP[DATATYPE::PP]]);
@@ -422,8 +458,6 @@ int main(int argc, char* argv[]) {
   GetTreesFromFile(track_m_file, trees[TYPEMAP[DATATYPE::TRACKM]]);
 
   // match keys
-  int auau_index = static_cast<int>(DATATYPE::AUAU);
-  int pp_index = static_cast<int>(DATATYPE::PP);
   for (auto entry : trees[auau_index]) {
     if (trees[pp_index].find(entry.first) != trees[pp_index].end()) {
       keys.push_back(entry.first);
@@ -441,8 +475,8 @@ int main(int argc, char* argv[]) {
     grid_key_params.push_back(std::vector<dijetcore::DijetKey>());
     for (int pt = 0; pt < constpt.size(); ++pt) {
       // find if the requested tree is present
-      for (auto& key_string : keys) {
-        dijetcore::DijetKey& key = parsed_keys[key_string];
+      for (auto &key_string : keys) {
+        dijetcore::DijetKey &key = parsed_keys[key_string];
 
         if (FLAGS_setScanning && key.lead_init_r == FLAGS_initRadius &&
             key.sub_init_r == FLAGS_initRadius &&
@@ -480,191 +514,196 @@ int main(int argc, char* argv[]) {
 
   const int num_datatypes = TYPEMAP.size();
 
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_eta(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_phi(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_pt(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_const(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_rho(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_sig(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_eta(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_phi(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_pt(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_const(
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_const(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_rho(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_sig(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_sig(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_const(
+      num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_sig(num_datatypes);
 
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_eta(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_phi(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_pt(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_const(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_rho(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_sig(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_eta(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_phi(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_pt(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_const(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_rho(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_sig(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_const(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_sig(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_eta(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_phi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_pt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_const(
+      num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_sig(num_datatypes);
 
-  std::vector<std::unordered_map<string, TH2D*>> npart(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_dphi(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_dphi(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> lead_dr(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> sub_dr(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> lead_dpt(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> sub_dpt(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> lead_dpt_frac(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> sub_dpt_frac(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> npart(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_dphi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_dphi(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> lead_dr(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> sub_dr(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> lead_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> sub_dpt(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> lead_dpt_frac(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> sub_dpt_frac(num_datatypes);
 
-  std::vector<std::unordered_map<string, TH2D*>> hard_aj(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_aj(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_aj_test(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_aj_test(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_aj_test(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_aj_test(num_datatypes);
 
-  std::vector<std::unordered_map<string, TH2D*>> off_axis_aj(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> off_axis_aj_test(
+  std::vector<std::unordered_map<string, TH2D *>> off_axis_aj(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> off_axis_aj_test(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> off_axis_rho(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> off_axis_sig(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> off_axis_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> off_axis_sig(num_datatypes);
 
-  std::vector<std::unordered_map<string, TH2D*>> hard_pp_only_aj(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_pp_only_aj(
+  std::vector<std::unordered_map<string, TH2D *>> hard_pp_only_aj(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_pp_dpt(
+  std::vector<std::unordered_map<string, TH2D *>> match_pp_only_aj(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_pp_dpt(
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_pp_dpt(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_pp_dpt(num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_pp_dpt(
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_pp_dpt(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_lead_pp_dpt_frac(
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_pp_dpt(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_lead_pp_dpt_frac(
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_pp_dpt(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> hard_sub_pp_dpt_frac(
+  std::vector<std::unordered_map<string, TH2D *>> hard_lead_pp_dpt_frac(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> match_sub_pp_dpt_frac(
+  std::vector<std::unordered_map<string, TH2D *>> match_lead_pp_dpt_frac(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> pp_lead_hard_match_fraction(
+  std::vector<std::unordered_map<string, TH2D *>> hard_sub_pp_dpt_frac(
       num_datatypes);
-  std::vector<std::unordered_map<string, TH2D*>> pp_sub_hard_match_fraction(
+  std::vector<std::unordered_map<string, TH2D *>> match_sub_pp_dpt_frac(
+      num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> pp_lead_hard_match_fraction(
+      num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> pp_sub_hard_match_fraction(
       num_datatypes);
 
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_lead_eta_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_lead_phi_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_lead_pt_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_lead_pt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_lead_const_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_lead_rho_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_lead_sig_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_eta_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_phi_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_pt_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_const_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_rho_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_sig_cent(num_datatypes);
 
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_eta_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_sub_eta_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_sub_phi_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> hard_sub_pt_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_phi_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_pt_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_sub_const_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_rho_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_sub_sig_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_sub_rho_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_sub_sig_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_sub_eta_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_sub_phi_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_sub_pt_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      match_sub_pt_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_sub_const_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_sub_rho_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_sub_sig_cent(num_datatypes);
 
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> npart_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> npart_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_dphi_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> hard_dphi_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_dphi_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> match_dphi_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> lead_dr_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> lead_dr_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> sub_dr_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> sub_dr_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> lead_dpt_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> lead_dpt_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> sub_dpt_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> sub_dpt_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       lead_dpt_frac_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> sub_dpt_frac_cent(
-      num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      sub_dpt_frac_cent(num_datatypes);
 
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_aj_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> hard_aj_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> match_aj_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> match_aj_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> hard_aj_test_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_aj_test_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_aj_test_cent(num_datatypes);
 
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> off_axis_aj_cent(
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> off_axis_aj_cent(
       num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       off_axis_aj_test_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> off_axis_rho_cent(
-      num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>> off_axis_sig_cent(
-      num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      off_axis_rho_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      off_axis_sig_cent(num_datatypes);
 
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_pp_only_aj_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_pp_only_aj_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_lead_pp_dpt_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_pp_dpt_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_sub_pp_dpt_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_sub_pp_dpt_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_lead_pp_dpt_frac_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_lead_pp_dpt_frac_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       hard_sub_pp_dpt_frac_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_sub_pp_dpt_frac_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       pp_lead_hard_match_fraction_cent(num_datatypes);
-  std::vector<std::unordered_map<string, std::vector<TH1D*>>>
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       pp_sub_hard_match_fraction_cent(num_datatypes);
 
-  std::unordered_map<string, std::vector<TGraphErrors*>> systematic_errors_hard;
-  std::unordered_map<string, std::vector<TGraphErrors*>>
+  std::unordered_map<string, std::vector<TGraphErrors *>>
+      systematic_errors_hard;
+  std::unordered_map<string, std::vector<TGraphErrors *>>
       systematic_errors_match;
 
   // create our histogram and canvas options
@@ -701,7 +740,7 @@ int main(int argc, char* argv[]) {
   int entry = -1;
 
   // loop over all keys
-  for (auto& key : keys) {
+  for (auto &key : keys) {
     // increment entry counter
     entry++;
     LOG(INFO) << "loading: " << key;
@@ -712,8 +751,8 @@ int main(int argc, char* argv[]) {
 
     // now iterate over all our datasets
     for (auto type : TYPEMAP) {
-      auto& type_enum = type.first;
-      auto& data_index = type.second;
+      auto &type_enum = type.first;
+      auto &data_index = type.second;
 
       // make our output directory
       string out_loc = key_loc + "/" + TYPENAME[type_enum];
@@ -721,7 +760,7 @@ int main(int argc, char* argv[]) {
       boost::filesystem::create_directories(dir);
 
       // load our reader
-      TTree* current_tree = trees[data_index][key];
+      TTree *current_tree = trees[data_index][key];
       TTreeReader reader(current_tree);
 
       // create readervalues for auau first
@@ -1128,14 +1167,15 @@ int main(int argc, char* argv[]) {
       while (reader.Next()) {
         int cent_bin = -1;
         for (int i = 0; i < cent_bin_boundaries.size(); ++i) {
-          auto& pair = cent_bin_boundaries[i];
+          auto &pair = cent_bin_boundaries[i];
           if (**cent >= pair.first && **cent <= pair.second) {
             cent_bin = i;
             break;
           }
         }
 
-        if (cent_bin == -1) continue;
+        if (cent_bin == -1)
+          continue;
 
         // check jet eta
         if (FLAGS_setScanning &&
@@ -1181,18 +1221,18 @@ int main(int argc, char* argv[]) {
         sub_dpt_frac[data_index][key]->Fill(
             cent_bin, ((*js)->Pt() - (*jsm)->Pt()) / (*js)->Pt());
 
-        hard_aj[data_index][key]->Fill(
-            cent_bin,
-            fabs((*jl)->Pt() - (*js)->Pt()) / ((*jl)->Pt() + (*js)->Pt()));
-        match_aj[data_index][key]->Fill(
-            cent_bin,
-            fabs((*jlm)->Pt() - (*jsm)->Pt()) / ((*jlm)->Pt() + (*jsm)->Pt()));
-        hard_aj_test[data_index][key]->Fill(
-            cent_bin,
-            fabs((*jl)->Pt() - (*js)->Pt()) / ((*jl)->Pt() + (*js)->Pt()));
-        match_aj_test[data_index][key]->Fill(
-            cent_bin,
-            fabs((*jlm)->Pt() - (*jsm)->Pt()) / ((*jlm)->Pt() + (*jsm)->Pt()));
+        hard_aj[data_index][key]->Fill(cent_bin,
+                                       fabs((*jl)->Pt() - (*js)->Pt()) /
+                                           ((*jl)->Pt() + (*js)->Pt()));
+        match_aj[data_index][key]->Fill(cent_bin,
+                                        fabs((*jlm)->Pt() - (*jsm)->Pt()) /
+                                            ((*jlm)->Pt() + (*jsm)->Pt()));
+        hard_aj_test[data_index][key]->Fill(cent_bin,
+                                            fabs((*jl)->Pt() - (*js)->Pt()) /
+                                                ((*jl)->Pt() + (*js)->Pt()));
+        match_aj_test[data_index][key]->Fill(cent_bin,
+                                             fabs((*jlm)->Pt() - (*jsm)->Pt()) /
+                                                 ((*jlm)->Pt() + (*jsm)->Pt()));
 
         if (auau_off_axis_present) {
           off_axis_aj[data_index][key]->Fill(
@@ -1413,7 +1453,7 @@ int main(int argc, char* argv[]) {
                   "pp_sub_hard_match_fraction", "", "", "event fraction",
                   "Centrality");
       }
-    }  // datatype
+    } // datatype
 
     // now we will get systematics and print out comparisons - do everything in
     // bins of centrality
@@ -1512,7 +1552,7 @@ int main(int argc, char* argv[]) {
                  out_loc, "aj_embed", "", "|A_{J}|", "event fraction");
 
       // now print off-axis AJ with the matched
-      std::vector<TH1D*> off_axis_match_compare{
+      std::vector<TH1D *> off_axis_match_compare{
           match_aj_cent[auau_index][key][i], match_aj_cent[pp_index][key][i],
           off_axis_aj_cent[auau_index][key][i]};
       std::vector<string> off_axis_match_string{"Au+Au", "embedded p+p",
@@ -1616,40 +1656,40 @@ int main(int argc, char* argv[]) {
                 "event fraction");
       Overlay1D(hard_lead_rho_cent[auau_index][key][i],
                 hard_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "hard_lead_rho", "", "rho",
+                hopts, copts, out_loc, "hard_lead_rho", "", "#rho",
                 "event fraction");
       Overlay1D(match_lead_rho_cent[auau_index][key][i],
                 match_lead_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "match_lead_rho", "", "rho",
+                hopts, copts, out_loc, "match_lead_rho", "", "#rho",
                 "event fraction");
       Overlay1D(hard_sub_rho_cent[auau_index][key][i],
                 hard_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "hard_sub_rho", "", "rho",
+                hopts, copts, out_loc, "hard_sub_rho", "", "#rho",
                 "event fraction");
       Overlay1D(match_sub_rho_cent[auau_index][key][i],
                 match_sub_rho_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "match_sub_rho", "", "rho",
+                hopts, copts, out_loc, "match_sub_rho", "", "#rho",
                 "event fraction");
       Overlay1D(hard_lead_sig_cent[auau_index][key][i],
                 hard_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "hard_lead_sig", "", "sigma",
+                hopts, copts, out_loc, "hard_lead_sig", "", "#sigma",
                 "event fraction");
       Overlay1D(match_lead_sig_cent[auau_index][key][i],
                 match_lead_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "match_lead_sig", "", "sigma",
+                hopts, copts, out_loc, "match_lead_sig", "", "#sigma",
                 "event fraction");
       Overlay1D(hard_sub_sig_cent[auau_index][key][i],
                 hard_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "hard_sub_sig", "", "sigma",
+                hopts, copts, out_loc, "hard_sub_sig", "", "#sigma",
                 "event fraction");
       Overlay1D(match_sub_sig_cent[auau_index][key][i],
                 match_sub_sig_cent[pp_index][key][i], "Au+Au", "p+p embedded",
-                hopts, copts, out_loc, "match_sub_sig", "", "sigma",
+                hopts, copts, out_loc, "match_sub_sig", "", "#sigma",
                 "event fraction");
 
-    }  // centrality
+    } // centrality
 
-  }  // key
+  } // key
 
   for (int cent = 0; cent < cent_boundaries.size(); ++cent) {
     // make a directory for our grid outputs
@@ -1661,44 +1701,44 @@ int main(int argc, char* argv[]) {
     boost::filesystem::create_directories(dir_cent);
 
     // now build histograms
-    TH2D* p_values_hard =
+    TH2D *p_values_hard =
         new TH2D(dijetcore::MakeString("p_values_hard_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* ks_values_hard =
+    TH2D *ks_values_hard =
         new TH2D(dijetcore::MakeString("ks_values_hard_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* p_values_match =
+    TH2D *p_values_match =
         new TH2D(dijetcore::MakeString("p_values_match_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* ks_values_match =
+    TH2D *ks_values_match =
         new TH2D(dijetcore::MakeString("ks_values_match_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* p_values_bkg =
+    TH2D *p_values_bkg =
         new TH2D(dijetcore::MakeString("p_values_bkg_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* ks_values_bkg =
+    TH2D *ks_values_bkg =
         new TH2D(dijetcore::MakeString("ks_values_bkg_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
 
-    TH2D* p_values_hard_error =
+    TH2D *p_values_hard_error =
         new TH2D(dijetcore::MakeString("p_values_hard_error_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* ks_values_hard_error =
+    TH2D *ks_values_hard_error =
         new TH2D(dijetcore::MakeString("ks_values_hard_error_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* p_values_match_error =
+    TH2D *p_values_match_error =
         new TH2D(dijetcore::MakeString("p_values_match_error_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
-    TH2D* ks_values_match_error =
+    TH2D *ks_values_match_error =
         new TH2D(dijetcore::MakeString("ks_values_match_error_", cent).c_str(),
                  ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
                  constpt.size(), -0.5, constpt.size() - 0.5);
@@ -1737,30 +1777,95 @@ int main(int argc, char* argv[]) {
                                                      constpt_string[j].c_str());
     }
 
-    TCanvas* c_hard =
+    TCanvas *c_hard =
         new TCanvas(dijetcore::MakeString("hard_canvas_", cent).c_str());
-    std::vector<std::vector<TPad*>> hard_pads = dijetcore::CanvasPartition(
+    std::vector<std::vector<TPad *>> hard_pads = dijetcore::CanvasPartition(
         c_hard, radii.size(), constpt.size(), 0.10, 0.10, 0.12, 0.05);
 
-    TCanvas* c_match =
+    TCanvas *c_match =
         new TCanvas(dijetcore::MakeString("match_canvas_", cent).c_str());
-    std::vector<std::vector<TPad*>> matched_pads = dijetcore::CanvasPartition(
+    std::vector<std::vector<TPad *>> matched_pads = dijetcore::CanvasPartition(
         c_match, radii.size(), constpt.size(), 0.10, 0.10, 0.12, 0.05);
 
-    TCanvas* c_match_oa =
+    TCanvas *c_match_oa =
         new TCanvas(dijetcore::MakeString("match_canvas_oa_", cent).c_str());
-    std::vector<std::vector<TPad*>> matched_oa_pads =
+    std::vector<std::vector<TPad *>> matched_oa_pads =
         dijetcore::CanvasPartition(c_match_oa, radii.size(), constpt.size(),
                                    0.10, 0.10, 0.12, 0.05);
 
+    TCanvas *c_hard_tow_sys_unc =
+        new TCanvas(dijetcore::MakeString("hard_tow_sys_unc_", cent).c_str());
+    std::vector<std::vector<TPad *>> hard_tow_sys_unc_pads =
+        dijetcore::CanvasPartition(c_hard_tow_sys_unc, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_hard_trk_sys_unc =
+        new TCanvas(dijetcore::MakeString("hard_trk_sys_unc_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> hard_trk_sys_unc_pads =
+        dijetcore::CanvasPartition(c_hard_trk_sys_unc, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_match_tow_sys_unc =
+        new TCanvas(dijetcore::MakeString("match_tow_sys_unc_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> match_tow_sys_unc_pads =
+        dijetcore::CanvasPartition(c_match_tow_sys_unc, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_match_trk_sys_unc =
+        new TCanvas(dijetcore::MakeString("match_trk_sys_unc_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> match_trk_sys_unc_pads =
+        dijetcore::CanvasPartition(c_match_trk_sys_unc, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+    
+    TCanvas *c_hard_tow_sys_unc_ratio =
+        new TCanvas(dijetcore::MakeString("hard_tow_sys_unc_ratio_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> hard_tow_sys_unc_ratio_pads =
+        dijetcore::CanvasPartition(c_hard_tow_sys_unc_ratio, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_hard_trk_sys_unc_ratio =
+        new TCanvas(dijetcore::MakeString("hard_trk_sys_unc_ratio_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> hard_trk_sys_unc_ratio_pads =
+        dijetcore::CanvasPartition(c_hard_trk_sys_unc_ratio, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_match_tow_sys_unc_ratio =
+        new TCanvas(dijetcore::MakeString("match_tow_sys_unc_ratio_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> match_tow_sys_unc_ratio_pads =
+        dijetcore::CanvasPartition(c_match_tow_sys_unc_ratio, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_match_trk_sys_unc_ratio =
+        new TCanvas(dijetcore::MakeString("match_trk_sys_unc_ratio_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> match_trk_sys_unc_ratio_pads =
+        dijetcore::CanvasPartition(c_match_trk_sys_unc_ratio, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_hard_sys_unc_ratio =
+        new TCanvas(dijetcore::MakeString("hard_sys_unc_ratio_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> hard_sys_unc_ratio_pads =
+        dijetcore::CanvasPartition(c_hard_sys_unc_ratio, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
+    TCanvas *c_match_sys_unc_ratio =
+        new TCanvas(dijetcore::MakeString("match_sys_unc_ratio_pad_", cent).c_str());
+    std::vector<std::vector<TPad *>> match_sys_unc_ratio_pads =
+        dijetcore::CanvasPartition(c_match_sys_unc_ratio, radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.12, 0.05);
+
     // for drawing x/y axis labels
-    TPad* invis = new TPad("invis_pad", "", 0, 0, 1, 1);
+    TPad *invis = new TPad("invis_pad", "", 0, 0, 1, 1);
     invis->SetFillStyle(4000);
-    TLatex* x_label_text = new TLatex(0.47, 0.03, "|A_{J}|");
+    TPad *invis_error = new TPad("invis_err_pad", "", 0, 0, 1, 1);
+    invis_error->SetFillStyle(4000);
+    TLatex *x_label_text = new TLatex(0.47, 0.03, "|A_{J}|");
     x_label_text->SetTextSize(0.05);
-    TLatex* y_label_text = new TLatex(0.05, 0.4, "event fraction");
+    TLatex *y_label_text = new TLatex(0.05, 0.4, "event fraction");
     y_label_text->SetTextSize(0.05);
     y_label_text->SetTextAngle(90);
+    TLatex *y_label_text_error_frac = new TLatex(0.05, 0.4, "percent error");
+    y_label_text_error_frac->SetTextSize(0.05);
+    y_label_text_error_frac->SetTextAngle(90);
 
     for (int rad = 0; rad < radii.size(); ++rad) {
       for (int pt = 0; pt < constpt.size(); ++pt) {
@@ -1769,26 +1874,84 @@ int main(int argc, char* argv[]) {
         string key = grid_keys[rad][pt];
         dijetcore::DijetKey key_params = grid_key_params[rad][pt];
 
-        TH1D* aj_hard_test = hard_aj_test_cent[auau_index][key][cent];
-        TH1D* aj_match_test = match_aj_test_cent[auau_index][key][cent];
+        // get all histograms that will be used in producing the various grids
 
-        TH1D* aj_hard_pp_test = hard_aj_test_cent[pp_index][key][cent];
-        TH1D* aj_match_pp_test = match_aj_test_cent[pp_index][key][cent];
+        TH1D *aj_hard_test = hard_aj_test_cent[auau_index][key][cent];
+        TH1D *aj_match_test = match_aj_test_cent[auau_index][key][cent];
 
-        TH1D* aj_hard = hard_aj_cent[auau_index][key][cent];
-        TH1D* aj_match = match_aj_cent[auau_index][key][cent];
+        TH1D *aj_hard_pp_test = hard_aj_test_cent[pp_index][key][cent];
+        TH1D *aj_match_pp_test = match_aj_test_cent[pp_index][key][cent];
 
-        TH1D* aj_hard_pp = hard_aj_cent[pp_index][key][cent];
-        TH1D* aj_match_pp = match_aj_cent[pp_index][key][cent];
+        TH1D *aj_hard = hard_aj_cent[auau_index][key][cent];
+        TH1D *aj_match = match_aj_cent[auau_index][key][cent];
 
-        TGraphErrors* hard_sys_error = systematic_errors_hard[key][cent];
-        TGraphErrors* match_sys_error = systematic_errors_match[key][cent];
+        TH1D *aj_hard_pp = hard_aj_cent[pp_index][key][cent];
+        TH1D *aj_match_pp = match_aj_cent[pp_index][key][cent];
 
-        TH1D* aj_off_axis = off_axis_aj_cent[auau_index][key][cent];
-        TH1D* aj_off_axis_test = off_axis_aj_test_cent[auau_index][key][cent];
+        TGraphErrors *hard_sys_error = systematic_errors_hard[key][cent];
+        TGraphErrors *match_sys_error = systematic_errors_match[key][cent];
+
+        TH1D *aj_off_axis = off_axis_aj_cent[auau_index][key][cent];
+        TH1D *aj_off_axis_test = off_axis_aj_test_cent[auau_index][key][cent];
+
+        // including systematics, and fractional systematics
+        TH1D* hard_tow_p_aj = hard_aj_cent[towp_index][key][cent];
+        hopts.SetHistogram(hard_tow_p_aj);
+        TH1D* hard_tow_p_aj_ratio = GetErrorFractional(aj_hard_pp, hard_tow_p_aj,
+                                                       dijetcore::MakeString("hardtowperr", cent));
+        hopts.SetHistogram(hard_tow_p_aj_ratio);
+
+        TH1D* hard_tow_m_aj = hard_aj_cent[towm_index][key][cent];
+        hopts.SetHistogram(hard_tow_m_aj);
+        TH1D* hard_tow_m_aj_ratio = GetErrorFractional(aj_hard_pp, hard_tow_m_aj,
+                                                       dijetcore::MakeString("hardtowmerr", cent));
+        hopts.SetHistogram(hard_tow_m_aj_ratio);
+
+        TH1D* hard_trk_p_aj = hard_aj_cent[trkp_index][key][cent];
+        hopts.SetHistogram(hard_trk_p_aj);
+        TH1D* hard_trk_p_aj_ratio = GetErrorFractional(aj_hard_pp, hard_trk_p_aj,
+                                                       dijetcore::MakeString("hardtrkperr", cent));
+        hopts.SetHistogram(hard_trk_p_aj_ratio);
+
+        TH1D* hard_trk_m_aj = hard_aj_cent[trkm_index][key][cent];
+        hopts.SetHistogram(hard_trk_m_aj);
+        TH1D* hard_trk_m_aj_ratio = GetErrorFractional(aj_hard_pp, hard_trk_m_aj,
+                                                       dijetcore::MakeString("hardtrkmerr", cent));
+        hopts.SetHistogram(hard_trk_m_aj_ratio);
+
+        TH1D* match_tow_p_aj = match_aj_cent[towp_index][key][cent];
+        hopts.SetHistogram(match_tow_p_aj);
+        TH1D* match_tow_p_aj_ratio = GetErrorFractional(aj_match_pp, match_tow_p_aj,
+                                                       dijetcore::MakeString("matchtowperr", cent));
+        hopts.SetHistogram(match_tow_p_aj_ratio);
+
+        TH1D* match_tow_m_aj = match_aj_cent[towm_index][key][cent];
+        hopts.SetHistogram(match_tow_m_aj);
+        TH1D* match_tow_m_aj_ratio = GetErrorFractional(aj_match_pp, match_tow_m_aj,
+                                                       dijetcore::MakeString("matchtowmerr", cent));
+        hopts.SetHistogram(match_tow_m_aj_ratio);
+
+        TH1D* match_trk_p_aj = match_aj_cent[trkp_index][key][cent];
+        hopts.SetHistogram(match_trk_p_aj);
+        TH1D* match_trk_p_aj_ratio = GetErrorFractional(aj_match_pp, match_trk_p_aj,
+                                                       dijetcore::MakeString("matchtrkperr", cent));
+        hopts.SetHistogram(match_trk_p_aj_ratio);
+
+        TH1D* match_trk_m_aj = match_aj_cent[trkm_index][key][cent];
+        hopts.SetHistogram(match_trk_m_aj);
+        TH1D* match_trk_m_aj_ratio = GetErrorFractional(aj_match_pp, match_trk_m_aj,
+                                                       dijetcore::MakeString("matchtrkmerr", cent));
+        hopts.SetHistogram(match_trk_m_aj_ratio);
+
+        // // full systematic ratios for hard and matched aj
+        TH1D* hard_aj_sys = GetErrorFractional(aj_hard_pp, hard_sys_error, dijetcore::MakeString("hardtotalerr", cent));
+        hopts.SetHistogram(hard_aj_sys);
+        TH1D* match_aj_sys = GetErrorFractional(aj_match_pp, match_sys_error, dijetcore::MakeString("matchtotalerr", cent));
+        hopts.SetHistogram(match_aj_sys);
 
         // print
-
+        
+        // first, the hard aj
         c_hard->cd(0);
         aj_hard->GetXaxis()->SetTitle(
             dijetcore::MakeString("R=", radii_string[rad]).c_str());
@@ -1798,10 +1961,12 @@ int main(int argc, char* argv[]) {
             dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
                 .c_str());
         aj_hard->GetYaxis()->SetTitleOffset(1.07);
-        if (pt != 0 && pt != constpt.size() -1)
-            aj_hard->GetYaxis()->SetTitleSize(aj_hard->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt != 0 && pt != constpt.size() - 1)
+          aj_hard->GetYaxis()->SetTitleSize(
+              aj_hard->GetYaxis()->GetTitleSize() * 1.05);
         if (pt == 0)
-            aj_hard->GetYaxis()->SetTitleSize(aj_hard->GetYaxis()->GetTitleSize() * 0.95);
+          aj_hard->GetYaxis()->SetTitleSize(
+              aj_hard->GetYaxis()->GetTitleSize() * 0.95);
         aj_hard->GetYaxis()->CenterTitle();
         aj_hard->GetYaxis()->SetRangeUser(0.00001, 0.2499);
         aj_hard->SetMarkerSize(0.2);
@@ -1811,7 +1976,7 @@ int main(int argc, char* argv[]) {
         hard_sys_error->SetFillStyle(1001);
         hard_sys_error->SetLineWidth(0);
         hard_sys_error->SetMarkerSize(0);
-        TPad* hard_pad = hard_pads[rad][pt];
+        TPad *hard_pad = hard_pads[rad][pt];
         double scale_factor =
             hard_pads[0][0]->GetAbsHNDC() / hard_pad->GetAbsHNDC();
         hard_pad->Draw();
@@ -1830,16 +1995,19 @@ int main(int argc, char* argv[]) {
         hard_sys_error->Draw("9e2SAME");
 
         // draw the STAR Prelim
-        TLegend* leg1 = GetLegend(rad, pt, radii_string.size() - 1,
+        TLegend *leg1 = GetLegend(rad, pt, radii_string.size() - 1,
                                   constpt_string.size() - 1, radii[rad],
                                   constpt[pt], scale_factor);
         leg1->AddEntry(aj_hard, "Au+Au HT", "lep")
             ->SetTextSize(.04 * scale_factor);
         leg1->AddEntry(aj_hard_pp, "p+p HT #oplus Au+Au MB", "lep")
             ->SetTextSize(.04 * scale_factor);
-        if (pt == constpt.size() - 1 && rad == 0) leg1->Draw();
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg1->Draw();
         c_hard->cd(0);
 
+        // next, plot matched aj
+        
         c_match->cd(0);
         aj_match->GetXaxis()->SetTitle(
             dijetcore::MakeString("R=", radii_string[rad]).c_str());
@@ -1849,10 +2017,12 @@ int main(int argc, char* argv[]) {
             dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
                 .c_str());
         aj_match->GetYaxis()->SetTitleOffset(1.07);
-        if (pt != 0 && pt != constpt.size() -1)
-            aj_match->GetYaxis()->SetTitleSize(aj_match->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt != 0 && pt != constpt.size() - 1)
+          aj_match->GetYaxis()->SetTitleSize(
+              aj_match->GetYaxis()->GetTitleSize() * 1.05);
         if (pt == 0)
-            aj_match->GetYaxis()->SetTitleSize(aj_match->GetYaxis()->GetTitleSize() * 0.95);
+          aj_match->GetYaxis()->SetTitleSize(
+              aj_match->GetYaxis()->GetTitleSize() * 0.95);
         aj_match->GetYaxis()->CenterTitle();
 
         aj_match->GetYaxis()->SetRangeUser(0.00001, 0.2499);
@@ -1863,7 +2033,7 @@ int main(int argc, char* argv[]) {
         match_sys_error->SetFillStyle(1001);
         match_sys_error->SetLineWidth(0);
         match_sys_error->SetMarkerSize(0);
-        TPad* match_pad = matched_pads[rad][pt];
+        TPad *match_pad = matched_pads[rad][pt];
         match_pad->SetFillStyle(4000);
         match_pad->SetFrameFillStyle(4000);
         match_pad->cd();
@@ -1879,16 +2049,18 @@ int main(int argc, char* argv[]) {
         match_sys_error->Draw("9e2SAME");
 
         // draw STAR prelim
-        TLegend* leg2 = GetLegend(rad, pt, radii_string.size() - 1,
+        TLegend *leg2 = GetLegend(rad, pt, radii_string.size() - 1,
                                   constpt_string.size() - 1, radii[rad],
                                   constpt[pt], scale_factor);
         leg2->AddEntry(aj_match, "Au+Au HT", "lep")
             ->SetTextSize(.04 * scale_factor);
         leg2->AddEntry(aj_match_pp, "p+p HT #oplus Au+Au MB", "lep")
             ->SetTextSize(.04 * scale_factor);
-        if (pt == constpt.size() - 1 && rad == 0) leg2->Draw();
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg2->Draw();
         c_match->cd(0);
 
+        // next, plot off-axis aj
         c_match_oa->cd(0);
         aj_off_axis->GetXaxis()->SetTitle(
             dijetcore::MakeString("R=", radii_string[rad]).c_str());
@@ -1898,11 +2070,13 @@ int main(int argc, char* argv[]) {
             dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
                 .c_str());
         aj_off_axis->GetYaxis()->SetTitleOffset(1.07);
-        if (pt != 0 && pt != constpt.size() -1)
-            aj_off_axis->GetYaxis()->SetTitleSize(aj_off_axis->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt != 0 && pt != constpt.size() - 1)
+          aj_off_axis->GetYaxis()->SetTitleSize(
+              aj_off_axis->GetYaxis()->GetTitleSize() * 1.05);
         if (pt == 0)
-            aj_off_axis->GetYaxis()->SetTitleSize(aj_off_axis->GetYaxis()->GetTitleSize() * 0.95);
-        
+          aj_off_axis->GetYaxis()->SetTitleSize(
+              aj_off_axis->GetYaxis()->GetTitleSize() * 0.95);
+
         aj_off_axis->GetYaxis()->CenterTitle();
 
         aj_off_axis->GetYaxis()->SetRangeUser(0.00001, 0.2499);
@@ -1914,7 +2088,7 @@ int main(int argc, char* argv[]) {
         aj_off_axis->SetFillColorAlpha(kAzure, 0.65);
         aj_off_axis->SetLineWidth(0);
         aj_off_axis->SetMarkerSize(0);
-        TPad* match_oa_pad = matched_oa_pads[rad][pt];
+        TPad *match_oa_pad = matched_oa_pads[rad][pt];
         match_oa_pad->SetFillStyle(4000);
         match_oa_pad->SetFrameFillStyle(4000);
         match_oa_pad->cd();
@@ -1929,36 +2103,573 @@ int main(int argc, char* argv[]) {
         aj_match->Draw("9SAME");
 
         // draw STAR prelim
-        TLegend* leg3 = GetLegend(rad, pt, radii_string.size() - 1,
+        TLegend *leg3 = GetLegend(rad, pt, radii_string.size() - 1,
                                   constpt_string.size() - 1, radii[rad],
                                   constpt[pt], scale_factor);
         leg3->AddEntry(aj_match, "Au+Au HT", "lep")
             ->SetTextSize(.04 * scale_factor);
         leg3->AddEntry(aj_off_axis, "Au+Au HT #oplus Au+Au MB", "f")
             ->SetTextSize(.04 * scale_factor);
-        if (pt == constpt.size() - 1 && rad == 0) leg3->Draw();
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg3->Draw();
 
         c_match_oa->cd(0);
 
-        c_match_oa->cd(0);
+        // now, tower systematic uncertainty for hard aj
+        c_hard_tow_sys_unc->cd(0);
+        hard_tow_p_aj->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        hard_tow_p_aj->GetXaxis()->SetTitleOffset(1.15);
+        hard_tow_p_aj->GetXaxis()->CenterTitle();
+        hard_tow_p_aj->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        hard_tow_p_aj->GetYaxis()->SetTitleOffset(1.07);
+        
+        if (pt != 0 && pt != constpt.size() - 1)
+          hard_tow_p_aj->GetYaxis()->SetTitleSize(
+              hard_tow_p_aj->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          hard_tow_p_aj->GetYaxis()->SetTitleSize(
+              hard_tow_p_aj->GetYaxis()->GetTitleSize() * 0.95);
+        hard_tow_p_aj->GetYaxis()->CenterTitle();
+        
+        hard_tow_p_aj->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        hard_tow_p_aj->SetMarkerSize(0.2);
+        hard_tow_p_aj->SetLineColor(kBlue);
+        hard_tow_p_aj->SetMarkerColor(kBlue);
+        hard_tow_m_aj->SetMarkerSize(0.2);
+        hard_tow_m_aj->SetLineColor(kMagenta);
+        hard_tow_m_aj->SetMarkerColor(kMagenta);
+        TPad *hard_sys_pad = hard_tow_sys_unc_pads[rad][pt];
+        hard_sys_pad->SetFillStyle(4000);
+        hard_sys_pad->SetFrameFillStyle(4000);
+        hard_sys_pad->cd();
+        
+        hard_tow_p_aj->GetXaxis()->SetNdivisions(305);
+        hard_tow_p_aj->GetXaxis()->SetLabelSize(0.08);
+        hard_tow_p_aj->GetYaxis()->SetNdivisions(305);
+        hard_tow_p_aj->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          hard_tow_p_aj->GetYaxis()->SetLabelSize(0.11);
+        
+        hard_tow_p_aj->Draw();
+        aj_hard_pp->Draw("SAME");
+        hard_tow_m_aj->Draw("SAME");
+        
+        // draw STAR prelim
+        TLegend *leg4 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg4->AddEntry(aj_hard_pp, "p+p HT #oplus Au+Au MB", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg4->AddEntry(hard_tow_p_aj, "p+p increased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg4->AddEntry(hard_tow_m_aj, "p+p decreased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg4->Draw();
+        
+        c_hard_tow_sys_unc->cd(0);
 
-        std::vector<TH1D*> aj_hard_pp_var{
+        // repeat for matched tower systematic uncertainties
+        
+        c_match_tow_sys_unc->cd(0);
+        match_tow_p_aj->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        match_tow_p_aj->GetXaxis()->SetTitleOffset(1.15);
+        match_tow_p_aj->GetXaxis()->CenterTitle();
+        match_tow_p_aj->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        
+        match_tow_p_aj->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          match_tow_p_aj->GetYaxis()->SetTitleSize(
+              match_tow_p_aj->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          match_tow_p_aj->GetYaxis()->SetTitleSize(
+              match_tow_p_aj->GetYaxis()->GetTitleSize() * 0.95);
+        match_tow_p_aj->GetYaxis()->CenterTitle();
+        
+        match_tow_p_aj->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        match_tow_p_aj->SetMarkerSize(0.2);
+        match_tow_p_aj->SetLineColor(kBlue);
+        match_tow_p_aj->SetMarkerColor(kBlue);
+        
+        match_tow_m_aj->SetMarkerSize(0.2);
+        match_tow_m_aj->SetLineColor(kMagenta);
+        match_tow_m_aj->SetMarkerColor(kMagenta);
+        TPad *match_tow_sys_pad = match_tow_sys_unc_pads[rad][pt];
+        match_tow_sys_pad->SetFillStyle(4000);
+        match_tow_sys_pad->SetFrameFillStyle(4000);
+        match_tow_sys_pad->cd();
+        match_tow_p_aj->GetXaxis()->SetNdivisions(305);
+        match_tow_p_aj->GetXaxis()->SetLabelSize(0.08);
+        match_tow_p_aj->GetYaxis()->SetNdivisions(305);
+        match_tow_p_aj->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          match_tow_p_aj->GetYaxis()->SetLabelSize(0.11);
+        
+        match_tow_p_aj->Draw();
+        aj_match_pp->Draw("SAME");
+        match_tow_m_aj->Draw("SAME");
+        
+        // draw STAR prelim
+        TLegend *leg5 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg5->AddEntry(aj_match_pp, "p+p HT #oplus Au+Au MB", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg5->AddEntry(match_tow_p_aj, "p+p increased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg5->AddEntry(match_tow_m_aj, "p+p decreased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg5->Draw();
+
+        c_match_tow_sys_unc->cd(0);
+        // ----------------------------------------------------------------------
+        // now, tracking systematic uncertainty for hard aj
+        
+        c_hard_trk_sys_unc->cd(0);
+        hard_trk_p_aj->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        hard_trk_p_aj->GetXaxis()->SetTitleOffset(1.15);
+        hard_trk_p_aj->GetXaxis()->CenterTitle();
+        hard_trk_p_aj->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        hard_trk_p_aj->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          hard_trk_p_aj->GetYaxis()->SetTitleSize(
+              hard_trk_p_aj->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          hard_trk_p_aj->GetYaxis()->SetTitleSize(
+              hard_trk_p_aj->GetYaxis()->GetTitleSize() * 0.95);
+        hard_trk_p_aj->GetYaxis()->CenterTitle();
+
+        hard_trk_p_aj->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        hard_trk_p_aj->SetMarkerSize(0.2);
+        hard_trk_p_aj->SetLineColor(kBlue);
+        hard_trk_p_aj->SetMarkerColor(kBlue);
+        hard_trk_m_aj->SetMarkerSize(0.2);
+        hard_trk_m_aj->SetLineColor(kMagenta);
+        hard_trk_m_aj->SetMarkerColor(kMagenta);
+        TPad *hard_trk_sys_pad = hard_trk_sys_unc_pads[rad][pt];
+        hard_trk_sys_pad->SetFillStyle(4000);
+        hard_trk_sys_pad->SetFrameFillStyle(4000);
+        hard_trk_sys_pad->cd();
+        hard_trk_p_aj->GetXaxis()->SetNdivisions(305);
+        hard_trk_p_aj->GetXaxis()->SetLabelSize(0.08);
+        hard_trk_p_aj->GetYaxis()->SetNdivisions(305);
+        hard_trk_p_aj->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          hard_trk_p_aj->GetYaxis()->SetLabelSize(0.11);
+
+        hard_trk_p_aj->Draw();
+        aj_hard_pp->Draw("SAME");
+        hard_trk_m_aj->Draw("SAME");
+
+        // draw STAR prelim
+        TLegend *leg6 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg6->AddEntry(aj_hard_pp, "p+p HT #oplus Au+Au MB", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg6->AddEntry(hard_trk_p_aj, "p+p increased tracking eff", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg6->AddEntry(hard_trk_m_aj, "p+p decreased tracking eff", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg6->Draw();
+
+        c_hard_trk_sys_unc->cd(0);
+
+        // repeat for matched tracking systematic uncertainties
+        c_match_trk_sys_unc->cd(0);
+        match_trk_p_aj->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        match_trk_p_aj->GetXaxis()->SetTitleOffset(1.15);
+        match_trk_p_aj->GetXaxis()->CenterTitle();
+        match_trk_p_aj->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        match_trk_p_aj->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          match_trk_p_aj->GetYaxis()->SetTitleSize(
+              match_trk_p_aj->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          match_trk_p_aj->GetYaxis()->SetTitleSize(
+              match_trk_p_aj->GetYaxis()->GetTitleSize() * 0.95);
+        match_trk_p_aj->GetYaxis()->CenterTitle();
+
+        match_trk_p_aj->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        match_trk_p_aj->SetMarkerSize(0.2);
+        match_trk_p_aj->SetLineColor(kBlue);
+        match_trk_p_aj->SetMarkerColor(kBlue);
+        match_trk_m_aj->SetMarkerSize(0.2);
+        match_trk_m_aj->SetLineColor(kMagenta);
+        match_trk_m_aj->SetMarkerColor(kMagenta);
+        TPad *match_trk_sys_pad = match_trk_sys_unc_pads[rad][pt];
+        match_trk_sys_pad->SetFillStyle(4000);
+        match_trk_sys_pad->SetFrameFillStyle(4000);
+        match_trk_sys_pad->cd();
+        match_trk_p_aj->GetXaxis()->SetNdivisions(305);
+        match_trk_p_aj->GetXaxis()->SetLabelSize(0.08);
+        match_trk_p_aj->GetYaxis()->SetNdivisions(305);
+        match_trk_p_aj->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          match_trk_p_aj->GetYaxis()->SetLabelSize(0.11);
+
+        match_trk_p_aj->Draw();
+        aj_match_pp->Draw("SAME");
+        match_trk_m_aj->Draw("SAME");
+
+        // draw STAR prelim
+        TLegend *leg7 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg7->AddEntry(aj_match_pp, "p+p HT #oplus Au+Au MB", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg7->AddEntry(match_trk_p_aj, "p+p increased tracking eff", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg7->AddEntry(match_trk_m_aj, "p+p decreased tracking eff", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg7->Draw();
+
+        c_match_trk_sys_unc->cd(0);
+
+        // now do systematic ratios
+        // first, hard aj tower variation
+        c_hard_tow_sys_unc_ratio->cd(0);
+        hard_tow_p_aj_ratio->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        hard_tow_p_aj_ratio->GetXaxis()->SetTitleOffset(1.15);
+        hard_tow_p_aj_ratio->GetXaxis()->CenterTitle();
+        hard_tow_p_aj_ratio->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        hard_tow_p_aj_ratio->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          hard_tow_p_aj_ratio->GetYaxis()->SetTitleSize(
+              hard_tow_p_aj_ratio->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          hard_tow_p_aj_ratio->GetYaxis()->SetTitleSize(
+              hard_tow_p_aj_ratio->GetYaxis()->GetTitleSize() * 0.95);
+        hard_tow_p_aj_ratio->GetYaxis()->CenterTitle();
+
+        hard_tow_p_aj_ratio->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        hard_tow_p_aj_ratio->SetMarkerSize(0.2);
+        hard_tow_p_aj_ratio->SetLineColor(kBlue);
+        hard_tow_p_aj_ratio->SetMarkerColor(kBlue);
+        hard_tow_m_aj_ratio->SetMarkerSize(0.2);
+        hard_tow_m_aj_ratio->SetLineColor(kMagenta);
+        hard_tow_m_aj_ratio->SetMarkerColor(kMagenta);
+        TPad *hard_tow_sys_ratio_pad = hard_tow_sys_unc_ratio_pads[rad][pt];
+        hard_tow_sys_ratio_pad->SetFillStyle(4000);
+        hard_tow_sys_ratio_pad->SetFrameFillStyle(4000);
+        hard_tow_sys_ratio_pad->cd();
+        hard_tow_p_aj_ratio->GetXaxis()->SetNdivisions(305);
+        hard_tow_p_aj_ratio->GetXaxis()->SetLabelSize(0.08);
+        hard_tow_p_aj_ratio->GetYaxis()->SetNdivisions(305);
+        hard_tow_p_aj_ratio->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          hard_tow_p_aj_ratio->GetYaxis()->SetLabelSize(0.11);
+
+        hard_tow_p_aj_ratio->Draw();
+        hard_tow_m_aj_ratio->Draw("SAME");
+
+        // draw STAR prelim
+        TLegend *leg8 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg8->AddEntry(hard_tow_p_aj_ratio, "p+p increased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg8->AddEntry(hard_tow_m_aj_ratio, "p+p decreased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg8->Draw();
+
+        c_hard_tow_sys_unc_ratio->cd(0);
+
+        // now, hard aj tracking variation
+        c_hard_trk_sys_unc_ratio->cd(0);
+
+        hard_trk_p_aj_ratio->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        hard_trk_p_aj_ratio->GetXaxis()->SetTitleOffset(1.15);
+        hard_trk_p_aj_ratio->GetXaxis()->CenterTitle();
+        hard_trk_p_aj_ratio->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        hard_trk_p_aj_ratio->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          hard_trk_p_aj_ratio->GetYaxis()->SetTitleSize(
+              hard_trk_p_aj_ratio->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          hard_trk_p_aj_ratio->GetYaxis()->SetTitleSize(
+              hard_trk_p_aj_ratio->GetYaxis()->GetTitleSize() * 0.95);
+        hard_trk_p_aj_ratio->GetYaxis()->CenterTitle();
+
+        hard_trk_p_aj_ratio->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        hard_trk_p_aj_ratio->SetMarkerSize(0.2);
+        hard_trk_p_aj_ratio->SetLineColor(kBlue);
+        hard_trk_p_aj_ratio->SetMarkerColor(kBlue);
+        hard_trk_m_aj_ratio->SetMarkerSize(0.2);
+        hard_trk_m_aj_ratio->SetLineColor(kMagenta);
+        hard_trk_m_aj_ratio->SetMarkerColor(kMagenta);
+        TPad *hard_trk_sys_ratio_pad = hard_trk_sys_unc_ratio_pads[rad][pt];
+        hard_trk_sys_ratio_pad->SetFillStyle(4000);
+        hard_trk_sys_ratio_pad->SetFrameFillStyle(4000);
+        hard_trk_sys_ratio_pad->cd();
+        hard_trk_p_aj_ratio->GetXaxis()->SetNdivisions(305);
+        hard_trk_p_aj_ratio->GetXaxis()->SetLabelSize(0.08);
+        hard_trk_p_aj_ratio->GetYaxis()->SetNdivisions(305);
+        hard_trk_p_aj_ratio->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          hard_trk_p_aj_ratio->GetYaxis()->SetLabelSize(0.11);
+
+        hard_trk_p_aj_ratio->Draw();
+        hard_trk_m_aj_ratio->Draw("SAME");
+
+        // draw STAR prelim
+        TLegend *leg9 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg9->AddEntry(hard_trk_p_aj_ratio, "p+p increased tracking efficiency", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg9->AddEntry(hard_trk_m_aj_ratio, "p+p decreased tracking efficiency", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg9->Draw();
+
+        c_hard_trk_sys_unc_ratio->cd(0);
+
+        // next, matched aj tower variation
+        c_match_tow_sys_unc_ratio->cd(0);
+
+        match_tow_p_aj_ratio->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        match_tow_p_aj_ratio->GetXaxis()->SetTitleOffset(1.15);
+        match_tow_p_aj_ratio->GetXaxis()->CenterTitle();
+        match_tow_p_aj_ratio->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        match_tow_p_aj_ratio->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          match_tow_p_aj_ratio->GetYaxis()->SetTitleSize(
+              match_tow_p_aj_ratio->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          match_tow_p_aj_ratio->GetYaxis()->SetTitleSize(
+              match_tow_p_aj_ratio->GetYaxis()->GetTitleSize() * 0.95);
+        match_tow_p_aj_ratio->GetYaxis()->CenterTitle();
+
+        match_tow_p_aj_ratio->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        match_tow_p_aj_ratio->SetMarkerSize(0.2);
+        match_tow_p_aj_ratio->SetLineColor(kBlue);
+        match_tow_p_aj_ratio->SetMarkerColor(kBlue);
+        match_tow_m_aj_ratio->SetMarkerSize(0.2);
+        match_tow_m_aj_ratio->SetLineColor(kMagenta);
+        match_tow_m_aj_ratio->SetMarkerColor(kMagenta);
+        TPad *match_tow_sys_ratio_pad = match_tow_sys_unc_ratio_pads[rad][pt];
+        match_tow_sys_ratio_pad->SetFillStyle(4000);
+        match_tow_sys_ratio_pad->SetFrameFillStyle(4000);
+        match_tow_sys_ratio_pad->cd();
+        match_tow_p_aj_ratio->GetXaxis()->SetNdivisions(305);
+        match_tow_p_aj_ratio->GetXaxis()->SetLabelSize(0.08);
+        match_tow_p_aj_ratio->GetYaxis()->SetNdivisions(305);
+        match_tow_p_aj_ratio->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          match_tow_p_aj_ratio->GetYaxis()->SetLabelSize(0.11);
+
+        match_tow_p_aj_ratio->Draw();
+        match_tow_m_aj_ratio->Draw("SAME");
+
+        // draw STAR prelim
+        TLegend *leg10 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg10->AddEntry(match_tow_p_aj_ratio, "p+p increased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg10->AddEntry(match_tow_m_aj_ratio, "p+p decreased tower E", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg10->Draw();
+
+        c_match_tow_sys_unc_ratio->cd(0);
+
+
+        // next, matched aj tracking variation
+        c_match_trk_sys_unc_ratio->cd(0);
+
+        match_trk_p_aj_ratio->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        match_trk_p_aj_ratio->GetXaxis()->SetTitleOffset(1.15);
+        match_trk_p_aj_ratio->GetXaxis()->CenterTitle();
+        match_trk_p_aj_ratio->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        match_trk_p_aj_ratio->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          match_trk_p_aj_ratio->GetYaxis()->SetTitleSize(
+              match_trk_p_aj_ratio->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          match_trk_p_aj_ratio->GetYaxis()->SetTitleSize(
+              match_trk_p_aj_ratio->GetYaxis()->GetTitleSize() * 0.95);
+        match_trk_p_aj_ratio->GetYaxis()->CenterTitle();
+
+        match_trk_p_aj_ratio->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        match_trk_p_aj_ratio->SetMarkerSize(0.2);
+        match_trk_p_aj_ratio->SetLineColor(kBlue);
+        match_trk_p_aj_ratio->SetMarkerColor(kBlue);
+        match_trk_m_aj_ratio->SetMarkerSize(0.2);
+        match_trk_m_aj_ratio->SetLineColor(kMagenta);
+        match_trk_m_aj_ratio->SetMarkerColor(kMagenta);
+        TPad *match_trk_sys_ratio_pad = match_trk_sys_unc_ratio_pads[rad][pt];
+        match_trk_sys_ratio_pad->SetFillStyle(4000);
+        match_trk_sys_ratio_pad->SetFrameFillStyle(4000);
+        match_trk_sys_ratio_pad->cd();
+        match_trk_p_aj_ratio->GetXaxis()->SetNdivisions(305);
+        match_trk_p_aj_ratio->GetXaxis()->SetLabelSize(0.08);
+        match_trk_p_aj_ratio->GetYaxis()->SetNdivisions(305);
+        match_trk_p_aj_ratio->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          match_trk_p_aj_ratio->GetYaxis()->SetLabelSize(0.11);
+
+        match_trk_p_aj_ratio->Draw();
+        match_trk_m_aj_ratio->Draw("SAME");
+
+        // draw STAR prelim
+        TLegend *leg11 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg11->AddEntry(match_trk_p_aj_ratio, "p+p increased tracking efficiency", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        leg11->AddEntry(match_trk_m_aj_ratio, "p+p decreased tracking efficiency", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg11->Draw();
+
+        c_match_trk_sys_unc_ratio->cd(0);
+
+        // now, total systematic uncertainty for hard aj
+        c_hard_sys_unc_ratio->cd(0);
+
+        hard_aj_sys->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        hard_aj_sys->GetXaxis()->SetTitleOffset(1.15);
+        hard_aj_sys->GetXaxis()->CenterTitle();
+        hard_aj_sys->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        hard_aj_sys->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          hard_aj_sys->GetYaxis()->SetTitleSize(
+              hard_aj_sys->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          hard_aj_sys->GetYaxis()->SetTitleSize(
+              hard_aj_sys->GetYaxis()->GetTitleSize() * 0.95);
+        hard_aj_sys->GetYaxis()->CenterTitle();
+
+        hard_aj_sys->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        hard_aj_sys->SetMarkerSize(0.2);
+        hard_aj_sys->SetLineColor(kBlue);
+        hard_aj_sys->SetMarkerColor(kBlue);
+        TPad *hard_sys_ratio_pad = hard_sys_unc_ratio_pads[rad][pt];
+        hard_sys_ratio_pad->SetFillStyle(4000);
+        hard_sys_ratio_pad->SetFrameFillStyle(4000);
+        hard_sys_ratio_pad->cd();
+        hard_aj_sys->GetXaxis()->SetNdivisions(305);
+        hard_aj_sys->GetXaxis()->SetLabelSize(0.08);
+        hard_aj_sys->GetYaxis()->SetNdivisions(305);
+        hard_aj_sys->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          hard_aj_sys->GetYaxis()->SetLabelSize(0.11);
+
+        hard_aj_sys->Draw();
+
+        // draw STAR prelim
+        TLegend *leg12 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg12->AddEntry(hard_aj_sys, "p+p total systematic uncertainty", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg12->Draw();
+
+        c_hard_sys_unc_ratio->cd(0);
+
+
+        // total systematic uncertainty for matched aj
+        c_match_sys_unc_ratio->cd(0);
+
+        match_aj_sys->GetXaxis()->SetTitle(
+            dijetcore::MakeString("R=", radii_string[rad]).c_str());
+        match_aj_sys->GetXaxis()->SetTitleOffset(1.15);
+        match_aj_sys->GetXaxis()->CenterTitle();
+        match_aj_sys->GetYaxis()->SetTitle(
+            dijetcore::MakeString("p_{T}^{const}=", constpt_string[pt])
+                .c_str());
+        match_aj_sys->GetYaxis()->SetTitleOffset(1.07);
+        if (pt != 0 && pt != constpt.size() - 1)
+          match_aj_sys->GetYaxis()->SetTitleSize(
+              match_aj_sys->GetYaxis()->GetTitleSize() * 1.05);
+        if (pt == 0)
+          match_aj_sys->GetYaxis()->SetTitleSize(
+              match_aj_sys->GetYaxis()->GetTitleSize() * 0.95);
+        match_aj_sys->GetYaxis()->CenterTitle();
+
+        match_aj_sys->GetYaxis()->SetRangeUser(0.00001, 0.2499);
+        match_aj_sys->SetMarkerSize(0.2);
+        match_aj_sys->SetLineColor(kBlue);
+        match_aj_sys->SetMarkerColor(kBlue);
+        TPad *match_sys_ratio_pad = match_sys_unc_ratio_pads[rad][pt];
+        match_sys_ratio_pad->SetFillStyle(4000);
+        match_sys_ratio_pad->SetFrameFillStyle(4000);
+        match_sys_ratio_pad->cd();
+        match_aj_sys->GetXaxis()->SetNdivisions(305);
+        match_aj_sys->GetXaxis()->SetLabelSize(0.08);
+        match_aj_sys->GetYaxis()->SetNdivisions(305);
+        match_aj_sys->GetYaxis()->SetLabelSize(0.08);
+        if (rad == 0 && !(pt == 0 || pt == constpt.size() - 1))
+          match_aj_sys->GetYaxis()->SetLabelSize(0.11);
+
+        match_aj_sys->Draw();
+
+        // draw STAR prelim
+        TLegend *leg13 = GetLegend(rad, pt, radii_string.size() - 1,
+                                  constpt_string.size() - 1, radii[rad],
+                                  constpt[pt], scale_factor);
+        leg13->AddEntry(match_aj_sys, "p+p total systematic uncertainty", "lep")
+            ->SetTextSize(.04 * scale_factor);
+        if (pt == constpt.size() - 1 && rad == 0)
+          leg13->Draw();
+
+        c_match_sys_unc_ratio->cd(0);
+
+        // finally, calculate the variation in the statistical
+        // tests when varying the pp by the systematic errors, as an estimate
+        // of the robustness of the result
+
+        std::vector<TH1D *> aj_hard_pp_var{
             hard_aj_cent[TYPEMAP[DATATYPE::TOWP]][key][cent],
             hard_aj_cent[TYPEMAP[DATATYPE::TOWM]][key][cent],
             hard_aj_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent],
             hard_aj_cent[TYPEMAP[DATATYPE::TRACKM]][key][cent]};
-        std::vector<TH1D*> aj_match_pp_var{
+        std::vector<TH1D *> aj_match_pp_var{
             match_aj_cent[TYPEMAP[DATATYPE::TOWP]][key][cent],
             match_aj_cent[TYPEMAP[DATATYPE::TOWM]][key][cent],
             match_aj_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent],
             match_aj_cent[TYPEMAP[DATATYPE::TRACKM]][key][cent]};
 
-        std::vector<TH1D*> aj_hard_pp_var_test{
+        std::vector<TH1D *> aj_hard_pp_var_test{
             hard_aj_test_cent[TYPEMAP[DATATYPE::TOWP]][key][cent],
             hard_aj_test_cent[TYPEMAP[DATATYPE::TOWM]][key][cent],
             hard_aj_test_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent],
             hard_aj_test_cent[TYPEMAP[DATATYPE::TRACKM]][key][cent]};
-        std::vector<TH1D*> aj_match_pp_var_test{
+        std::vector<TH1D *> aj_match_pp_var_test{
             match_aj_test_cent[TYPEMAP[DATATYPE::TOWP]][key][cent],
             match_aj_test_cent[TYPEMAP[DATATYPE::TOWM]][key][cent],
             match_aj_test_cent[TYPEMAP[DATATYPE::TRACKP]][key][cent],
@@ -2060,7 +2771,91 @@ int main(int argc, char* argv[]) {
     y_label_text->Draw();
     c_match_oa->SaveAs(
         dijetcore::MakeString(out_loc_grid, "/ajmatchgridwithoa.pdf").c_str());
-  }  // centrality
+    // now for systematics
+    // hard tower
+    c_hard_tow_sys_unc->cd();
+    invis->Draw("clone");
+    invis->cd();
+    x_label_text->Draw();
+    y_label_text->Draw();
+    c_hard_tow_sys_unc->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/hard_tow_sys.pdf").c_str());
+    // hard tracking
+    c_hard_trk_sys_unc->cd();
+    invis->Draw("clone");
+    invis->cd();
+    x_label_text->Draw();
+    y_label_text->Draw();
+    c_hard_trk_sys_unc->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/hard_trk_sys.pdf").c_str());
+    // match tower
+    c_match_tow_sys_unc->cd();
+    invis->Draw("clone");
+    invis->cd();
+    x_label_text->Draw();
+    y_label_text->Draw();
+    c_match_tow_sys_unc->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/match_tow_sys.pdf").c_str());
+    // match tracking
+    c_match_trk_sys_unc->cd();
+    invis->Draw("clone");
+    invis->cd();
+    x_label_text->Draw();
+    y_label_text->Draw();
+    c_match_trk_sys_unc->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/match_trk_sys.pdf").c_str());
+
+    // hard tower ratio
+    c_hard_tow_sys_unc_ratio->cd();
+    invis_error->Draw("clone");
+    invis_error->cd();
+    x_label_text->Draw();
+    y_label_text_error_frac->Draw();
+    c_hard_tow_sys_unc_ratio->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/hard_tow_sys_ratio.pdf").c_str());
+    // hard tracking ratio
+    c_hard_trk_sys_unc_ratio->cd();
+    invis_error->Draw("clone");
+    invis_error->cd();
+    x_label_text->Draw();
+    y_label_text_error_frac->Draw();
+    c_hard_trk_sys_unc_ratio->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/hard_trk_sys_ratio.pdf").c_str());
+    // match tower ratio
+    c_match_tow_sys_unc_ratio->cd();
+    invis_error->Draw("clone");
+    invis_error->cd();
+    x_label_text->Draw();
+    y_label_text_error_frac->Draw();
+    c_match_tow_sys_unc_ratio->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/match_tow_sys_ratio.pdf").c_str());
+    // match tracking ratio
+    c_match_trk_sys_unc_ratio->cd();
+    invis_error->Draw("clone");
+    invis_error->cd();
+    x_label_text->Draw();
+    y_label_text_error_frac->Draw();
+    c_match_trk_sys_unc_ratio->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/match_trk_sys_ratio.pdf").c_str());
+
+    // total hard systmatic uncertainty ratio
+    c_hard_sys_unc_ratio->cd();
+    invis_error->Draw("clone");
+    invis_error->cd();
+    x_label_text->Draw();
+    y_label_text_error_frac->Draw();
+    c_hard_sys_unc_ratio->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/hard_sys_ratio.pdf").c_str());
+
+    // total matched systmatic uncertainty ratio
+    c_match_sys_unc_ratio->cd();
+    invis_error->Draw("clone");
+    invis_error->cd();
+    x_label_text->Draw();
+    y_label_text_error_frac->Draw();
+    c_match_sys_unc_ratio->SaveAs(
+        dijetcore::MakeString(out_loc_grid, "/match_sys_ratio.pdf").c_str());
+  } // centrality
 
   return 0;
 }
