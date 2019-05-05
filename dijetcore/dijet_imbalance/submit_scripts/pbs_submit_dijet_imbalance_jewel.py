@@ -220,7 +220,7 @@ if __name__ == "__main__":
     parser.add_argument('--maxjobs', type=int, default=100,
                         help=' max number of jobs to have in running or queue states')
     parser.add_argument('--output', default='out',
-                        help=' directory for output root files'
+                        help=' directory for output root files')
     parser.add_argument('--constEta', default='1.0',
                         help='list of constituent eta ranges to use during jetfinding')
     parser.add_argument('--leadConstPt', default='2.0',
