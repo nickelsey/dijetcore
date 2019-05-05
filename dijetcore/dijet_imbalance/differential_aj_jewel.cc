@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <random>
 #include <exception>
+#include <limits>
 
 #include "dijetcore/lib/logging.h"
 #include "dijetcore/lib/flags.h"
@@ -48,6 +49,7 @@ DIJETCORE_DEFINE_bool(forceConstituentPtEquality, true, "Only use DijetDefinitio
 DIJETCORE_DEFINE_bool(forceConstituentEtaEquality, true, "Only use DijetDefinitions where eta const is equal in leading/subleading jets");
 DIJETCORE_DEFINE_bool(forceJetResolutionEquality, true, "Only use DijetDefinitions where leading/subleading R are equivalent");
 DIJETCORE_DEFINE_bool(forceMatchJetResolutionEquality, false, "Only use DijetDefinitions where initial and matched R are equivalent");
+DIJETCORE_DEFINE_int(nEvents, 10000, "number of events (-1 for all)");
 
 int main(int argc, char* argv[]) {
   
@@ -277,13 +279,20 @@ int main(int argc, char* argv[]) {
   fastjet::Selector track_pt_min_selector = fastjet::SelectorPtMin(0.2) && fastjet::SelectorAbsRapMax(1.0);
   
   int event = 0;
+  size_t max_event = 0;
+  if (FLAGS_nEvents < 0)
+    max_event = std::numeric_limits<size_t>::max();
+  else 
+    max_event = FLAGS_nEvents;
   try {
     while (reader.next()) {
+      if (event >= max_event)
+        break;
       if (event % 500 == 0) {
         LOG(INFO) << "Event: " << event;
       }
       event++;
-      
+
       std::vector<fastjet::PseudoJet> primary_particles = reader.event();
       
       // select tracks above the minimum pt threshold

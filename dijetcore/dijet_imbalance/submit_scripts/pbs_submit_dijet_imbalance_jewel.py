@@ -151,6 +151,7 @@ def main(args):
             clargs = clargs + ' --leadMatchR=' + \
                 args.leadMatchR + ' --subMatchR=' + args.subMatchR
             clargs = clargs + ' --logtostderr'
+            clargs = clargs + ' --nEvents='  + args.nEvents
             if args.forceConstPtEquality:
                 clargs = clargs + ' --forceConstituentPtEquality=true'
             else:
@@ -221,6 +222,8 @@ if __name__ == "__main__":
                         help=' max number of jobs to have in running or queue states')
     parser.add_argument('--output', default='out',
                         help=' directory for output root files')
+    parser.add_argument('--nEvents', default='10000',
+                        help=' number of events to run per file, -1 for all')
     parser.add_argument('--constEta', default='1.0',
                         help='list of constituent eta ranges to use during jetfinding')
     parser.add_argument('--leadConstPt', default='2.0',
