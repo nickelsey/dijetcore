@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
     dijetcore::unique_ptr<TTree> tmp = dijetcore::make_unique<TTree>(key.c_str(), key.c_str());
     // create branches for the tree
     tmp->Branch("vx", &vx_dict[key]);
-    tmp->Branch("vy", &vx_dict[key]);
+    tmp->Branch("vy", &vy_dict[key]);
     tmp->Branch("w", &w_dict[key]);
     tmp->Branch("jl", &lead_hard_jet_dict[key]);
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
