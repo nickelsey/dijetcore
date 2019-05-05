@@ -297,6 +297,9 @@ int main(int argc, char* argv[]) {
         if (out.found_match) {
 
           // fill all branches for that key
+          vx_dict[key] = reader.vx();
+          vy_dict[key] = reader.vy();
+          w_dict[key] = reader.weight();
 
           // set the four jets
           lead_hard_jet_dict[key] = TLorentzVector(out.lead_hard.px(),
