@@ -27,29 +27,29 @@ namespace dijetcore {
     //  Init(). hist_prefix is an optional name that can be tagged on to the front of 
     // each histogram's root identifier, to keep different jobs separate after adding
     // root files
-    bool Init(const std::string& hist_prefix = "");
+    bool init(const std::string& hist_prefix = "");
 
     // Writes all initialized histograms to specified TFile
-    bool WriteTo(TFile& file);
+    bool writeTo(TFile& file);
 
     // by default, QA for tracks and towers are on. However, turning them off if they
     // are not needed can reduce runtime and memory footprint (which is large).
-    void DoTowerQA(bool flag) {do_tower_qa_ = flag;}
-    void DoTrackQA(bool flag) {do_track_qa_ = flag;}
+    void doTowerQA(bool flag) {do_tower_qa_ = flag;}
+    void doTrackQA(bool flag) {do_track_qa_ = flag;}
 
     // To turn on run-by-run QA, the maker needs a list of run IDs. Supply that here
-    void DoRunQA(std::set<unsigned>& run_ids);
+    void doRunQA(std::set<unsigned>& run_ids);
 
     // analyze event
-    bool Run(TStarJetPicoReader& reader);
+    bool run(TStarJetPicoReader& reader);
 
   private:
 
     bool initialized_ = false;
 
-    bool RunQA(TStarJetPicoReader& reader);
-    bool TowerQA(TStarJetPicoReader& event);
-    bool TrackQA(TStarJetPicoReader& event);
+    bool runQA(TStarJetPicoReader& reader);
+    bool towerQA(TStarJetPicoReader& event);
+    bool trackQA(TStarJetPicoReader& event);
 
     bool do_run_qa_ = false;
     bool do_tower_qa_ = true;

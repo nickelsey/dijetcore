@@ -7,8 +7,8 @@ TEST(DijetDefinition, Default) {
 
     EXPECT_EQ(default_def.lead, nullptr);
     EXPECT_EQ(default_def.sub, nullptr);
-    EXPECT_FALSE(default_def.IsValid());
-    EXPECT_FALSE(default_def.DoMatching());
+    EXPECT_FALSE(default_def.isValid());
+    EXPECT_FALSE(default_def.doMatching());
 }
 
 TEST(DijetDefinition, ValidDijetDef) {
@@ -22,8 +22,8 @@ TEST(DijetDefinition, ValidDijetDef) {
     EXPECT_EQ(valid_dijetdef.lead, valid_matchdef1);
     EXPECT_EQ(valid_dijetdef.sub, valid_matchdef2);
 
-    EXPECT_TRUE(valid_dijetdef.IsValid());
-    EXPECT_TRUE(valid_dijetdef.DoMatching());
+    EXPECT_TRUE(valid_dijetdef.isValid());
+    EXPECT_TRUE(valid_dijetdef.doMatching());
 }
 
 TEST(DijetDefinition, ValidDijetDefNoMatching) {
@@ -38,7 +38,7 @@ TEST(DijetDefinition, ValidDijetDefNoMatching) {
     EXPECT_EQ(valid_dijetdef.lead, valid_matchdef1);
     EXPECT_EQ(valid_dijetdef.sub, valid_matchdef2);
 
-    EXPECT_TRUE(valid_dijetdef.IsValid());
-    EXPECT_FALSE(valid_dijetdef.DoMatching());
+    EXPECT_TRUE(valid_dijetdef.isValid());
+    EXPECT_FALSE(valid_dijetdef.doMatching());
 
 }

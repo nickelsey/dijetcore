@@ -120,9 +120,9 @@ std::array<fastjet::PseudoJet, 4> ClusterPP(std::vector<fastjet::PseudoJet>& inp
   bool finish = true;
   
   // first, cluster with initial jet definitions (no area estimation necessary)
-  fastjet::ClusterSequence seq_lead(def.lead->InitialJetDef().ConstituentSelector()(input),
-                                    def.lead->InitialJetDef());
-  fastjet::Selector circle_lead = fastjet::SelectorCircle(def.lead->InitialJetDef().R());
+  fastjet::ClusterSequence seq_lead(def.lead->initialJetDef().constituentSelector()(input),
+                                    def.lead->initialJetDef());
+  fastjet::Selector circle_lead = fastjet::SelectorCircle(def.lead->initialJetDef().R());
   circle_lead.set_reference(lead_jet);
   std::vector<fastjet::PseudoJet> matched_lead = fastjet::sorted_by_pt(circle_lead(seq_lead.inclusive_jets()));
   if (matched_lead.size() != 0)
@@ -131,9 +131,9 @@ std::array<fastjet::PseudoJet, 4> ClusterPP(std::vector<fastjet::PseudoJet>& inp
     finish = false;
   
   // now do the same for subleading jet
-  fastjet::ClusterSequence seq_sub(def.sub->InitialJetDef().ConstituentSelector()(input),
-                                   def.sub->InitialJetDef());
-  fastjet::Selector circle_sub = fastjet::SelectorCircle(def.sub->InitialJetDef().R());
+  fastjet::ClusterSequence seq_sub(def.sub->initialJetDef().constituentSelector()(input),
+                                   def.sub->initialJetDef());
+  fastjet::Selector circle_sub = fastjet::SelectorCircle(def.sub->initialJetDef().R());
   fastjet::Selector recoil_selector = !fastjet::SelectorRectangle(2.1, TMath::Pi() - def.dPhi);
   circle_sub.set_reference(sublead_jet);
   fastjet::Selector sub_selector = circle_sub && recoil_selector;
@@ -147,13 +147,13 @@ std::array<fastjet::PseudoJet, 4> ClusterPP(std::vector<fastjet::PseudoJet>& inp
   if (finish == false)
     return ret;
   
-  fastjet::ClusterSequence seq_lead_match(def.lead->MatchedJetDef().ConstituentSelector()(input),
-                                          def.lead->MatchedJetDef());
-  fastjet::ClusterSequence seq_sub_match(def.lead->MatchedJetDef().ConstituentSelector()(input),
-                                          def.lead->MatchedJetDef());
-  fastjet::Selector circle_lead_match = fastjet::SelectorCircle(def.lead->MatchedJetDef().R());
+  fastjet::ClusterSequence seq_lead_match(def.lead->matchedJetDef().constituentSelector()(input),
+                                          def.lead->matchedJetDef());
+  fastjet::ClusterSequence seq_sub_match(def.lead->matchedJetDef().constituentSelector()(input),
+                                          def.lead->matchedJetDef());
+  fastjet::Selector circle_lead_match = fastjet::SelectorCircle(def.lead->matchedJetDef().R());
   circle_lead_match.set_reference(ret[0]);
-  fastjet::Selector circle_sub_match = fastjet::SelectorCircle(def.sub->MatchedJetDef().R());
+  fastjet::Selector circle_sub_match = fastjet::SelectorCircle(def.sub->matchedJetDef().R());
   circle_sub_match.set_reference(ret[1]);
   
   std::vector<fastjet::PseudoJet> matched_lead_pp = fastjet::sorted_by_pt(circle_lead_match(seq_lead_match.inclusive_jets()));
@@ -277,15 +277,15 @@ int main(int argc, char* argv[]) {
   dijetcore::DijetWorker worker(alg, lead_hard_pt, lead_R, lead_R_match, sublead_hard_pt, sublead_R,
                                 sublead_R_match, lead_const_hard_pt, lead_const_match_pt,
                                 sublead_const_hard_pt, sublead_const_match_pt, const_eta);
-  worker.ForceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
-  worker.ForceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
-  worker.ForceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
-  worker.ForceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
-  worker.Initialize();
+  worker.forceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
+  worker.forceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
+  worker.forceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
+  worker.forceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
+  worker.initialize();
   
-  LOG(INFO) << "worker initialized - number of dijet definitions: " << worker.Size();
+  LOG(INFO) << "worker initialized - number of dijet definitions: " << worker.size();
   
-  std::set<std::string> keys = worker.Keys();
+  std::set<std::string> keys = worker.keys();
   for (auto key : keys)
     LOG(INFO) << key;
   
@@ -627,7 +627,7 @@ int main(int argc, char* argv[]) {
         particles = track_pt_min_selector(particles);
         
         // run the worker
-        auto& worker_out = worker.Run(particles);
+        auto& worker_out = worker.run(particles);
         
         // process any found di-jet pairs
         for (auto& result : worker_out) {

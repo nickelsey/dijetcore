@@ -62,32 +62,32 @@ namespace dijetcore {
   bkg_area_def_(rhs.bkg_area_def_),
   bkg_selector_(rhs.bkg_selector_) { }
   
-  bool JetDef::EquivalentCluster(const JetDef& rhs) const {
+  bool JetDef::equivalentCluster(const JetDef& rhs) const {
     // essentially == operator, without jet selector comparison
     if (jet_algorithm() != rhs.jet_algorithm() ||
         R() != rhs.R() ||
         recombination_scheme() != rhs.recombination_scheme() ||
         strategy() != rhs.strategy() ||
-        ConstituentSelector().description() != rhs.ConstituentSelector().description() ||
-        AreaDefinition().area_type() != rhs.AreaDefinition().area_type() ||
-        AreaDefinition().ghost_spec().ghost_maxrap() != rhs.AreaDefinition().ghost_spec().ghost_maxrap() ||
-        AreaDefinition().ghost_spec().ghost_area() != rhs.AreaDefinition().ghost_spec().ghost_area() ||
-        AreaDefinition().ghost_spec().grid_scatter() != rhs.AreaDefinition().ghost_spec().grid_scatter() ||
-        AreaDefinition().ghost_spec().pt_scatter() != rhs.AreaDefinition().ghost_spec().pt_scatter() ||
-        AreaDefinition().ghost_spec().mean_ghost_pt() != rhs.AreaDefinition().ghost_spec().mean_ghost_pt() ||
-        AreaDefinition().ghost_spec().repeat() != rhs.AreaDefinition().ghost_spec().repeat() ||
-        BackgroundAreaDef().area_type() != rhs.BackgroundAreaDef().area_type() ||
-        BackgroundAreaDef().ghost_spec().ghost_maxrap() != rhs.BackgroundAreaDef().ghost_spec().ghost_maxrap() ||
-        BackgroundAreaDef().ghost_spec().ghost_area() != rhs.BackgroundAreaDef().ghost_spec().ghost_area() ||
-        BackgroundAreaDef().ghost_spec().grid_scatter() != rhs.BackgroundAreaDef().ghost_spec().grid_scatter() ||
-        BackgroundAreaDef().ghost_spec().pt_scatter() != rhs.BackgroundAreaDef().ghost_spec().pt_scatter() ||
-        BackgroundAreaDef().ghost_spec().mean_ghost_pt() != rhs.BackgroundAreaDef().ghost_spec().mean_ghost_pt() ||
-        BackgroundAreaDef().ghost_spec().repeat() != rhs.BackgroundAreaDef().ghost_spec().repeat() ||
-        BackgroundJetDef().jet_algorithm() != rhs.BackgroundJetDef().jet_algorithm() ||
-        BackgroundJetDef().R() != rhs.BackgroundJetDef().R() ||
-        BackgroundJetDef().recombination_scheme() != rhs.BackgroundJetDef().recombination_scheme() ||
-        BackgroundJetDef().strategy() != rhs.BackgroundJetDef().strategy() ||
-        BackgroundSelector().description() != rhs.BackgroundSelector().description())
+        constituentSelector().description() != rhs.constituentSelector().description() ||
+        areaDefinition().area_type() != rhs.areaDefinition().area_type() ||
+        areaDefinition().ghost_spec().ghost_maxrap() != rhs.areaDefinition().ghost_spec().ghost_maxrap() ||
+        areaDefinition().ghost_spec().ghost_area() != rhs.areaDefinition().ghost_spec().ghost_area() ||
+        areaDefinition().ghost_spec().grid_scatter() != rhs.areaDefinition().ghost_spec().grid_scatter() ||
+        areaDefinition().ghost_spec().pt_scatter() != rhs.areaDefinition().ghost_spec().pt_scatter() ||
+        areaDefinition().ghost_spec().mean_ghost_pt() != rhs.areaDefinition().ghost_spec().mean_ghost_pt() ||
+        areaDefinition().ghost_spec().repeat() != rhs.areaDefinition().ghost_spec().repeat() ||
+        backgroundAreaDef().area_type() != rhs.backgroundAreaDef().area_type() ||
+        backgroundAreaDef().ghost_spec().ghost_maxrap() != rhs.backgroundAreaDef().ghost_spec().ghost_maxrap() ||
+        backgroundAreaDef().ghost_spec().ghost_area() != rhs.backgroundAreaDef().ghost_spec().ghost_area() ||
+        backgroundAreaDef().ghost_spec().grid_scatter() != rhs.backgroundAreaDef().ghost_spec().grid_scatter() ||
+        backgroundAreaDef().ghost_spec().pt_scatter() != rhs.backgroundAreaDef().ghost_spec().pt_scatter() ||
+        backgroundAreaDef().ghost_spec().mean_ghost_pt() != rhs.backgroundAreaDef().ghost_spec().mean_ghost_pt() ||
+        backgroundAreaDef().ghost_spec().repeat() != rhs.backgroundAreaDef().ghost_spec().repeat() ||
+        backgroundJetDef().jet_algorithm() != rhs.backgroundJetDef().jet_algorithm() ||
+        backgroundJetDef().R() != rhs.backgroundJetDef().R() ||
+        backgroundJetDef().recombination_scheme() != rhs.backgroundJetDef().recombination_scheme() ||
+        backgroundJetDef().strategy() != rhs.backgroundJetDef().strategy() ||
+        backgroundSelector().description() != rhs.backgroundSelector().description())
       return false;
     return true;
   }

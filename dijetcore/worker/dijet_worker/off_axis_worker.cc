@@ -21,7 +21,7 @@ namespace dijetcore {
     
   }
   
-  void OffAxisWorker::SetCentralityRange(int centLow, int centHigh) {
+  void OffAxisWorker::setCentralityRange(int centLow, int centHigh) {
     LOG(INFO) << "Initializing centrality range for OffAxisWorker";
     if (centLow >= 0 && centLow < 9)
       centLow = centLow;
@@ -41,13 +41,13 @@ namespace dijetcore {
     current_event_ = std::vector<unsigned>(nbins, 0);
     
     ReadEvent(0);
-    int centrality = GetCentrality();
+    int centrality = getCentrality();
     if (centrality >= cent_min_ && centrality <= cent_max_) {
       int idx =  centrality - cent_min_;
       pre_selected_events_[idx].push_back(GetNOfCurrentEvent());
     }
     while (NextEvent()) {
-      int centrality = GetCentrality();
+      int centrality = getCentrality();
       if (centrality >= cent_min_ && centrality <= cent_max_) {
         int idx =  centrality - cent_min_;
         pre_selected_events_[idx].push_back(GetNOfCurrentEvent());
@@ -55,7 +55,7 @@ namespace dijetcore {
     }
   }
   
-  std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& OffAxisWorker::Run(DijetWorker& worker, int centrality) {
+  std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& OffAxisWorker::run(DijetWorker& worker, int centrality) {
 
     // clear our output
     off_axis_result_.clear();
@@ -64,14 +64,14 @@ namespace dijetcore {
     // see if we need to do anything at all -
     // if there was no match in the Dijetworker, we exit out
     bool found_match = false;
-    for (auto& result : worker.Dijets())
+    for (auto& result : worker.dijets())
       if (result.second->found_match)
         found_match = true;
     
     if (found_match == false)
       return off_axis_result_;
 
-    if (!LoadNextEvent(centrality)) {
+    if (!loadNextEvent(centrality)) {
       LOG(ERROR) << "OffAxisWorker could not find an event that satisfies all event cuts";
       return off_axis_result_;
     }
@@ -79,7 +79,7 @@ namespace dijetcore {
     // load an event in the proper centrality class
     
     // get the input container
-    auto& dijets = worker.Dijets();
+    auto& dijets = worker.dijets();
     
     for (auto& dijet : dijets) {
       
@@ -96,8 +96,8 @@ namespace dijetcore {
       dijetcore::ConvertTStarJetVector(GetOutputContainer(), primary_particles);
       
       // have to remove bkg contribution from input tracks that are in the same kinematic window as the reference jet
-      double max_pt_lead = ExtractDoubleFromSelector(def->lead->InitialJetDef().ConstituentSelector(), "pt >=");
-      double max_pt_sub = ExtractDoubleFromSelector(def->sub->InitialJetDef().ConstituentSelector(), "pt >=");
+      double max_pt_lead = ExtractDoubleFromSelector(def->lead->initialJetDef().constituentSelector(), "pt >=");
+      double max_pt_sub = ExtractDoubleFromSelector(def->sub->initialJetDef().constituentSelector(), "pt >=");
       fastjet::Selector max_pt_sel_lead = fastjet::SelectorPtMax(max_pt_lead);
       fastjet::Selector max_pt_sel_sub = fastjet::SelectorPtMax(max_pt_sub);
       
@@ -108,8 +108,8 @@ namespace dijetcore {
       sub_particles.push_back(lead_hard_jet);
       sub_particles.push_back(sub_hard_jet);
       
-      auto lead_matched_jet = RunCluster(def->lead, lead_particles, lead_hard_jet);
-      auto sub_matched_jet = RunCluster(def->sub, sub_particles, sub_hard_jet);
+      auto lead_matched_jet = runCluster(def->lead, lead_particles, lead_hard_jet);
+      auto sub_matched_jet = runCluster(def->sub, sub_particles, sub_hard_jet);
       
       unique_ptr<OffAxisOutput> res = make_unique<OffAxisOutput>(lead_matched_jet.first, sub_matched_jet.first);
       res->lead_jet_rho = lead_matched_jet.second.first;
@@ -123,7 +123,7 @@ namespace dijetcore {
     return off_axis_result_;
   }
   
-  int OffAxisWorker::GetCentrality() {
+  int OffAxisWorker::getCentrality() {
     static const std::vector<int> cent_bins_ = {485, 399, 269, 178, 114, 69, 39, 21, 10};
     int cent_bin = -1;
     for (int i = 0; i < cent_bins_.size(); ++i)
@@ -135,27 +135,27 @@ namespace dijetcore {
   }
   
   std::pair<fastjet::PseudoJet, std::pair<double, double>>
-  OffAxisWorker::RunCluster(MatchDef* def, const std::vector<fastjet::PseudoJet>& input, const fastjet::PseudoJet& reference) {
+  OffAxisWorker::runCluster(MatchDef* def, const std::vector<fastjet::PseudoJet>& input, const fastjet::PseudoJet& reference) {
   
     std::unique_ptr<fastjet::ClusterSequenceArea>
-    cluster = make_unique<fastjet::ClusterSequenceArea>(def->MatchedJetDef().ConstituentSelector()(input),
-                                                        def->MatchedJetDef(),
-                                                        def->MatchedJetDef().AreaDefinition());
+    cluster = make_unique<fastjet::ClusterSequenceArea>(def->matchedJetDef().constituentSelector()(input),
+                                                        def->matchedJetDef(),
+                                                        def->matchedJetDef().areaDefinition());
     
-    std::vector<fastjet::PseudoJet> jets = fastjet::sorted_by_pt(def->MatchedJetDef().JetSelector()(cluster->inclusive_jets()));
+    std::vector<fastjet::PseudoJet> jets = fastjet::sorted_by_pt(def->matchedJetDef().jetSelector()(cluster->inclusive_jets()));
   
     // do bkg subtraction
-    fastjet::JetMedianBackgroundEstimator bkg_est(def->MatchedJetDef().BackgroundSelector(),
-                                                  def->MatchedJetDef().BackgroundJetDef(),
-                                                  def->MatchedJetDef().BackgroundAreaDef());
-    bkg_est.set_particles(def->MatchedJetDef().ConstituentSelector()(input));
+    fastjet::JetMedianBackgroundEstimator bkg_est(def->matchedJetDef().backgroundSelector(),
+                                                  def->matchedJetDef().backgroundJetDef(),
+                                                  def->matchedJetDef().backgroundAreaDef());
+    bkg_est.set_particles(def->matchedJetDef().constituentSelector()(input));
     fastjet::Subtractor bkgdSubtractor(&bkg_est);
     std::vector<fastjet::PseudoJet> subtracted_jets = fastjet::sorted_by_pt(bkgdSubtractor(jets));
   
     std::pair<double, double> bkg_stats = {bkg_est.rho(), bkg_est.sigma()};
     
     // find matched jet
-    fastjet::Selector circle_sel = fastjet::SelectorCircle(def->InitialJetDef().R());
+    fastjet::Selector circle_sel = fastjet::SelectorCircle(def->initialJetDef().R());
     circle_sel.set_reference(reference);
     
     subtracted_jets = fastjet::sorted_by_pt(circle_sel(subtracted_jets));
@@ -170,17 +170,17 @@ namespace dijetcore {
     
   }
   
-  bool OffAxisWorker::LoadNextEvent(int centrality) {
+  bool OffAxisWorker::loadNextEvent(int centrality) {
     if (pre_selected_events_.size() == 0) {
       while (NextEvent()) {
-        if (GetCentrality() == centrality)
+        if (getCentrality() == centrality)
           return true;
       }
       ReadEvent(0);
-      if (GetCentrality() == centrality)
+      if (getCentrality() == centrality)
         return true;
       while (NextEvent()) {
-        if (GetCentrality() == centrality)
+        if (getCentrality() == centrality)
           return true;
       }
       return false;

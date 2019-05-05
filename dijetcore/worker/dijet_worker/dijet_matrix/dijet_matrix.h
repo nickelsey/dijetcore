@@ -74,130 +74,130 @@ namespace dijetcore {
     virtual ~DijetMatrix() { };
     
     // removes all parameters
-    void Clear();
+    void clear();
     // removes only the DijetDefinitions, if Initialize()
     // has been called
-    void ClearDijetDefs();
+    void clearDijetDefs();
     
     // used to initialize the matrix.
-    void Initialize();
+    void initialize();
     
     // get the number of dijet definitions currently stored
     // (will be zero if no initialization has occured)
-    inline std::size_t Size() {return dijet_defs_.size();}
+    inline std::size_t size() {return dijet_defs_.size();}
     
     // get access to the dijet definitions
-    std::unordered_map<string, unique_ptr<DijetDefinition>>& DijetDefinitions()
+    std::unordered_map<string, unique_ptr<DijetDefinition>>& dijetDefinitions()
         {return dijet_defs_;}
     
     // dijet definition sets that have been selected such that
     // each set can use a single cluster sequence - only jet
     // selectors can change
-    std::vector<std::unordered_map<string, DijetDefinition*>>& SortedDefinitions()
+    std::vector<std::unordered_map<string, DijetDefinition*>>& sortedDefinitions()
         {return ordered_defs_;}
     
     
     // force leading and subleading jets to have equal constituent
     // pt cuts or eta cuts (default true)
-    void ForceConstituentPtEquality(bool flag = true);
-    void ForceConstituentEtaEquality(bool flag = true);
+    void forceConstituentPtEquality(bool flag = true);
+    void forceConstituentEtaEquality(bool flag = true);
     
     // force jets to have same R for leading/subleading (default true)
-    void ForceJetResolutionEquality(bool flag = true);
+    void forceJetResolutionEquality(bool flag = true);
     
     // force matched jets to have same R (default false)
-    void ForceMatchJetResolutionEquality(bool flag = true);
+    void forceMatchJetResolutionEquality(bool flag = true);
     
     // get the keys to the map
-    const std::set<string>& Keys() const {return keys_;}
+    const std::set<string>& keys() const {return keys_;}
     
     // keys sorted to match SortedDefinitions()
-    const std::vector<string>& SortedKeys() const {return ordered_keys_;}
+    const std::vector<string>& sortedKeys() const {return ordered_keys_;}
     
     // minimum pT needed for jet sets - returns {lead_hard_pt_min, sub_hard_pt_min}
-    const std::vector<std::pair<double, double>>& SortedDefinitionsMinPt() {return ordered_min_pt_;}
+    const std::vector<std::pair<double, double>>& sortedDefinitionsMinPt() {return ordered_min_pt_;}
     
     // The Matrix will build all logically consistent di-jet pairs
     // (i.e. if pt sub > pt lead, it will be ignored, that sort of
     // thing). Adding extra parameters will increase the effective
     // run time considerably, especially as the set of non-unique
     // parameters increases.
-    void AddConstituentEta(double eta);
-    void AddConstituentEta(std::set<double> eta);
+    void addConstituentEta(double eta);
+    void addConstituentEta(std::set<double> eta);
     
-    void AddConstituentLeadInitialPt(double pt);
-    void AddConstituentLeadInitialPt(std::set<double> pt);
+    void addConstituentLeadInitialPt(double pt);
+    void addConstituentLeadInitialPt(std::set<double> pt);
     
-    void AddConstituentLeadMatchPt(double pt);
-    void AddConstituentLeadMatchPt(std::set<double> pt);
+    void addConstituentLeadMatchPt(double pt);
+    void addConstituentLeadMatchPt(std::set<double> pt);
     
-    void AddConstituentSubInitialPt(double pt);
-    void AddConstituentSubInitialPt(std::set<double> pt);
+    void addConstituentSubInitialPt(double pt);
+    void addConstituentSubInitialPt(std::set<double> pt);
+  
+    void addConstituentSubMatchPt(double pt);
+    void addConstituentSubMatchPt(std::set<double> pt);
     
-    void AddConstituentSubMatchPt(double pt);
-    void AddConstituentSubMatchPt(std::set<double> pt);
+    void addJetAlgorithm(fastjet::JetAlgorithm alg);
+    void addJetAlgorithm(std::set<fastjet::JetAlgorithm> alg);
     
-    void AddJetAlgorithm(fastjet::JetAlgorithm alg);
-    void AddJetAlgorithm(std::set<fastjet::JetAlgorithm> alg);
+    void addLeadJetPt(double pt);
+    void addLeadJetPt(std::set<double> pt);
     
-    void AddLeadJetPt(double pt);
-    void AddLeadJetPt(std::set<double> pt);
+    void addLeadJetR(double R);
+    void addLeadJetR(std::set<double> R);
     
-    void AddLeadJetR(double R);
-    void AddLeadJetR(std::set<double> R);
+    void addSubJetPt(double pt);
+    void addSubJetPt(std::set<double> pt);
     
-    void AddSubJetPt(double pt);
-    void AddSubJetPt(std::set<double> pt);
-    
-    void AddSubJetR(double R);
-    void AddSubJetR(std::set<double> R);
+    void addSubJetR(double R);
+    void addSubJetR(std::set<double> R);
     
     // options to change the default fastjet settings
     // for area/bkg estimation
-    inline void SetClusterStrategy(fastjet::Strategy strat)  {strategy_ = strat;}
-    inline void SetRecombinationScheme(fastjet::RecombinationScheme schm)
+    inline void setClusterStrategy(fastjet::Strategy strat)  {strategy_ = strat;}
+    inline void setRecombinationScheme(fastjet::RecombinationScheme schm)
         {scheme_ = schm;}
-    inline void SetAreaType(fastjet::AreaType type)          {area_type_ = type;}
-    inline void SetGhostRepeat(int repeat)                   {ghost_repeat_ = repeat;}
-    inline void SetGhostArea(double area)                    {ghost_area_ = area;}
-    inline void SetGridScatter(double scatter)               {grid_scatter_ = scatter;}
-    inline void SetPtScatter(double scatter)                 {pt_scatter_ = scatter;}
-    inline void SetMeanGhostPt(double mean)                  {mean_ghost_pt_ = mean;}
-    inline void SetBkgDefinition(fastjet::JetDefinition def) {bkg_definition_ = def;}
+    inline void setAreaType(fastjet::AreaType type)          {area_type_ = type;}
+    inline void setGhostRepeat(int repeat)                   {ghost_repeat_ = repeat;}
+    inline void setGhostArea(double area)                    {ghost_area_ = area;}
+    inline void setGridScatter(double scatter)               {grid_scatter_ = scatter;}
+    inline void setPtScatter(double scatter)                 {pt_scatter_ = scatter;}
+    inline void setMeanGhostPt(double mean)                  {mean_ghost_pt_ = mean;}
+    inline void setBkgDefinition(fastjet::JetDefinition def) {bkg_definition_ = def;}
     
     // access to the internally stored sets
-    inline const std::set<double>& ConstituentEta() const              {return const_eta_;}
-    inline const std::set<double>& LeadConstituentInitPt() const       {return const_lead_pt_init_;}
-    inline const std::set<double>& LeadConstituentMatchPt() const      {return const_lead_pt_match_;}
-    inline const std::set<double>& SubConstituentInitPt() const        {return const_sub_pt_init_;}
-    inline const std::set<double>& SubConstituentMatchPt() const       {return const_sub_pt_match_;}
-    inline const std::set<fastjet::JetAlgorithm>& JetAlgorithm() const {return jet_algorithm_;}
-    inline const std::set<double>& LeadJetPt() const                   {return lead_pt_;}
-    inline const std::set<double>& LeadJetR() const                    {return lead_R_;}
-    inline const std::set<double>& SubJetPt() const                    {return sub_pt_;}
-    inline const std::set<double>& SubJetR() const                     {return sub_R_;}
+    inline const std::set<double>& constituentEta() const              {return const_eta_;}
+    inline const std::set<double>& leadConstituentInitPt() const       {return const_lead_pt_init_;}
+    inline const std::set<double>& leadConstituentMatchPt() const      {return const_lead_pt_match_;}
+    inline const std::set<double>& subConstituentInitPt() const        {return const_sub_pt_init_;}
+    inline const std::set<double>& subConstituentMatchPt() const       {return const_sub_pt_match_;}
+    inline const std::set<fastjet::JetAlgorithm>& jetAlgorithm() const {return jet_algorithm_;}
+    inline const std::set<double>& leadJetPt() const                   {return lead_pt_;}
+    inline const std::set<double>& leadJetR() const                    {return lead_R_;}
+    inline const std::set<double>& subJetPt() const                    {return sub_pt_;}
+    inline const std::set<double>& subJetR() const                     {return sub_R_;}
     
-    inline fastjet::Strategy ClusterStrategy() const                {return strategy_;}
-    inline fastjet::RecombinationScheme RecombinationScheme() const {return scheme_;}
-    inline fastjet::AreaType AreaType() const                       {return area_type_;}
+    inline fastjet::Strategy clusterStrategy() const                {return strategy_;}
+    inline fastjet::RecombinationScheme recombinationScheme() const {return scheme_;}
+    inline fastjet::AreaType areaType() const                       {return area_type_;}
     
     
   protected:
     
     // used internally to update the dijet definitions, if there has
     // been a parameter updated after initialization
-    void CheckToUpdate();
+    void checkToUpdate();
     
     // used internally to make sure there can be at least one valid
     // dijet definition when Initialize is called. Otherwise, it sets
     // default values for missing fields
-    void InitializeEmptyFields();
+    void initializeEmptyFields();
     
     // used during initialization
-    std::vector<fastjet::JetDefinition> FillLeadJetDefinitions();
-    std::vector<fastjet::JetDefinition> FillSubJetDefinitions();
-    std::vector<fastjet::JetDefinition> FillLeadMatchJetDefinitions();
-    std::vector<fastjet::JetDefinition> FillSubMatchJetDefinitions();
+    std::vector<fastjet::JetDefinition> fillLeadJetDefinitions();
+    std::vector<fastjet::JetDefinition> fillSubJetDefinitions();
+    std::vector<fastjet::JetDefinition> fillLeadMatchJetDefinitions();
+    std::vector<fastjet::JetDefinition> fillSubMatchJetDefinitions();
 
     
     std::set<double> const_eta_;

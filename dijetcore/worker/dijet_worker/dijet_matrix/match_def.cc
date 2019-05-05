@@ -2,9 +2,9 @@
 
 namespace dijetcore {
   
-  bool MatchDef::EquivalentCluster(const MatchDef& rhs) const {
-    return rhs.InitialJetDef().EquivalentCluster(InitialJetDef()) &&
-    rhs.MatchedJetDef().EquivalentCluster(MatchedJetDef());
+  bool MatchDef::equivalentCluster(const MatchDef& rhs) const {
+    return rhs.initialJetDef().equivalentCluster(initialJetDef()) &&
+    rhs.matchedJetDef().equivalentCluster(matchedJetDef());
   }
   
 } // namespace dijetcore

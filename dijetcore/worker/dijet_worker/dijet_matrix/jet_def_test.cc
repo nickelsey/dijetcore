@@ -38,12 +38,12 @@ bool SelectorEquality(fastjet::Selector a, fastjet::Selector b) {
 
 bool JetDefEquality(dijetcore::JetDef a, dijetcore::JetDef b) {
   if (!JetDefinitionEquality(a, b) ||
-      !JetDefinitionEquality(a.BackgroundJetDef(), b.BackgroundJetDef()) ||
-      !SelectorEquality(a.ConstituentSelector(), b.ConstituentSelector()) ||
-      !SelectorEquality(a.JetSelector(), b.JetSelector()) ||
-      !SelectorEquality(a.BackgroundSelector(), b.BackgroundSelector()) ||
-      !AreaDefEquality(a.AreaDefinition(), b.AreaDefinition()) ||
-      !AreaDefEquality(a.BackgroundAreaDef(), b.BackgroundAreaDef()))
+      !JetDefinitionEquality(a.backgroundJetDef(), b.backgroundJetDef()) ||
+      !SelectorEquality(a.constituentSelector(), b.constituentSelector()) ||
+      !SelectorEquality(a.jetSelector(), b.jetSelector()) ||
+      !SelectorEquality(a.backgroundSelector(), b.backgroundSelector()) ||
+      !AreaDefEquality(a.areaDefinition(), b.areaDefinition()) ||
+      !AreaDefEquality(a.backgroundAreaDef(), b.backgroundAreaDef()))
     return false;
   return true;
 }
@@ -53,15 +53,15 @@ TEST(JetDef, DefaultSettings) {
     dijetcore::JetDef default_def;
 
     EXPECT_TRUE(JetDefinitionEquality(default_def, fastjet::JetDefinition()));
-    EXPECT_TRUE(JetDefinitionEquality(default_def.BackgroundJetDef(), fastjet::JetDefinition()));
-    EXPECT_TRUE(SelectorEquality(default_def.ConstituentSelector(), fastjet::SelectorIdentity()));
-    EXPECT_TRUE(SelectorEquality(default_def.BackgroundSelector(), (!fastjet::SelectorNHardest(2))));
-    EXPECT_TRUE(SelectorEquality(default_def.JetSelector(), fastjet::SelectorIdentity()));
-    EXPECT_TRUE(AreaDefEquality(default_def.AreaDefinition(), fastjet::AreaDefinition(fastjet::invalid_area, fastjet::GhostedAreaSpec())));
+    EXPECT_TRUE(JetDefinitionEquality(default_def.backgroundJetDef(), fastjet::JetDefinition()));
+    EXPECT_TRUE(SelectorEquality(default_def.constituentSelector(), fastjet::SelectorIdentity()));
+    EXPECT_TRUE(SelectorEquality(default_def.backgroundSelector(), (!fastjet::SelectorNHardest(2))));
+    EXPECT_TRUE(SelectorEquality(default_def.jetSelector(), fastjet::SelectorIdentity()));
+    EXPECT_TRUE(AreaDefEquality(default_def.areaDefinition(), fastjet::AreaDefinition(fastjet::invalid_area, fastjet::GhostedAreaSpec())));
 
-    EXPECT_FALSE(default_def.IsValid());
-    EXPECT_FALSE(default_def.CanEstimateArea());
-    EXPECT_FALSE(default_def.CanBackgroundSub());
+    EXPECT_FALSE(default_def.isValid());
+    EXPECT_FALSE(default_def.canEstimateArea());
+    EXPECT_FALSE(default_def.canBackgroundSub());
 }
 
 TEST(JetDef, SimpleDefinition) {
@@ -70,9 +70,9 @@ TEST(JetDef, SimpleDefinition) {
     default_def.set_jet_algorithm(fastjet::antikt_algorithm);
     EXPECT_TRUE(JetDefEquality(simple_def, default_def));
     
-    EXPECT_TRUE(simple_def.IsValid());
-    EXPECT_FALSE(simple_def.CanEstimateArea());
-    EXPECT_FALSE(simple_def.CanBackgroundSub());
+    EXPECT_TRUE(simple_def.isValid());
+    EXPECT_FALSE(simple_def.canEstimateArea());
+    EXPECT_FALSE(simple_def.canBackgroundSub());
 }
 
 TEST(JetDef, FullDefinition) {
@@ -85,16 +85,16 @@ TEST(JetDef, FullDefinition) {
 
     dijetcore::JetDef default_def;
     default_def.set_jet_algorithm(fastjet::antikt_algorithm);
-    default_def.SetAreaDefinition(area_def);
-    default_def.SetBackgroundJetDef(bkg_def);
-    default_def.SetBackgroundSelector(bkg_sel);
-    default_def.SetBackgroundAreaDef(area_def);
+    default_def.setAreaDefinition(area_def);
+    default_def.setBackgroundJetDef(bkg_def);
+    default_def.setBackgroundSelector(bkg_sel);
+    default_def.setBackgroundAreaDef(area_def);
 
     EXPECT_TRUE(JetDefEquality(full_def, default_def));
 
-    EXPECT_TRUE(full_def.IsValid());
-    EXPECT_TRUE(full_def.CanEstimateArea());
-    EXPECT_TRUE(full_def.CanBackgroundSub());
+    EXPECT_TRUE(full_def.isValid());
+    EXPECT_TRUE(full_def.canEstimateArea());
+    EXPECT_TRUE(full_def.canBackgroundSub());
 }
 
 TEST(JetDef, EquivalantClustering) {
@@ -107,10 +107,10 @@ TEST(JetDef, EquivalantClustering) {
 
     dijetcore::JetDef default_def;
     default_def.set_jet_algorithm(fastjet::antikt_algorithm);
-    default_def.SetAreaDefinition(area_def);
-    default_def.SetBackgroundJetDef(bkg_def);
-    default_def.SetBackgroundSelector(bkg_sel);
-    default_def.SetBackgroundAreaDef(area_def);
+    default_def.setAreaDefinition(area_def);
+    default_def.setBackgroundJetDef(bkg_def);
+    default_def.setBackgroundSelector(bkg_sel);
+    default_def.setBackgroundAreaDef(area_def);
 
-    EXPECT_TRUE(full_def.EquivalentCluster(default_def));
+    EXPECT_TRUE(full_def.equivalentCluster(default_def));
 }

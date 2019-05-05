@@ -127,13 +127,13 @@ int main(int argc, char* argv[]) {
   dijetcore::DijetWorker worker(alg, lead_hard_pt, lead_R, lead_R_match, sublead_hard_pt, sublead_R,
                                 sublead_R_match, lead_const_hard_pt, lead_const_match_pt,
                                 sublead_const_hard_pt, sublead_const_match_pt, const_eta);
-  worker.ForceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
-  worker.ForceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
-  worker.ForceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
-  worker.ForceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
-  worker.Initialize();
+  worker.forceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
+  worker.forceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
+  worker.forceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
+  worker.forceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
+  worker.initialize();
   
-  std::set<std::string> keys = worker.Keys();
+  std::set<std::string> keys = worker.keys();
   
   for (auto key : keys)
     LOG(INFO) << key;
@@ -345,7 +345,7 @@ int main(int argc, char* argv[]) {
       }
     }
     
-    auto& worker_out = worker.Run(particles);
+    auto& worker_out = worker.run(particles);
     
     // process any found di-jet pairs
     for (auto& result : worker_out) {

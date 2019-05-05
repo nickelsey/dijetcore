@@ -28,7 +28,7 @@ namespace dijetcore {
     found_sublead(false),
     found_match(false) { }
     
-    inline bool FoundDijet() {return found_match;}
+    inline bool foundDijet() {return found_match;}
     
     DijetDefinition* dijet_def;
     
@@ -92,52 +92,52 @@ namespace dijetcore {
     // and gives as output a dictionary containing the dijet pairs
     // of all DijetDefinitions where a dijet pair was found
     std::unordered_map<std::string, unique_ptr<ClusterOutput>>&
-    Run(const std::vector<fastjet::PseudoJet>& input);
+    run(const std::vector<fastjet::PseudoJet>& input);
     
     // second method to access the dictionary, outside
     // of calling run.
-    std::unordered_map<std::string, unique_ptr<ClusterOutput>>& Dijets() {return cluster_result;}
+    std::unordered_map<std::string, unique_ptr<ClusterOutput>>& dijets() {return cluster_result;}
     
   private:
     
     // clears all of the containers
-    void ClearResults();
+    void clearResults();
     
     // Internal step for running the clustering for each DijetDefinition
-    bool RunClustering(const std::vector<fastjet::PseudoJet>& input, const DijetDefinition& def,
+    bool runClustering(const std::vector<fastjet::PseudoJet>& input, const DijetDefinition& def,
                        string cluster_identifier, double min_lead_pt, double min_sub_pt);
     
     // Internal step for identifying the correct cluster sequences for
     // a specific DijetDefinition
-    std::array<fastjet::ClusterSequenceArea*, 4> LoadProperClusterSequence(string cluster_identifier);
+    std::array<fastjet::ClusterSequenceArea*, 4> loadProperClusterSequence(string cluster_identifier);
     
     // Used to select leading and subleading hard jets
     // currently only supports selecting highest pT jet as leading -
     // intend to implement trigger requirement later
-    fastjet::PseudoJet SelectLeadingHardJet(const std::vector<fastjet::PseudoJet>& clustered_jets);
-    fastjet::PseudoJet SelectSubLeadingHardJet(const fastjet::PseudoJet& trigger_jet,
+    fastjet::PseudoJet selectLeadingHardJet(const std::vector<fastjet::PseudoJet>& clustered_jets);
+    fastjet::PseudoJet selectSubLeadingHardJet(const fastjet::PseudoJet& trigger_jet,
                                                const std::vector<fastjet::PseudoJet>& sublead_candidates,
                                                double dPhi_range);
     
     // function to estimate background energy density
-    std::pair<double, double> EstimateBackgroundDensity(const std::vector<fastjet::PseudoJet>& input,
+    std::pair<double, double> estimateBackgroundDensity(const std::vector<fastjet::PseudoJet>& input,
                                                         const JetDef& jet_def);
     
     // returns a list of background subtracted jets
     // returns rho and sigma the same was EstimateBackgroundDensity
-    std::pair<double, double> SubtractBackgroundFromJets(const std::vector<fastjet::PseudoJet>& input,
+    std::pair<double, double> subtractBackgroundFromJets(const std::vector<fastjet::PseudoJet>& input,
                                                          const JetDef& jet_def,
                                                          const std::vector<fastjet::PseudoJet>& jets,
                                                          std::vector<fastjet::PseudoJet>& subtracted_jets);
     
     // or get the background subtractor itself
     std::pair<unique_ptr<fastjet::JetMedianBackgroundEstimator>,
-              unique_ptr<fastjet::Subtractor>> GetBackgroundSubtractor(const std::vector<fastjet::PseudoJet>& input,
+              unique_ptr<fastjet::Subtractor>> getBackgroundSubtractor(const std::vector<fastjet::PseudoJet>& input,
                                                                        const JetDef& jet_def);
     
     
     // matches a reclustered jet to the selected leading/subleading hard jet
-    fastjet::PseudoJet MatchJets(const fastjet::PseudoJet& target,
+    fastjet::PseudoJet matchJets(const fastjet::PseudoJet& target,
                                  const MatchDef& matchdef,
                                  const std::vector<fastjet::PseudoJet>& candidates);
     
@@ -150,15 +150,15 @@ namespace dijetcore {
     
     // checks to see if two area definitions are equivalent,
     // used by EquivalentClusterInput()
-    bool EquivalentAreaDefinition(const fastjet::AreaDefinition& a1, const fastjet::AreaDefinition& a2);
+    bool equivalentAreaDefinition(const fastjet::AreaDefinition& a1, const fastjet::AreaDefinition& a2);
     
     // used to decide if two clusterings would give the same output
     // to reduce computation time. Comparison of ConstituentSelector
     // AreaDefinition and JetDefinition
-    bool EquivalentClusterInput(const JetDef& c1, const JetDef& c2);
+    bool equivalentClusterInput(const JetDef& c1, const JetDef& c2);
     
     // same for background estimation
-    bool EquivalentBkgEstimationInput(const JetDef& c1, const JetDef& c2);
+    bool equivalentBkgEstimationInput(const JetDef& c1, const JetDef& c2);
     
     // used to keep cluster sequences in scope, in case user wants to
     // access constituents

@@ -111,8 +111,8 @@ int main(int argc, char* argv[]) {
 
   // initialize worker
   dijetcore::Run14QAWorker worker;
-  worker.DoTowerQA(FLAGS_doTowerQA);
-  worker.DoTrackQA(FLAGS_doTrackQA);
+  worker.doTowerQA(FLAGS_doTowerQA);
+  worker.doTrackQA(FLAGS_doTrackQA);
 
   // check if we are going to do runID dependent QA, if so, load runIDs
   if (!FLAGS_runIDFile.empty()) {
@@ -125,11 +125,11 @@ int main(int argc, char* argv[]) {
     while (runid_reader.Next()) runid_set.insert(*runid);
 
     // add runids to worker
-    worker.DoRunQA(runid_set);
+    worker.doRunQA(runid_set);
   }
 
   // initialize worker
-  worker.Init(FLAGS_histogramPrefix);
+  worker.init(FLAGS_histogramPrefix);
 
   // get selected triggers
   std::set<unsigned> triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
       }
 
       // run
-      worker.Run(*reader);
+      worker.run(*reader);
     }
   } catch (std::exception& e) {
     std::cerr << "Caught: " << e.what() << " during analysis loop."
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
   }
 
   // write to file
-  worker.WriteTo(outputFile);
+  worker.writeTo(outputFile);
   outputFile.Close();
 
   return 0;

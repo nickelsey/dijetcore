@@ -50,51 +50,51 @@ namespace dijetcore {
     virtual ~JetDef() { }
     
     // selector used on constituents pre-clustering
-    inline fastjet::Selector ConstituentSelector()   const {return const_selector_;}
+    inline fastjet::Selector constituentSelector()   const {return const_selector_;}
     
     // selector used on jets post-clustering
     // (and post bkg subtraction, if it is being applied)
-    inline fastjet::Selector JetSelector()           const {return jet_selector_;}
+    inline fastjet::Selector jetSelector()           const {return jet_selector_;}
     
     // area definition used for area estimation &
     // background subtraction
-    inline fastjet::AreaDefinition AreaDefinition()  const {return area_def_;}
+    inline fastjet::AreaDefinition areaDefinition()  const {return area_def_;}
     
     // background jet definition
-    inline fastjet::JetDefinition BackgroundJetDef() const {return bkg_jet_def_;}
+    inline fastjet::JetDefinition backgroundJetDef() const {return bkg_jet_def_;}
     
     // background area definition
-    inline fastjet::AreaDefinition BackgroundAreaDef() const {return bkg_area_def_;}
+    inline fastjet::AreaDefinition backgroundAreaDef() const {return bkg_area_def_;}
     
     // selector used to estimate background. By default,
     // set to !SelectorNHardest(2), but should also include
     // a user defined rapidity cut
-    inline fastjet::Selector BackgroundSelector()    const {return bkg_selector_;}
+    inline fastjet::Selector backgroundSelector()    const {return bkg_selector_;}
     
     // set the various fastjet definitions & selectors
-    inline void SetConstituentSelector(fastjet::Selector sel)     {const_selector_ = sel;}
-    inline void SetJetSelector(fastjet::Selector sel)             {jet_selector_ = sel;}
-    inline void SetAreaDefinition(fastjet::AreaDefinition def)    {area_def_ = def;}
-    inline void SetBackgroundJetDef(fastjet::JetDefinition def)   {bkg_jet_def_ = def;}
-    inline void SetBackgroundAreaDef(fastjet::AreaDefinition def) {bkg_area_def_ = def;}
-    inline void SetBackgroundSelector(fastjet::Selector sel)      {bkg_selector_ = sel;}
+    inline void setConstituentSelector(fastjet::Selector sel)     {const_selector_ = sel;}
+    inline void setJetSelector(fastjet::Selector sel)             {jet_selector_ = sel;}
+    inline void setAreaDefinition(fastjet::AreaDefinition def)    {area_def_ = def;}
+    inline void setBackgroundJetDef(fastjet::JetDefinition def)   {bkg_jet_def_ = def;}
+    inline void setBackgroundAreaDef(fastjet::AreaDefinition def) {bkg_area_def_ = def;}
+    inline void setBackgroundSelector(fastjet::Selector sel)      {bkg_selector_ = sel;}
     
     // returns true if the jetdefinition is valid
-    inline bool IsValid() const          {return jet_algorithm() != fastjet::undefined_jet_algorithm;}
+    inline bool isValid() const          {return jet_algorithm() != fastjet::undefined_jet_algorithm;}
     
     // returns true if a valid area definition is present
-    inline bool CanEstimateArea() const  {return area_def_.area_type() != fastjet::invalid_area;}
+    inline bool canEstimateArea() const  {return area_def_.area_type() != fastjet::invalid_area;}
     
     // returns true if a valid area definition & valid
     // background jet definition are defined
-    inline bool CanBackgroundSub() {return CanEstimateArea() &&
+    inline bool canBackgroundSub() {return canEstimateArea() &&
       (bkg_jet_def_.jet_algorithm() != fastjet::undefined_jet_algorithm) &&
       (bkg_area_def_.area_type() != fastjet::invalid_area);}
     
     // returns true if two JetDefs use an equivalent
     // clustersequence & input particles, which means that
     // clustering can be done only once
-    bool EquivalentCluster(const JetDef& rhs) const;
+    bool equivalentCluster(const JetDef& rhs) const;
     
   private:
     
@@ -141,27 +141,27 @@ namespace dijetcore {
         lhs.R() != rhs.R() ||
         lhs.recombination_scheme() != rhs.recombination_scheme() ||
         lhs.strategy() != rhs.strategy() ||
-        lhs.ConstituentSelector().description() != rhs.ConstituentSelector().description() ||
-        lhs.JetSelector().description() != rhs.JetSelector().description() ||
-        lhs.AreaDefinition().area_type() != rhs.AreaDefinition().area_type() ||
-        lhs.AreaDefinition().ghost_spec().ghost_maxrap() != rhs.AreaDefinition().ghost_spec().ghost_maxrap() ||
-        lhs.AreaDefinition().ghost_spec().ghost_area() != rhs.AreaDefinition().ghost_spec().ghost_area() ||
-        lhs.AreaDefinition().ghost_spec().grid_scatter() != rhs.AreaDefinition().ghost_spec().grid_scatter() ||
-        lhs.AreaDefinition().ghost_spec().pt_scatter() != rhs.AreaDefinition().ghost_spec().pt_scatter() ||
-        lhs.AreaDefinition().ghost_spec().mean_ghost_pt() != rhs.AreaDefinition().ghost_spec().mean_ghost_pt() ||
-        lhs.AreaDefinition().ghost_spec().repeat() != rhs.AreaDefinition().ghost_spec().repeat() ||
-        lhs.BackgroundAreaDef().area_type() != rhs.BackgroundAreaDef().area_type() ||
-        lhs.BackgroundAreaDef().ghost_spec().ghost_maxrap() != rhs.BackgroundAreaDef().ghost_spec().ghost_maxrap() ||
-        lhs.BackgroundAreaDef().ghost_spec().ghost_area() != rhs.BackgroundAreaDef().ghost_spec().ghost_area() ||
-        lhs.BackgroundAreaDef().ghost_spec().grid_scatter() != rhs.BackgroundAreaDef().ghost_spec().grid_scatter() ||
-        lhs.BackgroundAreaDef().ghost_spec().pt_scatter() != rhs.BackgroundAreaDef().ghost_spec().pt_scatter() ||
-        lhs.BackgroundAreaDef().ghost_spec().mean_ghost_pt() != rhs.BackgroundAreaDef().ghost_spec().mean_ghost_pt() ||
-        lhs.BackgroundAreaDef().ghost_spec().repeat() != rhs.BackgroundAreaDef().ghost_spec().repeat() ||
-        lhs.BackgroundJetDef().jet_algorithm() != rhs.BackgroundJetDef().jet_algorithm() ||
-        lhs.BackgroundJetDef().R() != rhs.BackgroundJetDef().R() ||
-        lhs.BackgroundJetDef().recombination_scheme() != rhs.BackgroundJetDef().recombination_scheme() ||
-        lhs.BackgroundJetDef().strategy() != rhs.BackgroundJetDef().strategy() ||
-        lhs.BackgroundSelector().description() != rhs.BackgroundSelector().description())
+        lhs.constituentSelector().description() != rhs.constituentSelector().description() ||
+        lhs.jetSelector().description() != rhs.jetSelector().description() ||
+        lhs.areaDefinition().area_type() != rhs.areaDefinition().area_type() ||
+        lhs.areaDefinition().ghost_spec().ghost_maxrap() != rhs.areaDefinition().ghost_spec().ghost_maxrap() ||
+        lhs.areaDefinition().ghost_spec().ghost_area() != rhs.areaDefinition().ghost_spec().ghost_area() ||
+        lhs.areaDefinition().ghost_spec().grid_scatter() != rhs.areaDefinition().ghost_spec().grid_scatter() ||
+        lhs.areaDefinition().ghost_spec().pt_scatter() != rhs.areaDefinition().ghost_spec().pt_scatter() ||
+        lhs.areaDefinition().ghost_spec().mean_ghost_pt() != rhs.areaDefinition().ghost_spec().mean_ghost_pt() ||
+        lhs.areaDefinition().ghost_spec().repeat() != rhs.areaDefinition().ghost_spec().repeat() ||
+        lhs.backgroundAreaDef().area_type() != rhs.backgroundAreaDef().area_type() ||
+        lhs.backgroundAreaDef().ghost_spec().ghost_maxrap() != rhs.backgroundAreaDef().ghost_spec().ghost_maxrap() ||
+        lhs.backgroundAreaDef().ghost_spec().ghost_area() != rhs.backgroundAreaDef().ghost_spec().ghost_area() ||
+        lhs.backgroundAreaDef().ghost_spec().grid_scatter() != rhs.backgroundAreaDef().ghost_spec().grid_scatter() ||
+        lhs.backgroundAreaDef().ghost_spec().pt_scatter() != rhs.backgroundAreaDef().ghost_spec().pt_scatter() ||
+        lhs.backgroundAreaDef().ghost_spec().mean_ghost_pt() != rhs.backgroundAreaDef().ghost_spec().mean_ghost_pt() ||
+        lhs.backgroundAreaDef().ghost_spec().repeat() != rhs.backgroundAreaDef().ghost_spec().repeat() ||
+        lhs.backgroundJetDef().jet_algorithm() != rhs.backgroundJetDef().jet_algorithm() ||
+        lhs.backgroundJetDef().R() != rhs.backgroundJetDef().R() ||
+        lhs.backgroundJetDef().recombination_scheme() != rhs.backgroundJetDef().recombination_scheme() ||
+        lhs.backgroundJetDef().strategy() != rhs.backgroundJetDef().strategy() ||
+        lhs.backgroundSelector().description() != rhs.backgroundSelector().description())
       return false;
     return true;
   }

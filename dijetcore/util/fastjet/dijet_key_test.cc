@@ -23,15 +23,15 @@ TEST(DijetKey, CompleteKey) {
   
   
   dijetcore::JetDef def_A(fastjet::antikt_algorithm, 0.4);
-  def_A.SetConstituentSelector(const_sel_2);
-  def_A.SetJetSelector(jet_sel_2);
+  def_A.setConstituentSelector(const_sel_2);
+  def_A.setJetSelector(jet_sel_2);
   dijetcore::JetDef def_B(fastjet::antikt_algorithm, 0.5);
-  def_B.SetConstituentSelector(const_sel);
+  def_B.setConstituentSelector(const_sel);
   dijetcore::JetDef def_C(fastjet::antikt_algorithm, 0.6);
-  def_C.SetConstituentSelector(const_sel_2);
-  def_C.SetJetSelector(jet_sel_2);
+  def_C.setConstituentSelector(const_sel_2);
+  def_C.setJetSelector(jet_sel_2);
   dijetcore::JetDef def_D(fastjet::antikt_algorithm, 0.7);
-  def_D.SetConstituentSelector(const_sel);
+  def_D.setConstituentSelector(const_sel);
   
   dijetcore::MatchDef* match_A = new dijetcore::MatchDef(def_A, def_B, 0.4);
   dijetcore::MatchDef* match_B = new dijetcore::MatchDef(def_C, def_D, 0.6);

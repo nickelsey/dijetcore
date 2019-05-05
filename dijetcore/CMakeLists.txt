@@ -1,12 +1,14 @@
 ## declare our source files
 ## DC_SRCS is used to build libdijetcore
 ## DC_TEST_SRCS contains all test sources
+## DC_TEST_MAIN contains gtest main()
 ## DC_BENCH_SRCS contains benchmark routine sources
 ## DC_BIN_SRCS contains binary source files
 
 set(DC_SRCS)
 set(DC_HDRS)
 set(DC_TEST_SRCS)
+set(DC_TEST_MAIN)
 set(DC_BENCH_SRCS)
 set(DC_BINARY_SRCS)
 
@@ -15,6 +17,7 @@ add_subdirectory(lib)
 add_subdirectory(util)
 add_subdirectory(proto)
 add_subdirectory(worker)
+add_subdirectory(test)
 add_subdirectory(dijet_imbalance)
 add_subdirectory(resources)
 if (BUILD_DATA_QA_BINARIES)
@@ -75,6 +78,14 @@ if (BUILD_TEST)
     add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
     install(TARGETS ${test_name} DESTINATION test)
   endforeach()
+
+  ## build gtest main
+  add_executable(dijetcore_gtest_main ${DC_TEST_MAIN} ${DC_TEST_SRCS})
+  add_dependencies(dijetcore_gtest_main ${DC_LIBS})
+  target_link_libraries(dijetcore_gtest_main ${DC_LIBS} 
+                        ${DC_DEPENDENCY_LIBS} gtest_main)
+  #add_test(NAME dijetcore_gtest_main COMMAND $<TARGET_FILE:$dijetcore_gtest_main>)
+  install(TARGETS dijetcore_gtest_main DESTINATION test)
 endif()
 
 ## benchmark binaries

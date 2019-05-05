@@ -21,7 +21,7 @@ namespace dijetcore {
   pt_scatter_(fastjet::gas::def_pt_scatter),
   mean_ghost_pt_(fastjet::gas::def_mean_ghost_pt),
   bkg_definition_(fastjet::JetDefinition(fastjet::kt_algorithm, 0.4)) { }
-  
+
   // single entry construction
   DijetMatrix::DijetMatrix(fastjet::JetAlgorithm jet_alg_in,
                            double lead_pt_in,
@@ -131,7 +131,7 @@ namespace dijetcore {
   bkg_definition_(rhs.bkg_definition_)
   { }
   
-  void DijetMatrix::Clear() {
+  void DijetMatrix::clear() {
     const_eta_.clear();
     const_lead_pt_init_.clear();
     const_sub_pt_init_.clear();
@@ -145,10 +145,10 @@ namespace dijetcore {
     sub_R_.clear();
     sub_R_match_.clear();
     
-    ClearDijetDefs();
+    clearDijetDefs();
   }
   
-  void DijetMatrix::ClearDijetDefs() {
+  void DijetMatrix::clearDijetDefs() {
     dijet_defs_.clear();
     ordered_defs_.clear();
     lead_matchdefs_.clear();
@@ -157,161 +157,161 @@ namespace dijetcore {
     ordered_keys_.clear();
   }
   
-  void DijetMatrix::ForceConstituentPtEquality(bool flag) {
+  void DijetMatrix::forceConstituentPtEquality(bool flag) {
     force_constituent_pt_equality_ = flag;
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::ForceConstituentEtaEquality(bool flag) {
+  void DijetMatrix::forceConstituentEtaEquality(bool flag) {
     force_constituent_eta_equality_ = flag;
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::ForceJetResolutionEquality(bool flag) {
+  void DijetMatrix::forceJetResolutionEquality(bool flag) {
     force_jet_resolution_equality_ = flag;
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::ForceMatchJetResolutionEquality(bool flag) {
+  void DijetMatrix::forceMatchJetResolutionEquality(bool flag) {
     force_match_jet_resolution_equality_ = flag;
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentEta(double eta) {
+  void DijetMatrix::addConstituentEta(double eta) {
     const_eta_.insert(eta);
-    CheckToUpdate();
+    checkToUpdate();
   }
-  void DijetMatrix::AddConstituentEta(std::set<double> eta) {
+  void DijetMatrix::addConstituentEta(std::set<double> eta) {
     for (auto& val : eta) {
       const_eta_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentLeadInitialPt(double pt) {
+  void DijetMatrix::addConstituentLeadInitialPt(double pt) {
     const_lead_pt_init_.insert(pt);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentLeadInitialPt(std::set<double> pt) {
+  void DijetMatrix::addConstituentLeadInitialPt(std::set<double> pt) {
     for (auto& val : pt) {
       const_lead_pt_init_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentLeadMatchPt(double pt) {
+  void DijetMatrix::addConstituentLeadMatchPt(double pt) {
     const_lead_pt_match_.insert(pt);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentLeadMatchPt(std::set<double> pt) {
+  void DijetMatrix::addConstituentLeadMatchPt(std::set<double> pt) {
     for (auto& val : pt) {
       const_lead_pt_match_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentSubInitialPt(double pt) {
+  void DijetMatrix::addConstituentSubInitialPt(double pt) {
     const_sub_pt_init_.insert(pt);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentSubInitialPt(std::set<double> pt) {
+  void DijetMatrix::addConstituentSubInitialPt(std::set<double> pt) {
     for (auto& val : pt) {
       const_sub_pt_init_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentSubMatchPt(double pt) {
+  void DijetMatrix::addConstituentSubMatchPt(double pt) {
     const_sub_pt_match_.insert(pt);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddConstituentSubMatchPt(std::set<double> pt) {
+  void DijetMatrix::addConstituentSubMatchPt(std::set<double> pt) {
     for (auto& val : pt) {
       const_sub_pt_match_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddJetAlgorithm(fastjet::JetAlgorithm alg) {
+  void DijetMatrix::addJetAlgorithm(fastjet::JetAlgorithm alg) {
     jet_algorithm_.insert(alg);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddJetAlgorithm(std::set<fastjet::JetAlgorithm> alg) {
+  void DijetMatrix::addJetAlgorithm(std::set<fastjet::JetAlgorithm> alg) {
     for (auto& val : alg) {
       jet_algorithm_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddLeadJetPt(double pt) {
+  void DijetMatrix::addLeadJetPt(double pt) {
     lead_pt_.insert(pt);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddLeadJetPt(std::set<double> pt) {
+  void DijetMatrix::addLeadJetPt(std::set<double> pt) {
     for (auto& val : pt) {
       lead_pt_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddLeadJetR(double R) {
+  void DijetMatrix::addLeadJetR(double R) {
     lead_R_.insert(R);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddLeadJetR(std::set<double> R) {
+  void DijetMatrix::addLeadJetR(std::set<double> R) {
     for (auto& val : R) {
       lead_R_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddSubJetPt(double pt) {
+  void DijetMatrix::addSubJetPt(double pt) {
     sub_pt_.insert(pt);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddSubJetPt(std::set<double> pt) {
+  void DijetMatrix::addSubJetPt(std::set<double> pt) {
     for (auto& val : pt) {
       sub_pt_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddSubJetR(double R) {
+  void DijetMatrix::addSubJetR(double R) {
     sub_R_.insert(R);
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::AddSubJetR(std::set<double> R) {
+  void DijetMatrix::addSubJetR(std::set<double> R) {
     for (auto& val : R) {
       sub_R_.insert(val);
     }
-    CheckToUpdate();
+    checkToUpdate();
   }
   
-  void DijetMatrix::Initialize() {
+  void DijetMatrix::initialize() {
     // if already initialzed, remove old definitions
     if (dijet_defs_.size() != 0) {
-      ClearDijetDefs();
+      clearDijetDefs();
     }
     
     // check to make sure there is at least one valid dijet
     // definition, either through custom definitions,
     // or parameters. Create default parameters otherwise
-    InitializeEmptyFields();
+    initializeEmptyFields();
     
     // first step - get our leading & subleading jet definitions
-    std::vector<fastjet::JetDefinition> lead_jet_defs = FillLeadJetDefinitions();
-    std::vector<fastjet::JetDefinition> lead_match_jet_defs = FillLeadMatchJetDefinitions();
-    std::vector<fastjet::JetDefinition> sub_jet_defs = FillSubJetDefinitions();
-    std::vector<fastjet::JetDefinition> sub_match_jet_defs = FillSubMatchJetDefinitions();
+    std::vector<fastjet::JetDefinition> lead_jet_defs = fillLeadJetDefinitions();
+    std::vector<fastjet::JetDefinition> lead_match_jet_defs = fillLeadMatchJetDefinitions();
+    std::vector<fastjet::JetDefinition> sub_jet_defs = fillSubJetDefinitions();
+    std::vector<fastjet::JetDefinition> sub_match_jet_defs = fillSubMatchJetDefinitions();
     
     // start creating the leading jet MatchDefs
     for (auto& lead_fj_def : lead_jet_defs) {
@@ -360,11 +360,11 @@ namespace dijetcore {
                 // create the initial JetDef & the
                 // matched JetDef def
                 JetDef init_def(lead_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-                init_def.SetConstituentSelector(init_const_selector);
-                init_def.SetJetSelector(init_jet_selector);
+                init_def.setConstituentSelector(init_const_selector);
+                init_def.setJetSelector(init_jet_selector);
                 JetDef match_def(lead_match_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-                match_def.SetConstituentSelector(match_const_selector);
-                match_def.SetJetSelector(match_jet_selector);
+                match_def.setConstituentSelector(match_const_selector);
+                match_def.setJetSelector(match_jet_selector);
                 
                 // create the MatchDef
                 lead_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
@@ -423,11 +423,11 @@ namespace dijetcore {
                 // create the initial JetDef & the
                 // matched JetDef def
                 JetDef init_def(sub_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-                init_def.SetConstituentSelector(init_const_selector);
-                init_def.SetJetSelector(init_jet_selector);
+                init_def.setConstituentSelector(init_const_selector);
+                init_def.setJetSelector(init_jet_selector);
                 JetDef match_def(sub_match_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
-                match_def.SetConstituentSelector(match_const_selector);
-                match_def.SetJetSelector(match_jet_selector);
+                match_def.setConstituentSelector(match_const_selector);
+                match_def.setJetSelector(match_jet_selector);
                 
                 // create the MatchDef
                 sub_matchdefs_.insert(make_unique<MatchDef>(init_def, match_def));
@@ -444,28 +444,28 @@ namespace dijetcore {
       for (auto& sub : sub_matchdefs_) {
         
         // make sure we're looking at similar jets
-        if (lead->InitialJetDef().jet_algorithm() != sub->InitialJetDef().jet_algorithm())
+        if (lead->initialJetDef().jet_algorithm() != sub->initialJetDef().jet_algorithm())
           continue;
         
         // make sure that the pt lead > pt sub
-        if (SelectorPtMinLessThan(lead->InitialJetDef().JetSelector(), sub->InitialJetDef().JetSelector()))
+        if (SelectorPtMinLessThan(lead->initialJetDef().jetSelector(), sub->initialJetDef().jetSelector()))
           continue;
         
         // if force_constituent_pt_equality is on, force
         // pt to be equal. Same for eta
         if (force_constituent_pt_equality_) {
-          double lead_pt_init = ExtractDoubleFromSelector(lead->InitialJetDef().ConstituentSelector(), "pt >=");
-          double sub_pt_init = ExtractDoubleFromSelector(sub->InitialJetDef().ConstituentSelector(), "pt >=");
+          double lead_pt_init = ExtractDoubleFromSelector(lead->initialJetDef().constituentSelector(), "pt >=");
+          double sub_pt_init = ExtractDoubleFromSelector(sub->initialJetDef().constituentSelector(), "pt >=");
           if (lead_pt_init != sub_pt_init)
             continue;
-          double lead_pt_match = ExtractDoubleFromSelector(lead->MatchedJetDef().ConstituentSelector(), "pt >=");
-          double sub_pt_match = ExtractDoubleFromSelector(sub->MatchedJetDef().ConstituentSelector(), "pt >=");
+          double lead_pt_match = ExtractDoubleFromSelector(lead->matchedJetDef().constituentSelector(), "pt >=");
+          double sub_pt_match = ExtractDoubleFromSelector(sub->matchedJetDef().constituentSelector(), "pt >=");
           if (lead_pt_match != sub_pt_match)
             continue;
         }
         if (force_constituent_eta_equality_) {
-          double lead_eta = ExtractDoubleFromSelector(lead->InitialJetDef().ConstituentSelector(), "|rap| <=");
-          double sub_eta = ExtractDoubleFromSelector(sub->InitialJetDef().ConstituentSelector(), "|rap| <=");
+          double lead_eta = ExtractDoubleFromSelector(lead->initialJetDef().constituentSelector(), "|rap| <=");
+          double sub_eta = ExtractDoubleFromSelector(sub->initialJetDef().constituentSelector(), "|rap| <=");
           if (lead_eta != sub_eta)
             continue;
         }
@@ -473,14 +473,14 @@ namespace dijetcore {
         // if the force_jet_resolution_equality_ is on, force
         // R to be equal
         if (force_jet_resolution_equality_) {
-          if (lead->InitialJetDef().R() != sub->InitialJetDef().R() ||
-              lead->MatchedJetDef().R() != sub->MatchedJetDef().R())
+          if (lead->initialJetDef().R() != sub->initialJetDef().R() ||
+              lead->matchedJetDef().R() != sub->matchedJetDef().R())
             continue;
         }
         
         auto tmp = make_unique<DijetDefinition>(lead.get(), sub.get(),
-                                                     std::min(lead->InitialJetDef().R(),
-                                                              sub->InitialJetDef().R()));
+                                                     std::min(lead->initialJetDef().R(),
+                                                              sub->initialJetDef().R()));
         
         string key = MakeKeyFromDijetDefinition(*tmp);
         dijet_defs_[key] = std::move(tmp);
@@ -502,13 +502,13 @@ namespace dijetcore {
         const string& set_key = ordered_defs_[i].begin()->first;
         DijetDefinition* set_def = ordered_defs_[i].begin()->second;
       
-        if (set_def->EquivalentCluster(*new_def)) {
+        if (set_def->equivalentCluster(*new_def)) {
       
           ordered_defs_[i][new_key] = new_def;
           match_success = true;
       
-          double lead_pt_min = ExtractDoubleFromSelector(new_def->lead->InitialJetDef().JetSelector(), "pt >=");
-          double sub_pt_min = ExtractDoubleFromSelector(new_def->sub->InitialJetDef().JetSelector(), "pt >=");
+          double lead_pt_min = ExtractDoubleFromSelector(new_def->lead->initialJetDef().jetSelector(), "pt >=");
+          double sub_pt_min = ExtractDoubleFromSelector(new_def->sub->initialJetDef().jetSelector(), "pt >=");
       
           if (lead_pt_min < ordered_min_pt_[i].first)
             ordered_min_pt_[i].first = lead_pt_min;
@@ -524,21 +524,21 @@ namespace dijetcore {
         tmp.insert({new_key, new_def});
         ordered_defs_.push_back(std::move(tmp));
         ordered_keys_.push_back(MakeSortedKeyFromDijetDefinition(*new_def));
-        double lead_pt_min = ExtractDoubleFromSelector(new_def->lead->InitialJetDef().JetSelector(), "pt >=");
-        double sub_pt_min = ExtractDoubleFromSelector(new_def->sub->InitialJetDef().JetSelector(), "pt >=");
+        double lead_pt_min = ExtractDoubleFromSelector(new_def->lead->initialJetDef().jetSelector(), "pt >=");
+        double sub_pt_min = ExtractDoubleFromSelector(new_def->sub->initialJetDef().jetSelector(), "pt >=");
         ordered_min_pt_.push_back({lead_pt_min, sub_pt_min});
       }
     }
     
   }
   
-  void DijetMatrix::CheckToUpdate() {
+  void DijetMatrix::checkToUpdate() {
     if (dijet_defs_.size() != 0) {
-      ClearDijetDefs();
+      clearDijetDefs();
     }
   }
   
-  void DijetMatrix::InitializeEmptyFields() {
+  void DijetMatrix::initializeEmptyFields() {
     if (const_eta_.empty())
       const_eta_.insert(1.0);
     if (const_lead_pt_init_.empty())
@@ -565,7 +565,7 @@ namespace dijetcore {
       sub_R_match_.insert(0.4);
   }
   
-  std::vector<fastjet::JetDefinition> DijetMatrix::FillLeadJetDefinitions() {
+  std::vector<fastjet::JetDefinition> DijetMatrix::fillLeadJetDefinitions() {
     std::vector<fastjet::JetDefinition> ret;
     for (auto& alg : jet_algorithm_)
       for (auto& R : lead_R_)
@@ -573,7 +573,7 @@ namespace dijetcore {
     return ret;
   }
   
-  std::vector<fastjet::JetDefinition> DijetMatrix::FillLeadMatchJetDefinitions() {
+  std::vector<fastjet::JetDefinition> DijetMatrix::fillLeadMatchJetDefinitions() {
     std::vector<fastjet::JetDefinition> ret;
     for (auto& alg : jet_algorithm_)
       for (auto& R : lead_R_match_)
@@ -581,7 +581,7 @@ namespace dijetcore {
     return ret;
   }
   
-  std::vector<fastjet::JetDefinition> DijetMatrix::FillSubJetDefinitions() {
+  std::vector<fastjet::JetDefinition> DijetMatrix::fillSubJetDefinitions() {
     std::vector<fastjet::JetDefinition> ret;
     for (auto& alg : jet_algorithm_)
       for (auto& R : sub_R_)
@@ -589,7 +589,7 @@ namespace dijetcore {
     return ret;
   }
   
-  std::vector<fastjet::JetDefinition> DijetMatrix::FillSubMatchJetDefinitions() {
+  std::vector<fastjet::JetDefinition> DijetMatrix::fillSubMatchJetDefinitions() {
     std::vector<fastjet::JetDefinition> ret;
     for (auto& alg : jet_algorithm_)
       for (auto& R : sub_R_match_)

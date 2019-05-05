@@ -16,7 +16,7 @@ namespace dijetcore {
   // defaults set in header
   Run14QAWorker::Run14QAWorker() {}
 
-  bool Run14QAWorker::Init(const std::string& hist_prefix) {
+  bool Run14QAWorker::init(const std::string& hist_prefix) {
 
     // binning for run id
     unsigned bin_runid = run_id_map_.size();
@@ -200,7 +200,7 @@ namespace dijetcore {
     return true;
   }
 
-  bool Run14QAWorker::WriteTo(TFile& file) {
+  bool Run14QAWorker::writeTo(TFile& file) {
     if (!file.IsOpen()) {
       LOG(ERROR) << "input file " << file.GetName() << " is not open, failed to write histograms to disk";
       return false;
@@ -287,7 +287,7 @@ namespace dijetcore {
     return true;
   }
 
-  void Run14QAWorker::DoRunQA(std::set<unsigned>& run_ids) {
+  void Run14QAWorker::doRunQA(std::set<unsigned>& run_ids) {
     unsigned bin = 1;
     run_id_map_.clear();
     for (auto& runid : run_ids) {
@@ -298,14 +298,14 @@ namespace dijetcore {
       do_run_qa_ = true;
   }
 
-  bool Run14QAWorker::Run(TStarJetPicoReader& reader) {
+  bool Run14QAWorker::run(TStarJetPicoReader& reader) {
 
     // first do event level QA
     TStarJetPicoEventHeader* header = reader.GetEvent()->GetHeader();
     
     // make sure initialization has happened
     if (initialized_ == false)
-      Init();
+      init();
     
     zdc_vz_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetPrimaryVertexZ());
     zdc_dvz_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetPrimaryVertexZ() - header->GetVpdVz());
@@ -318,20 +318,20 @@ namespace dijetcore {
 
     // check if we are doing run-by-run QA
     if (run_id_map_.size() > 0 && run_id_ref_gref_ != nullptr) {
-      if (RunQA(reader) == false) {
+      if (runQA(reader) == false) {
         LOG(ERROR) << "failure in RunQA";
       }
     }
     
     // check if we are doing tower QA
     if (e_et_ != nullptr) {
-      if (!TowerQA(reader)) {
+      if (!towerQA(reader)) {
         LOG(ERROR) << "failure in TowerQA";
       }
     }
     
     if (px_py_ != nullptr) {
-      if (!TrackQA(reader)) {
+      if (!trackQA(reader)) {
         LOG(ERROR) << "failure in TrackQA";
       }
     }
@@ -339,7 +339,7 @@ namespace dijetcore {
     return true;
   }
 
-  bool Run14QAWorker::RunQA(TStarJetPicoReader& event) {
+  bool Run14QAWorker::runQA(TStarJetPicoReader& event) {
     TStarJetPicoEventHeader* header = event.GetEvent()->GetHeader();
 
     unsigned runid_idx = run_id_map_[header->GetRunId()];
@@ -354,7 +354,7 @@ namespace dijetcore {
     return true;
   }
 
-  bool Run14QAWorker::TowerQA(TStarJetPicoReader& reader) {
+  bool Run14QAWorker::towerQA(TStarJetPicoReader& reader) {
     TStarJetPicoEventHeader* header = reader.GetEvent()->GetHeader();
     TList* towers = reader.GetListOfSelectedTowers();
     TIter nextTower(towers);
@@ -379,7 +379,7 @@ namespace dijetcore {
     return true;
   }
 
-  bool Run14QAWorker::TrackQA(TStarJetPicoReader& reader) {
+  bool Run14QAWorker::trackQA(TStarJetPicoReader& reader) {
     TStarJetPicoEventHeader* header = reader.GetEvent()->GetHeader();
     TList* tracks = reader.GetListOfSelectedTracks();
     TIter nextTrack(tracks);

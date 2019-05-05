@@ -25,12 +25,12 @@ namespace dijetcore {
     
     virtual ~DijetDefinition() { };
     
-    inline bool IsValid()    const {return lead && sub && lead->IsValid() && sub->IsValid();}
-    inline bool DoMatching() const {return lead && sub && lead->CanMatch() && sub->CanMatch();}
+    inline bool isValid()    const {return lead && sub && lead->isValid() && sub->isValid();}
+    inline bool doMatching() const {return lead && sub && lead->canMatch() && sub->canMatch();}
     
     // checks if two dijet definitions can use equivalent
     // clustersequences
-    bool EquivalentCluster(const DijetDefinition& rhs) const;
+    bool equivalentCluster(const DijetDefinition& rhs) const;
     
     MatchDef* lead;
     MatchDef* sub;

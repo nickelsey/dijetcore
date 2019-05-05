@@ -6,11 +6,11 @@ TEST(MatchDef, DefaultSettings) {
     dijetcore::MatchDef default_matchdef;
     dijetcore::JetDef default_jetdef;
 
-    EXPECT_FALSE(default_matchdef.IsValid());
-    EXPECT_FALSE(default_matchdef.CanMatch());
+    EXPECT_FALSE(default_matchdef.isValid());
+    EXPECT_FALSE(default_matchdef.canMatch());
 
-    EXPECT_EQ(default_matchdef.InitialJetDef(), default_jetdef);
-    EXPECT_EQ(default_matchdef.MatchedJetDef(), default_jetdef);
+    EXPECT_EQ(default_matchdef.initialJetDef(), default_jetdef);
+    EXPECT_EQ(default_matchdef.matchedJetDef(), default_jetdef);
 }
 
 TEST(MatchDef, ValidMatchDef) {
@@ -23,10 +23,10 @@ TEST(MatchDef, ValidMatchDef) {
   
     dijetcore::MatchDef cant_match(valid_jetdef, dijetcore::JetDef());
   
-    EXPECT_TRUE(cant_match.IsValid());
-    EXPECT_FALSE(cant_match.CanMatch());
-    EXPECT_EQ(cant_match.InitialJetDef(), valid_jetdef);
-    EXPECT_EQ(cant_match.MatchedJetDef(), dijetcore::JetDef());
+    EXPECT_TRUE(cant_match.isValid());
+    EXPECT_FALSE(cant_match.canMatch());
+    EXPECT_EQ(cant_match.initialJetDef(), valid_jetdef);
+    EXPECT_EQ(cant_match.matchedJetDef(), dijetcore::JetDef());
 }
 
 TEST(MatchDef, MatchingMatchDef) {
@@ -39,10 +39,10 @@ TEST(MatchDef, MatchingMatchDef) {
     dijetcore::JetDef valid_jetdef_alt(fastjet::antikt_algorithm, 0.5, area_def, bkg_def, area_def, bkg_sel);
     dijetcore::MatchDef can_match(valid_jetdef, valid_jetdef_alt);
   
-    EXPECT_TRUE(can_match.IsValid());
-    EXPECT_TRUE(can_match.CanMatch());
-    EXPECT_EQ(can_match.InitialJetDef(), valid_jetdef);
-    EXPECT_EQ(can_match.MatchedJetDef(), valid_jetdef_alt);
+    EXPECT_TRUE(can_match.isValid());
+    EXPECT_TRUE(can_match.canMatch());
+    EXPECT_EQ(can_match.initialJetDef(), valid_jetdef);
+    EXPECT_EQ(can_match.matchedJetDef(), valid_jetdef_alt);
 
 }
 
@@ -57,6 +57,6 @@ TEST(MatchDef, EquivalentCluster) {
     dijetcore::MatchDef can_match(valid_jetdef, valid_jetdef_alt);
     dijetcore::MatchDef can_match_alt(valid_jetdef_alt, valid_jetdef);
 
-    EXPECT_TRUE(can_match.EquivalentCluster(can_match));
-    EXPECT_FALSE(can_match.EquivalentCluster(can_match_alt));
+    EXPECT_TRUE(can_match.equivalentCluster(can_match));
+    EXPECT_FALSE(can_match.equivalentCluster(can_match_alt));
 }

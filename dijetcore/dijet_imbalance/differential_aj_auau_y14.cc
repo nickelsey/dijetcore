@@ -146,13 +146,13 @@ int main(int argc, char* argv[]) {
   dijetcore::DijetWorker worker(alg, lead_hard_pt, lead_R, lead_R_match, sublead_hard_pt, sublead_R,
                                 sublead_R_match, lead_const_hard_pt, lead_const_match_pt,
                                 sublead_const_hard_pt, sublead_const_match_pt, const_eta);
-  worker.ForceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
-  worker.ForceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
-  worker.ForceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
-  worker.ForceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
-  worker.Initialize();
+  worker.forceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
+  worker.forceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
+  worker.forceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
+  worker.forceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
+  worker.initialize();
   
-  std::set<std::string> keys = worker.Keys();
+  std::set<std::string> keys = worker.keys();
   
   // define centrality for run 14
   dijetcore::CentralityRun14 centrality;
@@ -378,11 +378,11 @@ int main(int argc, char* argv[]) {
       primary_particles = track_pt_min_selector(primary_particles);
       
       // run the worker
-      auto& worker_out = worker.Run(primary_particles);
+      auto& worker_out = worker.run(primary_particles);
       
       std::unordered_map<std::string, dijetcore::unique_ptr<dijetcore::OffAxisOutput>> off_axis_worker_out;
       if (off_axis_worker)
-        off_axis_worker_out = std::move(off_axis_worker->Run(worker, centrality_bin));
+        off_axis_worker_out = std::move(off_axis_worker->run(worker, centrality_bin));
 
       // process any found di-jet pairs
 
@@ -483,7 +483,7 @@ int main(int argc, char* argv[]) {
               off_axis_worker_out[key]->lead_jet.has_constituents() &&
               off_axis_worker_out[key]->sub_jet.has_constituents()) {
             
-            off_axis_centrality[key] = off_axis_worker->GetCentrality();
+            off_axis_centrality[key] = off_axis_worker->getCentrality();
 
             auto& off_axis_out = *off_axis_worker_out[key].get();
             lead_off_axis_jet_dict[key] = TLorentzVector(off_axis_out.lead_jet.px(),

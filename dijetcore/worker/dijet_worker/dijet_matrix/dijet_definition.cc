@@ -2,8 +2,8 @@
 
 namespace dijetcore {
   
-  bool DijetDefinition::EquivalentCluster(const DijetDefinition& rhs) const {
-    return lead->EquivalentCluster(*rhs.lead) && sub->EquivalentCluster(*rhs.sub);
+  bool DijetDefinition::equivalentCluster(const DijetDefinition& rhs) const {
+    return lead->equivalentCluster(*rhs.lead) && sub->equivalentCluster(*rhs.sub);
   }
   
 } // namespace dijetcore

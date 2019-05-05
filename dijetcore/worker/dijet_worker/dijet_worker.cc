@@ -48,20 +48,20 @@ namespace dijetcore {
   DijetMatrix(rhs) { }
   
   std::unordered_map<std::string, unique_ptr<ClusterOutput>>&
-  DijetWorker::Run(const std::vector<fastjet::PseudoJet>& input) {
+  DijetWorker::run(const std::vector<fastjet::PseudoJet>& input) {
     // clear the last event
-    ClearResults();
+    clearResults();
 
     // make sure the DijetMatrix is initialized,
     // if not, do so
-    if (Size() == 0) {
-      Initialize();
+    if (size() == 0) {
+      initialize();
     }
     
     // get the sorted list of all dijet definitions
-    auto& sorted_dijet_definitions = SortedDefinitions();
-    auto& sorted_dijet_keys = SortedKeys();
-    auto& sorted_dijet_min_pt = SortedDefinitionsMinPt();
+    auto& sorted_dijet_definitions = sortedDefinitions();
+    auto& sorted_dijet_keys = sortedKeys();
+    auto& sorted_dijet_min_pt = sortedDefinitionsMinPt();
     
     for (int i = 0; i < sorted_dijet_definitions.size(); ++i) {
 
@@ -88,12 +88,12 @@ namespace dijetcore {
         MatchDef* sub = dijet_def.second->sub;
         
         // run the clustering if its necessary
-        if (!RunClustering(input, *dijet_def.second, dijet_set_key, min_pt_lead, min_pt_sub)) {
+        if (!runClustering(input, *dijet_def.second, dijet_set_key, min_pt_lead, min_pt_sub)) {
           break;
         }
 
         // load proper cluster sequence
-        auto cl_sequences = LoadProperClusterSequence(dijet_set_key);
+        auto cl_sequences = loadProperClusterSequence(dijet_set_key);
         bool fail = false;
         for (auto& e : cl_sequences)
           if (e == nullptr)
@@ -111,8 +111,8 @@ namespace dijetcore {
 
         // now we can decide if we have hard core jets that satisfy our dijet criteria
         // get output jets, and make sure neither are zero length
-        std::vector<fastjet::PseudoJet> lead_hard_jets = fastjet::sorted_by_pt(lead->InitialJetDef().JetSelector()(cl_lead_hard->inclusive_jets()));
-        std::vector<fastjet::PseudoJet> sublead_hard_jets = fastjet::sorted_by_pt(sub->InitialJetDef().JetSelector()(cl_sub_hard->inclusive_jets()));
+        std::vector<fastjet::PseudoJet> lead_hard_jets = fastjet::sorted_by_pt(lead->initialJetDef().jetSelector()(cl_lead_hard->inclusive_jets()));
+        std::vector<fastjet::PseudoJet> sublead_hard_jets = fastjet::sorted_by_pt(sub->initialJetDef().jetSelector()(cl_sub_hard->inclusive_jets()));
         
         if (lead_hard_jets.size() == 0)
           continue;
@@ -121,20 +121,20 @@ namespace dijetcore {
         std::vector<fastjet::PseudoJet> lead_subtracted_hard;
         std::vector<fastjet::PseudoJet> sub_subtracted_hard;
         
-        if (EquivalentBkgEstimationInput(lead->InitialJetDef(), sub->InitialJetDef())) {
-          auto bkg_subtractor = GetBackgroundSubtractor(input, lead->InitialJetDef());
-          lead_subtracted_hard = lead->InitialJetDef().JetSelector()((*bkg_subtractor.second)(lead_hard_jets));
-          sub_subtracted_hard = sub->InitialJetDef().JetSelector()((*bkg_subtractor.second)(sublead_hard_jets));
+        if (equivalentBkgEstimationInput(lead->initialJetDef(), sub->initialJetDef())) {
+          auto bkg_subtractor = getBackgroundSubtractor(input, lead->initialJetDef());
+          lead_subtracted_hard = lead->initialJetDef().jetSelector()((*bkg_subtractor.second)(lead_hard_jets));
+          sub_subtracted_hard = sub->initialJetDef().jetSelector()((*bkg_subtractor.second)(sublead_hard_jets));
           dijet_container->lead_hard_rho = bkg_subtractor.first->rho();
           dijet_container->sublead_hard_rho = bkg_subtractor.first->rho();
           dijet_container->lead_hard_sigma = bkg_subtractor.first->sigma();
           dijet_container->sublead_hard_sigma = bkg_subtractor.first->sigma();
         }
         else {
-          auto bkg_subtractor_lead = GetBackgroundSubtractor(input, lead->InitialJetDef());
-          auto bkg_subtractor_sub = GetBackgroundSubtractor(input, sub->InitialJetDef());
-          lead_subtracted_hard = lead->InitialJetDef().JetSelector()((*bkg_subtractor_lead.second)(lead_hard_jets));
-          sublead_hard_jets = sub->InitialJetDef().JetSelector()((*bkg_subtractor_sub.second)(sublead_hard_jets));
+          auto bkg_subtractor_lead = getBackgroundSubtractor(input, lead->initialJetDef());
+          auto bkg_subtractor_sub = getBackgroundSubtractor(input, sub->initialJetDef());
+          lead_subtracted_hard = lead->initialJetDef().jetSelector()((*bkg_subtractor_lead.second)(lead_hard_jets));
+          sublead_hard_jets = sub->initialJetDef().jetSelector()((*bkg_subtractor_sub.second)(sublead_hard_jets));
           dijet_container->lead_hard_rho = bkg_subtractor_lead.first->rho();
           dijet_container->sublead_hard_rho = bkg_subtractor_sub.first->rho();
           dijet_container->lead_hard_sigma = bkg_subtractor_lead.first->sigma();
@@ -146,8 +146,8 @@ namespace dijetcore {
           continue;
         
         // select our trigger jet & recoil jet
-        fastjet::PseudoJet leading_hard_jet = SelectLeadingHardJet(lead_subtracted_hard);
-        fastjet::PseudoJet subleading_hard_jet = SelectSubLeadingHardJet(leading_hard_jet,
+        fastjet::PseudoJet leading_hard_jet = selectLeadingHardJet(lead_subtracted_hard);
+        fastjet::PseudoJet subleading_hard_jet = selectSubLeadingHardJet(leading_hard_jet,
                                                                          sub_subtracted_hard,
                                                                          dijet_def.second->dPhi);
 
@@ -180,14 +180,14 @@ namespace dijetcore {
         std::vector<fastjet::PseudoJet> lead_subtracted_matched;
         std::vector<fastjet::PseudoJet> sub_subtracted_matched;
 
-        std::pair<double, double> lead_match_bkg = SubtractBackgroundFromJets(input, lead->MatchedJetDef(),
+        std::pair<double, double> lead_match_bkg = subtractBackgroundFromJets(input, lead->matchedJetDef(),
                                                                               lead_match_jets, lead_subtracted_matched);
-        std::pair<double, double> sub_match_bkg = SubtractBackgroundFromJets(input, sub->MatchedJetDef(),
+        std::pair<double, double> sub_match_bkg = subtractBackgroundFromJets(input, sub->matchedJetDef(),
                                                                              sublead_match_jets, sub_subtracted_matched);
 
         // get the resulting jets and make sure neither are zero length
-        lead_subtracted_matched = fastjet::sorted_by_pt(lead->MatchedJetDef().JetSelector()(lead_subtracted_matched));
-        sub_subtracted_matched = fastjet::sorted_by_pt(sub->MatchedJetDef().JetSelector()(sub_subtracted_matched));
+        lead_subtracted_matched = fastjet::sorted_by_pt(lead->matchedJetDef().jetSelector()(lead_subtracted_matched));
+        sub_subtracted_matched = fastjet::sorted_by_pt(sub->matchedJetDef().jetSelector()(sub_subtracted_matched));
 
         if (lead_subtracted_matched.size() == 0 ||
             sub_subtracted_matched.size() == 0) {
@@ -196,8 +196,8 @@ namespace dijetcore {
         }
 
         // now we perform matching
-        fastjet::PseudoJet leading_matched_jet = MatchJets(leading_hard_jet, *lead, lead_subtracted_matched);
-        fastjet::PseudoJet subleading_matched_jet = MatchJets(subleading_hard_jet, *sub, sub_subtracted_matched);
+        fastjet::PseudoJet leading_matched_jet = matchJets(leading_hard_jet, *lead, lead_subtracted_matched);
+        fastjet::PseudoJet subleading_matched_jet = matchJets(subleading_hard_jet, *sub, sub_subtracted_matched);
 
         if (!leading_matched_jet.has_associated_cluster_sequence() ||
             !subleading_matched_jet.has_associated_cluster_sequence()) {
@@ -219,7 +219,7 @@ namespace dijetcore {
     return cluster_result;
   }
   
-  void DijetWorker::ClearResults() {
+  void DijetWorker::clearResults() {
     cluster_seq_lead_hard.clear();
     cluster_seq_sub_hard.clear();
     cluster_seq_lead_match.clear();
@@ -227,7 +227,7 @@ namespace dijetcore {
     cluster_result.clear();
   }
   
-  bool DijetWorker::RunClustering(const std::vector<fastjet::PseudoJet>& input, const DijetDefinition& def,
+  bool DijetWorker::runClustering(const std::vector<fastjet::PseudoJet>& input, const DijetDefinition& def,
                                   string cluster_identifier, double min_pt_lead, double min_pt_sub) {
     // check if the clustering has been run yet -
     // if not, run the clustering for this dijet set
@@ -243,18 +243,18 @@ namespace dijetcore {
       // first, the hard core jets
       
       // if the same cluster sequence can be used for both leading and subleading, do so
-      if (EquivalentClusterInput(lead->InitialJetDef(), sub->InitialJetDef())) {
-        lead_hard_seq = make_unique<fastjet::ClusterSequenceArea>(lead->InitialJetDef().ConstituentSelector()(input),
-                                                                  lead->InitialJetDef(),
-                                                                  lead->InitialJetDef().AreaDefinition());
+      if (equivalentClusterInput(lead->initialJetDef(), sub->initialJetDef())) {
+        lead_hard_seq = make_unique<fastjet::ClusterSequenceArea>(lead->initialJetDef().constituentSelector()(input),
+                                                                  lead->initialJetDef(),
+                                                                  lead->initialJetDef().areaDefinition());
       }
       else {
-        lead_hard_seq = make_unique<fastjet::ClusterSequenceArea>(lead->InitialJetDef().ConstituentSelector()(input),
-                                                                  lead->InitialJetDef(),
-                                                                  lead->InitialJetDef().AreaDefinition());
-        sub_hard_seq = make_unique<fastjet::ClusterSequenceArea>(sub->InitialJetDef().ConstituentSelector()(input),
-                                                                 sub->InitialJetDef(),
-                                                                 sub->InitialJetDef().AreaDefinition());
+        lead_hard_seq = make_unique<fastjet::ClusterSequenceArea>(lead->initialJetDef().constituentSelector()(input),
+                                                                  lead->initialJetDef(),
+                                                                  lead->initialJetDef().areaDefinition());
+        sub_hard_seq = make_unique<fastjet::ClusterSequenceArea>(sub->initialJetDef().constituentSelector()(input),
+                                                                 sub->initialJetDef(),
+                                                                 sub->initialJetDef().areaDefinition());
       }
       
       // insert into dictionary
@@ -281,7 +281,7 @@ namespace dijetcore {
       // if the jets do not satisfy our min pT cuts, we can continue - we will
       // identify potential leading & subleading jets, and check against min pT
       fastjet::PseudoJet tmp_lead = fastjet::sorted_by_pt(cluster_seq_lead_hard[cluster_identifier]->inclusive_jets())[0];
-      fastjet::Selector tmp_sel = !fastjet::SelectorCircle(lead->InitialJetDef().R());
+      fastjet::Selector tmp_sel = !fastjet::SelectorCircle(lead->initialJetDef().R());
       tmp_sel.set_reference(tmp_lead);
       
       fastjet::PseudoJet tmp_sub;
@@ -303,18 +303,18 @@ namespace dijetcore {
       // now we will perform the matching jet finding
       // for both leading & subleading jets
       
-      if (EquivalentClusterInput(lead->MatchedJetDef(), sub->MatchedJetDef())) {
-        lead_match_seq = make_unique<fastjet::ClusterSequenceArea>(lead->MatchedJetDef().ConstituentSelector()(input),
-                                                                   lead->MatchedJetDef(),
-                                                                   lead->MatchedJetDef().AreaDefinition());
+      if (equivalentClusterInput(lead->matchedJetDef(), sub->matchedJetDef())) {
+        lead_match_seq = make_unique<fastjet::ClusterSequenceArea>(lead->matchedJetDef().constituentSelector()(input),
+                                                                   lead->matchedJetDef(),
+                                                                   lead->matchedJetDef().areaDefinition());
       }
       else {
-        lead_match_seq = make_unique<fastjet::ClusterSequenceArea>(lead->MatchedJetDef().ConstituentSelector()(input),
-                                                                   lead->MatchedJetDef(),
-                                                                   lead->MatchedJetDef().AreaDefinition());
-        sub_match_seq = make_unique<fastjet::ClusterSequenceArea>(sub->MatchedJetDef().ConstituentSelector()(input),
-                                                                  sub->MatchedJetDef(),
-                                                                  sub->MatchedJetDef().AreaDefinition());
+        lead_match_seq = make_unique<fastjet::ClusterSequenceArea>(lead->matchedJetDef().constituentSelector()(input),
+                                                                   lead->matchedJetDef(),
+                                                                   lead->matchedJetDef().areaDefinition());
+        sub_match_seq = make_unique<fastjet::ClusterSequenceArea>(sub->matchedJetDef().constituentSelector()(input),
+                                                                  sub->matchedJetDef(),
+                                                                  sub->matchedJetDef().areaDefinition());
       }
       
       // insert into dictionary
@@ -329,7 +329,7 @@ namespace dijetcore {
     return true;
   }
   
-  std::array<fastjet::ClusterSequenceArea*, 4> DijetWorker::LoadProperClusterSequence(string cluster_identifier) {
+  std::array<fastjet::ClusterSequenceArea*, 4> DijetWorker::loadProperClusterSequence(string cluster_identifier) {
     std::array<fastjet::ClusterSequenceArea*, 4> ret{nullptr, nullptr, nullptr, nullptr};
     // now load the proper cluster sequences
     if (cluster_seq_lead_hard.find(cluster_identifier) == cluster_seq_lead_hard.end() ||
@@ -354,13 +354,13 @@ namespace dijetcore {
     return ret;
   }
   
-  fastjet::PseudoJet DijetWorker::SelectLeadingHardJet(const std::vector<fastjet::PseudoJet>& clustered_jets) {
+  fastjet::PseudoJet DijetWorker::selectLeadingHardJet(const std::vector<fastjet::PseudoJet>& clustered_jets) {
     // for now, only returns the highest momentum jet
     return fastjet::sorted_by_pt(clustered_jets)[0];
   }
   
   
-  fastjet::PseudoJet DijetWorker::SelectSubLeadingHardJet(const fastjet::PseudoJet& trigger_jet,
+  fastjet::PseudoJet DijetWorker::selectSubLeadingHardJet(const fastjet::PseudoJet& trigger_jet,
                                                           const std::vector<fastjet::PseudoJet>& sublead_candidates,
                                                           double dPhi_range) {
     // select the highest momentum jet that is dPhi > pi - dPhi_cut
@@ -374,46 +374,46 @@ namespace dijetcore {
     return dphi_selected_recoil[0];
   }
   
-  std::pair<double, double> DijetWorker::EstimateBackgroundDensity(const std::vector<fastjet::PseudoJet>& input,
+  std::pair<double, double> DijetWorker::estimateBackgroundDensity(const std::vector<fastjet::PseudoJet>& input,
                                                       const JetDef& jet_def) {
-    fastjet::JetMedianBackgroundEstimator bkg_est(jet_def.BackgroundSelector(),
-                                                  jet_def.BackgroundJetDef(),
-                                                  jet_def.BackgroundAreaDef());
-    bkg_est.set_particles(jet_def.ConstituentSelector()(input));
+    fastjet::JetMedianBackgroundEstimator bkg_est(jet_def.backgroundSelector(),
+                                                  jet_def.backgroundJetDef(),
+                                                  jet_def.backgroundAreaDef());
+    bkg_est.set_particles(jet_def.constituentSelector()(input));
     return {bkg_est.rho(), bkg_est.sigma()};
   }
   
-  std::pair<double, double> DijetWorker::SubtractBackgroundFromJets(const std::vector<fastjet::PseudoJet>& input,
+  std::pair<double, double> DijetWorker::subtractBackgroundFromJets(const std::vector<fastjet::PseudoJet>& input,
                                                                     const JetDef& jet_def,
                                                                     const std::vector<fastjet::PseudoJet>& jets,
                                                                     std::vector<fastjet::PseudoJet>& subtracted_jets) {
-    fastjet::JetMedianBackgroundEstimator bkg_est(jet_def.BackgroundSelector(),
-                                                  jet_def.BackgroundJetDef(),
-                                                  jet_def.BackgroundAreaDef());
-    bkg_est.set_particles(jet_def.ConstituentSelector()(input));
+    fastjet::JetMedianBackgroundEstimator bkg_est(jet_def.backgroundSelector(),
+                                                  jet_def.backgroundJetDef(),
+                                                  jet_def.backgroundAreaDef());
+    bkg_est.set_particles(jet_def.constituentSelector()(input));
     fastjet::Subtractor bkgdSubtractor(&bkg_est);
     bkgdSubtractor.set_use_rho_m(true);
     bkgdSubtractor.set_safe_mass(true);
-    subtracted_jets = fastjet::sorted_by_pt(jet_def.JetSelector()(bkgdSubtractor(jets)));
+    subtracted_jets = fastjet::sorted_by_pt(jet_def.jetSelector()(bkgdSubtractor(jets)));
     
     return {bkg_est.rho(), bkg_est.sigma()};
   }
   
   std::pair<unique_ptr<fastjet::JetMedianBackgroundEstimator>,
-  unique_ptr<fastjet::Subtractor>> DijetWorker::GetBackgroundSubtractor(const std::vector<fastjet::PseudoJet>& input,
+  unique_ptr<fastjet::Subtractor>> DijetWorker::getBackgroundSubtractor(const std::vector<fastjet::PseudoJet>& input,
                                                                         const JetDef& jet_def) {
     unique_ptr<fastjet::JetMedianBackgroundEstimator> bkg_est =
-    make_unique<fastjet::JetMedianBackgroundEstimator>(jet_def.BackgroundSelector(),
-                                                       jet_def.BackgroundJetDef(),
-                                                       jet_def.BackgroundAreaDef());
-    bkg_est->set_particles(jet_def.ConstituentSelector()(input));
+    make_unique<fastjet::JetMedianBackgroundEstimator>(jet_def.backgroundSelector(),
+                                                       jet_def.backgroundJetDef(),
+                                                       jet_def.backgroundAreaDef());
+    bkg_est->set_particles(jet_def.constituentSelector()(input));
     unique_ptr<fastjet::Subtractor> bkgdSubtractor = make_unique<fastjet::Subtractor>(bkg_est.get());
     bkgdSubtractor->set_use_rho_m(true);
     bkgdSubtractor->set_safe_mass(true);
     return {std::move(bkg_est), std::move(bkgdSubtractor)};
   }
   
-  fastjet::PseudoJet DijetWorker::MatchJets(const fastjet::PseudoJet& target,
+  fastjet::PseudoJet DijetWorker::matchJets(const fastjet::PseudoJet& target,
                                             const MatchDef& matchdef,
                                             const std::vector<fastjet::PseudoJet>& candidates) {
     // now match to the hard jets
@@ -425,7 +425,7 @@ namespace dijetcore {
     return tmp[0];
   }
   
-  bool DijetWorker::EquivalentAreaDefinition(const fastjet::AreaDefinition& a1, const fastjet::AreaDefinition& a2) {
+  bool DijetWorker::equivalentAreaDefinition(const fastjet::AreaDefinition& a1, const fastjet::AreaDefinition& a2) {
     
     // compare area definitions
     if (a1.area_type() != a2.area_type() ||
@@ -440,7 +440,7 @@ namespace dijetcore {
     return true;
   }
   
-  bool DijetWorker::EquivalentClusterInput(const JetDef& c1, const JetDef& c2) {
+  bool DijetWorker::equivalentClusterInput(const JetDef& c1, const JetDef& c2) {
     // compare the jet definition
     if (c1.R() != c2.R() ||
         c1.jet_algorithm() != c2.jet_algorithm() ||
@@ -449,7 +449,7 @@ namespace dijetcore {
       return false;
     
     // compare AreaDefinitions
-    if (!EquivalentAreaDefinition(c1.AreaDefinition(), c2.AreaDefinition()))
+    if (!equivalentAreaDefinition(c1.areaDefinition(), c2.areaDefinition()))
       return false;
     
     // compare constituent selector since I dont want to
@@ -457,30 +457,30 @@ namespace dijetcore {
     // description strings, so if they werent constructed
     // identically this will fail, even if they give
     // identical output
-    if (c1.ConstituentSelector().description() != c2.ConstituentSelector().description())
+    if (c1.constituentSelector().description() != c2.constituentSelector().description())
       return false;
     
     return true;
   }
   
-  bool DijetWorker::EquivalentBkgEstimationInput(const JetDef& c1, const JetDef& c2) {
+  bool DijetWorker::equivalentBkgEstimationInput(const JetDef& c1, const JetDef& c2) {
     
     // first. compare constituent and bkg jet selector
-    if (c1.ConstituentSelector().description() != c2.ConstituentSelector().description())
+    if (c1.constituentSelector().description() != c2.constituentSelector().description())
       return false;
     
-    if (c1.BackgroundSelector().description() != c2.BackgroundSelector().description())
+    if (c1.backgroundSelector().description() != c2.backgroundSelector().description())
       return false;
     
     // compare background area definitions
-    if (!EquivalentAreaDefinition(c1.BackgroundAreaDef(), c2.BackgroundAreaDef()))
+    if (!equivalentAreaDefinition(c1.backgroundAreaDef(), c2.backgroundAreaDef()))
       return false;
     
     // finally compare background jet definitions
-    if (c1.BackgroundJetDef().R() != c2.BackgroundJetDef().R() ||
-        c1.BackgroundJetDef().jet_algorithm() != c2.BackgroundJetDef().jet_algorithm() ||
-        c1.BackgroundJetDef().recombination_scheme() != c2.BackgroundJetDef().recombination_scheme() ||
-        c1.BackgroundJetDef().strategy() != c2.BackgroundJetDef().strategy())
+    if (c1.backgroundJetDef().R() != c2.backgroundJetDef().R() ||
+        c1.backgroundJetDef().jet_algorithm() != c2.backgroundJetDef().jet_algorithm() ||
+        c1.backgroundJetDef().recombination_scheme() != c2.backgroundJetDef().recombination_scheme() ||
+        c1.backgroundJetDef().strategy() != c2.backgroundJetDef().strategy())
       return false;
     
     return true;

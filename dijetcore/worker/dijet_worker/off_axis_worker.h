@@ -30,20 +30,20 @@ namespace dijetcore {
     // if you know which centralities you are interested in, then you can set them beforehand
     // this will speed up the process (-1 for open ended)
     // don't call this function multiple times - it has to run over the full tree
-    void SetCentralityRange(int centLow, int centHigh);
+    void setCentralityRange(int centLow, int centHigh);
     
-    std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& Run(DijetWorker& worker, int centrality);
+    std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& run(DijetWorker& worker, int centrality);
     
-    std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& OffAxisResult() {return off_axis_result_;}
+    std::unordered_map<std::string, unique_ptr<OffAxisOutput>>& offAxisResult() {return off_axis_result_;}
     
-    int GetCentrality();
+    int getCentrality();
     
   private:
     
-    bool LoadNextEvent(int centrality);
+    bool loadNextEvent(int centrality);
     
     std::pair<fastjet::PseudoJet, std::pair<double, double>>
-    RunCluster(MatchDef* def, const std::vector<fastjet::PseudoJet>& input, const fastjet::PseudoJet& reference);
+    runCluster(MatchDef* def, const std::vector<fastjet::PseudoJet>& input, const fastjet::PseudoJet& reference);
     
     std::vector<std::vector<unsigned>> pre_selected_events_;
     std::vector<unsigned> current_event_;

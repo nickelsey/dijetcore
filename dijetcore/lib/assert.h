@@ -36,9 +36,9 @@ if (!(assertion)) {                                                        \
     
     const std::vector<string>& MessageStack() const {return msg_stack_;}
     
-    void Append(const string& str);
+    void append(const string& str);
     
-    string Msg();
+    string message();
     
     const char* what() const noexcept override;
     

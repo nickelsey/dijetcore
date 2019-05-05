@@ -14,15 +14,15 @@ namespace dijetcore {
                                      const char* failure,
                                      const string& msg) :
     msg_stack_({MakeString("[assertion failure: ", GetFileName(string(file)), "::", line, "] "),
-               string(failure), " ", msg}), msg_(Msg()) {}
+               string(failure), " ", msg}), msg_(message()) {}
   
-  string AssertionFailure::Msg() {
+  string AssertionFailure::message() {
     return std::accumulate(msg_stack_.begin(), msg_stack_.end(), string(" "));
   }
   
-  void AssertionFailure::Append(const string& str) {
+  void AssertionFailure::append(const string& str) {
     msg_stack_.push_back(str);
-    msg_ = Msg();
+    msg_ = message();
   }
   
   const char* AssertionFailure::what() const noexcept {
