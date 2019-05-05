@@ -56,7 +56,7 @@ private:
 
   TTreeReaderValue<float> vx_;
   TTreeReaderValue<float> vy_;
-  TTreeReaderValue<float> w_;
+  TTreeReaderValue<double> w_;
 
   // event container
   std::vector<fastjet::PseudoJet> processed_;
