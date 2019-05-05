@@ -20,7 +20,7 @@ public:
 
   bool next();
   bool read(unsigned idx);
-  
+
   std::vector<fastjet::PseudoJet> &event() { return processed_; }
   float vx() { return *vx_; }
   float vy() { return *vy_; }
@@ -42,7 +42,7 @@ private:
   TTreeReader header_;
 
   // branches for the trees
-  TTreeReaderValue<float> xsec_;
+  TTreeReaderValue<double> xsec_;
   TTreeReaderValue<float> total_weight_;
   TTreeReaderValue<int> nevents_;
 

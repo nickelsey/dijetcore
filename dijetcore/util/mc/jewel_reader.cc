@@ -9,7 +9,7 @@ JewelReader::JewelReader(std::string &filename)
       header_("runInfo", &input_), xsec_(header_, "crossSection"),
       total_weight_(header_, "totalWeight"), nevents_(header_, "nEvents"),
       pid_(event_, "particleID"), status_(event_, "status"), px_(event_, "px"),
-      py_(event_, "py"), pz_(event_, "pz"), e_(event_, "e"), m_(event_, "m"),
+      py_(event_, "py"), pz_(event_, "pz"), e_(event_, "energy"), m_(event_, "m"),
       vx_(event_, "vertex_x"), vy_(event_, "vertex_y"), w_(event_, "weight") {
         header_.SetEntry(0);
       }
