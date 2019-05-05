@@ -276,8 +276,13 @@ int main(int argc, char* argv[]) {
   // define a selector to reject low momentum tracks
   fastjet::Selector track_pt_min_selector = fastjet::SelectorPtMin(0.2) && fastjet::SelectorAbsRapMax(1.0);
   
+  int event = 0;
   try {
     while (reader.next()) {
+      if (event % 500 == 0) {
+        LOG(INFO) << "Event: " << event;
+      }
+      event++;
       
       std::vector<fastjet::PseudoJet> primary_particles = reader.event();
       
