@@ -126,6 +126,7 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, double> vx_dict;
   std::unordered_map<std::string, double> vy_dict;
   std::unordered_map<std::string, double> w_dict;
+  std::unordered_map<std::string, double> trig_dict;
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_dict;
   std::unordered_map<std::string, TH1D*> lead_hard_jet_const_pt_dict;
   std::unordered_map<std::string, TH1D*> lead_hard_jet_const_dr_dict;
@@ -169,6 +170,7 @@ int main(int argc, char* argv[]) {
     vx_dict.insert({key, 0.0});
     vy_dict.insert({key, 0.0});
     w_dict.insert({key, 0.0});
+    trig_dict.insert({key, 0.0});
 
     lead_hard_jet_dict.insert({key, TLorentzVector()});
     lead_hard_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlconstpt").c_str(),
@@ -222,6 +224,7 @@ int main(int argc, char* argv[]) {
     tmp->Branch("vx", &vx_dict[key]);
     tmp->Branch("vy", &vy_dict[key]);
     tmp->Branch("w", &w_dict[key]);
+    tmp->Branch("e", &trig_dict[key]);
     tmp->Branch("jl", &lead_hard_jet_dict[key]);
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
     tmp->Branch("jlm", &lead_match_jet_dict[key]);
@@ -296,7 +299,7 @@ int main(int argc, char* argv[]) {
       std::vector<fastjet::PseudoJet> primary_particles = reader.event();
       
       // select tracks above the minimum pt threshold
-      primary_particles = track_pt_min_selector(primary_particles);
+      primary_particles = track_pt_min_selector(primary_particles);  
       
       // run the worker
       auto& worker_out = worker.run(primary_particles);
@@ -314,6 +317,14 @@ int main(int argc, char* argv[]) {
           vx_dict[key] = reader.vx();
           vy_dict[key] = reader.vy();
           w_dict[key] = reader.weight();
+
+          // find trigger
+          double trig_pt = 0.0;
+          for (auto& p : primary_particles) {
+            if (p.pt() > trig_pt)
+              trig_pt = p.pt();
+          }
+          trig_dict[key] = trig_pt;
 
           // set the four jets
           lead_hard_jet_dict[key] = TLorentzVector(out.lead_hard.px(),
