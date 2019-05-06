@@ -43,7 +43,7 @@ private:
 
   // branches for the trees
   TTreeReaderValue<double> xsec_;
-  TTreeReaderValue<float> total_weight_;
+  TTreeReaderValue<double> total_weight_;
   TTreeReaderValue<int> nevents_;
 
   TTreeReaderArray<short> pid_;
