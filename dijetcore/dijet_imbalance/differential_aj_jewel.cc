@@ -126,6 +126,7 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, double> vx_dict;
   std::unordered_map<std::string, double> vy_dict;
   std::unordered_map<std::string, double> w_dict;
+  std::unordered_map<std::string, double> xsec_dict;
   std::unordered_map<std::string, double> trig_dict;
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_dict;
   std::unordered_map<std::string, TH1D*> lead_hard_jet_const_pt_dict;
@@ -170,6 +171,7 @@ int main(int argc, char* argv[]) {
     vx_dict.insert({key, 0.0});
     vy_dict.insert({key, 0.0});
     w_dict.insert({key, 0.0});
+    xsec_dict.insert({key, 0.0});
     trig_dict.insert({key, 0.0});
 
     lead_hard_jet_dict.insert({key, TLorentzVector()});
@@ -317,6 +319,7 @@ int main(int argc, char* argv[]) {
           vx_dict[key] = reader.vx();
           vy_dict[key] = reader.vy();
           w_dict[key] = reader.weight();
+          xsec_dict[key] = reader.totalXsec();
 
           // find trigger
           double trig_pt = 0.0;
