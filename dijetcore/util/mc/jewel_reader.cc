@@ -36,6 +36,8 @@ void JewelReader::create_pseudojets() {
   clear();
 
   for (int i = 0; i < px_.GetSize(); ++i) {
+    if (status_[i] != 0)
+      continue;
     fastjet::PseudoJet tmp(px_[i], py_[i], pz_[i], e_[i]);
     tmp.set_user_index(pid_[i]);
     processed_.push_back(tmp);
