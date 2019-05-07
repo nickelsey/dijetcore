@@ -1,6 +1,7 @@
 #include "dijetcore/util/mc/jewel_reader.h"
 
 #include "dijetcore/lib/assert.h"
+#include "dijetcore/lib/logging.h"
 
 namespace dijetcore {
 
@@ -34,8 +35,12 @@ bool JewelReader::read(unsigned idx) {
 
 void JewelReader::create_pseudojets() {
   clear();
-
+  LOG(INFO) << "new event";
   for (int i = 0; i < px_.GetSize(); ++i) {
+    LOG(INFO) << "particle: " << i;
+    LOG(INFO) << "particle status: " << status_[i];
+    LOG(INFO) << "particle pid: " << pid_[i];
+    LOG(INFO) << "particle e: " << e_[i];
     if (status_[i] != 0)
       continue;
     fastjet::PseudoJet tmp(px_[i], py_[i], pz_[i], e_[i]);
