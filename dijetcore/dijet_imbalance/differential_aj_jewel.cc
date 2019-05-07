@@ -226,6 +226,7 @@ int main(int argc, char* argv[]) {
     tmp->Branch("vx", &vx_dict[key]);
     tmp->Branch("vy", &vy_dict[key]);
     tmp->Branch("w", &w_dict[key]);
+    tmp->Branch("xsec", &xsec_dict[key]);
     tmp->Branch("e", &trig_dict[key]);
     tmp->Branch("jl", &lead_hard_jet_dict[key]);
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
