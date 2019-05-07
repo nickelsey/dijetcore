@@ -128,6 +128,13 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, double> w_dict;
   std::unordered_map<std::string, double> xsec_dict;
   std::unordered_map<std::string, double> trig_dict;
+
+  // initiating partons
+  std::unordered_map<std::string, TLorentzVector> lead_parton_dict;
+  std::unordered_map<std::string, TLorentzVector> sub_parton_dict;
+  std::unordered_map<std::string, int> lead_parton_id_dict;
+  std::unordered_map<std::string, int> sub_parton_id_dict;
+
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_dict;
   std::unordered_map<std::string, TH1D*> lead_hard_jet_const_pt_dict;
   std::unordered_map<std::string, TH1D*> lead_hard_jet_const_dr_dict;
@@ -156,15 +163,7 @@ int main(int argc, char* argv[]) {
   std::unordered_map<std::string, double> sublead_match_rho_dict;
   std::unordered_map<std::string, double> sublead_match_sigma_dict;
   std::unordered_map<std::string, double> sublead_match_area_dict;
-  std::unordered_map<std::string, int> off_axis_centrality;
-  std::unordered_map<std::string, TLorentzVector> lead_off_axis_jet_dict;
-  std::unordered_map<std::string, int> lead_off_axis_nconst_dict;
-  std::unordered_map<std::string, double> lead_off_axis_rho_dict;
-  std::unordered_map<std::string, double> lead_off_axis_sigma_dict;
-  std::unordered_map<std::string, TLorentzVector> sublead_off_axis_jet_dict;
-  std::unordered_map<std::string, int> sublead_off_axis_nconst_dict;
-  std::unordered_map<std::string, double> sublead_off_axis_rho_dict;
-  std::unordered_map<std::string, double> sublead_off_axis_sigma_dict;
+
   // fill the maps first, so that they don't decide to resize/move themselves
   // after branch creation...
   for (auto key : keys) {
@@ -173,6 +172,11 @@ int main(int argc, char* argv[]) {
     w_dict.insert({key, 0.0});
     xsec_dict.insert({key, 0.0});
     trig_dict.insert({key, 0.0});
+
+    lead_parton_dict.insert({key, TLorentzVector()});
+    sub_parton_dict.insert({key, TLorentzVector()});
+    lead_parton_id_dict.insert({key, 0});
+    sub_parton_id_dict.insert({key, 0});
 
     lead_hard_jet_dict.insert({key, TLorentzVector()});
     lead_hard_jet_const_pt_dict.insert({key, new TH1D(dijetcore::MakeString(key, "jlconstpt").c_str(),
@@ -211,13 +215,7 @@ int main(int argc, char* argv[]) {
     sublead_match_sigma_dict.insert({key, 0});
     sublead_match_area_dict.insert({key, 0});
     
-    off_axis_centrality.insert({key, 0});
-    lead_off_axis_jet_dict.insert({key, TLorentzVector()});
-    lead_off_axis_rho_dict.insert({key, 0});
-    lead_off_axis_sigma_dict.insert({key, 0});
-    sublead_off_axis_jet_dict.insert({key, TLorentzVector()});
-    sublead_off_axis_rho_dict.insert({key, 0});
-    sublead_off_axis_sigma_dict.insert({key, 0});
+    
   }
   
   for (auto key : keys) {
@@ -228,12 +226,16 @@ int main(int argc, char* argv[]) {
     tmp->Branch("w", &w_dict[key]);
     tmp->Branch("xsec", &xsec_dict[key]);
     tmp->Branch("e", &trig_dict[key]);
+
+    tmp->Branch("pl", &lead_parton_dict[key]);
+    tmp->Branch("ps", &sub_parton_dict[key]);
+    tmp->Branch("plid", &lead_parton_id_dict[key]);
+    tmp->Branch("psid", &sub_parton_id_dict[key]);
+
     tmp->Branch("jl", &lead_hard_jet_dict[key]);
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
     tmp->Branch("jlm", &lead_match_jet_dict[key]);
     tmp->Branch("jsm", &sublead_match_jet_dict[key]);
-    tmp->Branch("jloa", &lead_off_axis_jet_dict[key]);
-    tmp->Branch("jsoa", &sublead_off_axis_jet_dict[key]);
     tmp->Branch("jlconst", &lead_hard_jet_nconst_dict[key]);
     tmp->Branch("jlrho", &lead_hard_rho_dict[key]);
     tmp->Branch("jlsig", &lead_hard_sigma_dict[key]);
@@ -250,13 +252,6 @@ int main(int argc, char* argv[]) {
     tmp->Branch("jsmrho", &sublead_match_rho_dict[key]);
     tmp->Branch("jsmsig", &sublead_match_sigma_dict[key]);
     tmp->Branch("jsmarea", &sublead_match_area_dict[key]);
-    tmp->Branch("oacent", &off_axis_centrality[key]);
-    tmp->Branch("jloaconst", &lead_off_axis_nconst_dict[key]);
-    tmp->Branch("jloarho", &lead_off_axis_rho_dict[key]);
-    tmp->Branch("jloasig", &lead_off_axis_sigma_dict[key]);
-    tmp->Branch("jsoaconst", &sublead_off_axis_nconst_dict[key]);
-    tmp->Branch("jsoarho", &sublead_off_axis_rho_dict[key]);
-    tmp->Branch("jsoasig", &sublead_off_axis_sigma_dict[key]);
     
     trees[key] = std::move(tmp);
     trees[key]->SetDirectory(0);
@@ -321,6 +316,14 @@ int main(int argc, char* argv[]) {
           vy_dict[key] = reader.vy();
           w_dict[key] = reader.weight();
           xsec_dict[key] = reader.totalXsec();
+
+          fastjet::PseudoJet lead_p = reader.leadingParton();
+          fastjet::PseudoJet sub_p = reader.subParton();
+
+          lead_parton_dict[key] = TLorentzVector(lead_p.px(), lead_p.py(), lead_p.pz(), lead_p.E());
+          sub_parton_dict[key] = TLorentzVector(sub_p.px(), sub_p.py(), sub_p.pz(), sub_p.E());
+          lead_parton_id_dict[key] = lead_p.user_index();
+          sub_parton_id_dict[key] = sub_p.user_index();
 
           // find trigger
           double trig_pt = 0.0;

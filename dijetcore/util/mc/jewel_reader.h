@@ -30,6 +30,9 @@ public:
   float totalWeight() {return *total_weight_;}
   unsigned nEvents() { return event_.GetTree()->GetEntries(); }
 
+  fastjet::PseudoJet leadingParton() {return lead_p_;}
+  fastjet::PseudoJet subParton() {return sub_p_;}
+
 private:
   // clears the container of pseudojets. Called by read() and next()
   void clear() { processed_.clear(); }
@@ -60,6 +63,8 @@ private:
 
   // event container
   std::vector<fastjet::PseudoJet> processed_;
+  fastjet::PseudoJet lead_p_;
+  fastjet::PseudoJet sub_p_;
 };
 
 } // namespace dijetcore

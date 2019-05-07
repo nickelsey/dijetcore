@@ -36,6 +36,16 @@ bool JewelReader::read(unsigned idx) {
 void JewelReader::create_pseudojets() {
   clear();
   for (int i = 0; i < px_.GetSize(); ++i) {
+    if (i == 0) {
+      lead_p_ = fastjet::PseudoJet(px_[i], py_[i], pz_[i], e_[i]);
+      lead_p_.set_user_index(pid_[i]);
+      continue;
+    }
+    else if (i == 1) {
+      sub_p_ = fastjet::PseudoJet(px_[i], py_[i], pz_[i], e_[i]);
+      sub_p_.set_user_index(pid_[i]);
+      continue;
+    }
     if (status_[i] != 1)
       continue;
     fastjet::PseudoJet tmp(px_[i], py_[i], pz_[i], e_[i]);
