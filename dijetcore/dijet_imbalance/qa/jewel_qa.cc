@@ -71,6 +71,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  // attempt to initialize the jewel reader
+  dijetcore::JewelReader reader(FLAGS_input);
+
   // build output directory if it doesn't exist, using boost::filesystem
   string output_dir = config["output_directory"];
   if (output_dir.empty())
@@ -83,9 +86,6 @@ int main(int argc, char *argv[]) {
                         dijetcore::MakeString(FLAGS_id) + ".root";
   TFile out(outfile_name.c_str(), "RECREATE");
 
-  // attempt to initialize the jewel reader
-  dijetcore::JewelReader reader(FLAGS_input);
-
   // define the clustering jet definition
   fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, 0.4);
 
@@ -95,6 +95,7 @@ int main(int argc, char *argv[]) {
   fastjet::Selector jet_sel =
       fastjet::SelectorPtMin(5.0) && fastjet::SelectorAbsRapMax(0.6);
 
+  LOG(INFO) << "building tree";
   TTree* result_tree = new TTree("T", "tree");
   TLorentzVector trigger_jet;
   TLorentzVector trigger_particle;
