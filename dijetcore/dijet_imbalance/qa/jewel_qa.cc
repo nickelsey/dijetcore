@@ -95,21 +95,21 @@ int main(int argc, char *argv[]) {
   fastjet::Selector jet_sel =
       fastjet::SelectorPtMin(5.0) && fastjet::SelectorAbsRapMax(0.6);
 
-  TTree result_tree("t", "t");
+  TTree* result_tree = new TTree("T", "tree");
   TLorentzVector trigger_jet;
   TLorentzVector trigger_particle;
   TLorentzVector p1, p2;
   double w, xsec;
   double vx, vy;
 
-  result_tree.Branch("tj", &trigger_jet);
-  result_tree.Branch("tp", &trigger_particle);
-  result_tree.Branch("p1", &p1);
-  result_tree.Branch("p2", &p2);
-  result_tree.Branch("w", &w);
-  result_tree.Branch("xsec", &xsec);
-  result_tree.Branch("vx", &vx);
-  result_tree.Branch("vy", &vy);
+  result_tree->Branch("tj", &trigger_jet);
+  result_tree->Branch("tp", &trigger_particle);
+  result_tree->Branch("p1", &p1);
+  result_tree->Branch("p2", &p2);
+  result_tree->Branch("w", &w);
+  result_tree->Branch("xsec", &xsec);
+  result_tree->Branch("vx", &vx);
+  result_tree->Branch("vy", &vy);
 
   int event = 0;
   size_t max_event = 0;
@@ -161,14 +161,14 @@ int main(int argc, char *argv[]) {
       p1 = TLorentzVector(lead_p.px(), lead_p.py(), lead_p.pz(), lead_p.E());
       p2 = TLorentzVector(sub_p.px(), sub_p.py(), sub_p.pz(), sub_p.E());
 
-      result_tree.Fill();
+      result_tree->Fill();
     }
   } catch (std::exception &e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
   }
 
   out.cd();
-
+  result_tree->Write();
   out.Close();
 
   gflags::ShutDownCommandLineFlags();
