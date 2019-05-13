@@ -53,7 +53,7 @@ DIJETCORE_DEFINE_int(nEvents, 10000, "number of events (-1 for all)");
 
 int main(int argc, char* argv[]) {
   
-  string usage = "Run 7 differential di-jet imbalance analysis routine";
+  string usage = "JEWEL differential di-jet imbalance analysis routine";
   
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
