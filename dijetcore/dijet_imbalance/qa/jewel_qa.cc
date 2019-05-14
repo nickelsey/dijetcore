@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
                                    results[0].pz(), results[0].E());
 
       // find trigger
-      trigger_jet = TLorentzVector();
+      trigger_particle = TLorentzVector();
       for (auto &p : primary_particles) {
         if (p.pt() > trigger_particle.Pt())
           trigger_particle = TLorentzVector(p.px(), p.py(), p.pz(), p.E());
