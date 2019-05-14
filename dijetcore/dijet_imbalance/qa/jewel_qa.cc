@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
     max_event = config["n_events"];
   try {
     while (reader.next()) {
+
       if (event >= max_event)
         break;
       if (event % 500 == 0) {
@@ -145,6 +146,7 @@ int main(int argc, char *argv[]) {
                                    results[0].pz(), results[0].E());
 
       // find trigger
+      trigger_jet = TLorentzVector();
       for (auto &p : primary_particles) {
         if (p.pt() > trigger_particle.Pt())
           trigger_particle = TLorentzVector(p.px(), p.py(), p.pz(), p.E());
