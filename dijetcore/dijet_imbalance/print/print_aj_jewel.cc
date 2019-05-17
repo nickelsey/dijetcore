@@ -36,12 +36,10 @@ DIJETCORE_DEFINE_string(input, "",
 DIJETCORE_DEFINE_string(outputDir, "results", "directory for output");
 DIJETCORE_DEFINE_bool(
     setScanning, true,
-    "fixes the initial radius, and scans through matched radii")
-    DIJETCORE_DEFINE_double(initRadius, 0.2, "initial radius when set to scan");
+    "fixes the initial radius, and scans through matched radii");
+DIJETCORE_DEFINE_double(initRadius, 0.2, "initial radius when set to scan");
 DIJETCORE_DEFINE_string(radii, "0.2,0.25,0.3,0.35,0.4", "radii to put in grid");
 DIJETCORE_DEFINE_string(constPt, "1.0,1.5,2.0,2.5,3.0", "radii to put in grid");
-DIJETCORE_DEFINE_bool(useSingleCentrality, true,
-                      "do things in 3 centrality bins or 1");
 DIJETCORE_DEFINE_string(centrality, "0-20%",
                         "string for centrality definitions (cosmetic)");
 DIJETCORE_DEFINE_double(trigger, 5.4, "trigger ET threshold");
@@ -78,7 +76,7 @@ int main(int argc, char *argv[]) {
   dijetcore::InitLogging(argv[0]);
 
   // set drawing preferences for histograms and graphs
-  //gStyle->SetOptStat(false);
+  // gStyle->SetOptStat(false);
   gStyle->SetOptFit(false);
   gStyle->SetOptTitle(1);
   gStyle->SetLegendBorderSize(0);
@@ -215,6 +213,9 @@ int main(int argc, char *argv[]) {
   std::unordered_map<string, TH1D *> event_vy_rotated;
   std::unordered_map<string, TH2D *> event_vxvy_rotated;
 
+  std::unordered_map<string, TH1D *> xsec_dist;
+  std::unordered_map<string, TH1D *> parton_pt;
+
   std::unordered_map<string, TH1D *> hard_lead_eta;
   std::unordered_map<string, TH1D *> hard_lead_phi;
   std::unordered_map<string, TH1D *> hard_lead_pt;
@@ -275,6 +276,7 @@ int main(int argc, char *argv[]) {
   coptslogz.leg_left_bound = 0.6;
   coptslogz.log_z = true;
   dijetcore::canvasOpts coptslogy;
+  coptslogy.do_legend = false;
   coptslogy.leg_left_bound = 0.6;
   coptslogy.log_y = true;
   dijetcore::canvasOpts cOptsBottomLeg;
@@ -385,6 +387,13 @@ int main(int argc, char *argv[]) {
     event_vxvy_rotated[key] =
         new TH2D(dijetcore::MakeString(hist_prefix, "eventvxvyrot").c_str(), "",
                  100, -10, 10, 100, -10, 10);
+    
+    xsec_dist[key] =
+        new TH1D(dijetcore::MakeString(hist_prefix, "xsec").c_str(), "",
+                 100, 0, 4e6);
+    parton_pt[key] =
+        new TH1D(dijetcore::MakeString(hist_prefix, "parton_pt").c_str(), "",
+                 100, 0, 100);
 
     // create the histograms
     hard_lead_eta[key] =
@@ -504,11 +513,8 @@ int main(int argc, char *argv[]) {
       // check for trigger pT
       if (**trigger_e < FLAGS_trigger)
         continue;
-      // if (**w > 0.2)
-      //   continue;
-      // if (**xsec > 20000)
-      //   continue;
-      if ((**pl).Pt() < 25)
+
+      if (**xsec > 4000000)
         continue;
 
       event_vx[key]->Fill(**vx);
@@ -526,7 +532,9 @@ int main(int argc, char *argv[]) {
       event_vy_rotated[key]->Fill(event_vector_rotated.Y());
       event_vxvy_rotated[key]->Fill(event_vector_rotated.X(),
                                     event_vector_rotated.Y(), // 1.0);
-                                    **w);
+                                    **xsec);
+      xsec_dist[key]->Fill(**xsec);
+      parton_pt[key]->Fill((*pl)->Pt(), **xsec);
 
       hard_lead_eta[key]->Fill((*jl)->Eta());
       hard_lead_phi[key]->Fill((*jl)->Phi());
@@ -609,19 +617,23 @@ int main(int argc, char *argv[]) {
         ->SetTextSize(0.038);
     dijetcore::Print2DSimple(event_vxvy_rotated[key], hopts, copts, out_loc,
                              "rotated_vxvy", "", "x [fm]", "y [fm]", "CONTZ");
+    dijetcore::PrettyPrint1D(xsec_dist[key], hopts, coptslogy, "", out_loc, "xsec", "", "xsec", "counts");
+    dijetcore::PrettyPrint1D(parton_pt[key], hopts, coptslogy, "", out_loc, "parton_pt", "", "p_{T}", "counts");
   }
 
   // now we will print out the average shift away from zero
   std::vector<TGraphErrors> shift_x(radii.size(), TGraphErrors(constpt.size()));
-  std::vector<TGraphErrors> shift_x2(radii.size(), TGraphErrors(constpt.size()));
+  std::vector<TGraphErrors> shift_x2(radii.size(),
+                                     TGraphErrors(constpt.size()));
   std::vector<TGraphErrors> shift_y(radii.size(), TGraphErrors(constpt.size()));
-  std::vector<TGraphErrors> shift_y2(radii.size(), TGraphErrors(constpt.size()));
+  std::vector<TGraphErrors> shift_y2(radii.size(),
+                                     TGraphErrors(constpt.size()));
   std::vector<TGraphErrors> shift_r(radii.size(), TGraphErrors(constpt.size()));
 
   for (int rad = 0; rad < radii.size(); ++rad) {
     for (int pt = 0; pt < constpt.size(); ++pt) {
-      auto& key = grid_keys[rad][pt];
-      TH2D* h = event_vxvy_rotated[key];
+      auto &key = grid_keys[rad][pt];
+      TH2D *h = event_vxvy_rotated[key];
 
       shift_x[rad].SetPoint(pt, constpt[pt], h->GetMean(1));
       shift_x2[rad].SetPoint(pt, constpt[pt], h->GetStdDev(1));
@@ -639,16 +651,16 @@ int main(int argc, char *argv[]) {
   shift_r[0].GetYaxis()->SetRangeUser(0, 1);
   shift_r[0].Draw();
   shift_r[0].SetLineColor(kBlack);
-  TLegend* legend1 = new TLegend(0.6,0.7,0.88,0.88);
+  TLegend *legend1 = new TLegend(0.6, 0.7, 0.88, 0.88);
   legend1->AddEntry(&shift_r[0], radii_string[0].c_str(), "lep");
   for (int i = 1; i < shift_r.size(); ++i) {
-    shift_r[i].SetLineColor(i+1);
-    shift_r[i].SetMarkerColor(i+1);
+    shift_r[i].SetLineColor(i + 1);
+    shift_r[i].SetMarkerColor(i + 1);
     shift_r[i].Draw("SAME");
     legend1->AddEntry(&shift_r[i], radii_string[i].c_str(), "lep");
   }
   legend1->Draw();
-  c1.SaveAs("testr.pdf");
+  c1.SaveAs(dijetcore::MakeString(FLAGS_outputDir, "/r.pdf").c_str());
 
   TCanvas c2;
   shift_y2[0].SetTitle("");
@@ -657,16 +669,16 @@ int main(int argc, char *argv[]) {
   shift_y2[0].GetYaxis()->SetRangeUser(2.5, 3);
   shift_y2[0].Draw();
   shift_y2[0].SetLineColor(kBlack);
-  TLegend* legend2 = new TLegend(0.6,0.7,0.88,0.88);
+  TLegend *legend2 = new TLegend(0.6, 0.7, 0.88, 0.88);
   legend2->AddEntry(&shift_y2[0], radii_string[0].c_str(), "lep");
   for (int i = 1; i < shift_y2.size(); ++i) {
-    shift_y2[i].SetLineColor(i+1);
-    shift_y2[i].SetMarkerColor(i+1);
+    shift_y2[i].SetLineColor(i + 1);
+    shift_y2[i].SetMarkerColor(i + 1);
     shift_y2[i].Draw("SAME");
     legend2->AddEntry(&shift_y2[i], radii_string[i].c_str(), "lep");
   }
   legend2->Draw();
-  c2.SaveAs("testy2.pdf");
+  c2.SaveAs(dijetcore::MakeString(FLAGS_outputDir, "/y2.pdf").c_str());
 
   TCanvas c3;
   shift_x[0].SetTitle("");
@@ -675,16 +687,16 @@ int main(int argc, char *argv[]) {
   shift_x[0].GetYaxis()->SetRangeUser(-1, 0);
   shift_x[0].Draw();
   shift_x[0].SetLineColor(kBlack);
-  TLegend* legend3 = new TLegend(0.6,0.7,0.88,0.88);
+  TLegend *legend3 = new TLegend(0.6, 0.7, 0.88, 0.88);
   legend2->AddEntry(&shift_x[0], radii_string[0].c_str(), "lep");
   for (int i = 0; i < shift_x.size(); ++i) {
-    shift_x[i].SetLineColor(i+1);
-    shift_x[i].SetMarkerColor(i+1);
+    shift_x[i].SetLineColor(i + 1);
+    shift_x[i].SetMarkerColor(i + 1);
     shift_x[i].Draw("SAME");
     legend3->AddEntry(&shift_x[i], radii_string[i].c_str(), "lep");
   }
   legend3->Draw();
-  c3.SaveAs("testx.pdf");
+  c3.SaveAs(dijetcore::MakeString(FLAGS_outputDir, "/x.pdf").c_str());
 
   return 0;
 }

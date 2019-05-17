@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
   // create output file from the given directory, name & id
   string outfile_name = output_dir + "/" + FLAGS_name +
                         dijetcore::MakeString(FLAGS_id) + ".root";
+  LOG(INFO) << "output file: " << outfile_name;
   TFile out(outfile_name.c_str(), "RECREATE");
 
   // define the clustering jet definition
@@ -169,7 +170,7 @@ int main(int argc, char *argv[]) {
   } catch (std::exception &e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
   }
-
+  LOG(INFO) << "writing to disk";
   out.cd();
   result_tree->Write();
   out.Close();
