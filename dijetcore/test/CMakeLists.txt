@@ -34,7 +34,7 @@ list(REMOVE_ITEM DC_SRCS ${DC_TEST_MAIN})
 endif(DC_TEST_MAIN)
 
 ## install headers
-install(FILES ${DC_HDRS} DESTINATION include/jetreader/lib)
+install(FILES ${DC_HDRS} DESTINATION include/dijetcore/lib)
 
 ## add subdirectories
 ## none

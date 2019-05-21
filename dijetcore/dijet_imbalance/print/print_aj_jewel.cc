@@ -666,7 +666,7 @@ int main(int argc, char *argv[]) {
   shift_y2[0].SetTitle("");
   shift_y2[0].GetXaxis()->SetTitle("p_T^{const} [GeV/c]");
   shift_y2[0].GetYaxis()->SetTitle("<y^2> [fm^2]");
-  shift_y2[0].GetYaxis()->SetRangeUser(2.5, 3);
+  shift_y2[0].GetYaxis()->SetRangeUser(2.7, 3.4);
   shift_y2[0].Draw();
   shift_y2[0].SetLineColor(kBlack);
   TLegend *legend2 = new TLegend(0.6, 0.7, 0.88, 0.88);
