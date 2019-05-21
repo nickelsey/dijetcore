@@ -1,4 +1,5 @@
 #include "dijetcore/util/root/root_print_utils.h"
+#include "dijetcore/util/root/grid_print_utils.h"
 #include "dijetcore/util/fastjet/dijet_key.h"
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/lib/logging.h"
