@@ -25,7 +25,7 @@ list(REMOVE_ITEM DC_SRCS ${DC_BENCH_SRCS})
 endif(DC_BENCH_SRCS)
 
 ## install headers
-install(FILES ${DC_HDRS} DESTINATION include/dijetcore/lib)
+install(FILES ${DC_HDRS} DESTINATION include/dijetcore/util/root)
 
 ## add subdirectories
 ## none

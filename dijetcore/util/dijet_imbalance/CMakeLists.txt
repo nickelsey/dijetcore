@@ -25,14 +25,10 @@ list(REMOVE_ITEM DC_SRCS ${DC_BENCH_SRCS})
 endif(DC_BENCH_SRCS)
 
 ## install headers
-install(FILES ${DC_HDRS} DESTINATION include/dijetcore/util)
+install(FILES ${DC_HDRS} DESTINATION include/dijetcore/util/dijet_imbalance)
 
 ## add subdirectories
-add_subdirectory(data)
-add_subdirectory(fastjet)
-add_subdirectory(root)
-add_subdirectory(mc)
-add_subdirectory(dijet_imbalance)
+## none
 
 ## export file lists to parent scope
 set(DC_SRCS ${DC_SRCS} PARENT_SCOPE)
