@@ -277,6 +277,13 @@ int main(int argc, char *argv[]) {
   std::vector<std::unordered_map<string, TH2D *>> hard_aj_test(num_datatypes);
   std::vector<std::unordered_map<string, TH2D *>> match_aj_test(num_datatypes);
 
+  std::vector<std::unordered_map<string, TH2D *>> hard_aj_full(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_aj_full(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_aj_full_test(
+      num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_aj_full_test(
+      num_datatypes);
+
   std::vector<std::unordered_map<string, TH2D *>> off_axis_aj(num_datatypes);
   std::vector<std::unordered_map<string, TH2D *>> off_axis_aj_test(
       num_datatypes);
@@ -290,6 +297,15 @@ int main(int argc, char *argv[]) {
   std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       match_aj_test_cent(num_datatypes);
 
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_aj_full_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      match_aj_full_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      hard_aj_full_test_cent(num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>>
+      match_aj_full_test_cent(num_datatypes);
+
   std::vector<std::unordered_map<string, std::vector<TH1D *>>> off_axis_aj_cent(
       num_datatypes);
   std::vector<std::unordered_map<string, std::vector<TH1D *>>>
@@ -299,6 +315,11 @@ int main(int argc, char *argv[]) {
       systematic_errors_hard;
   std::unordered_map<string, std::vector<TGraphErrors *>>
       systematic_errors_match;
+
+  std::unordered_map<string, std::vector<TGraphErrors *>>
+      systematic_errors_hard_full;
+  std::unordered_map<string, std::vector<TGraphErrors *>>
+      systematic_errors_match_full;
 
   std::unordered_map<string, std::vector<TH1D *>> hard_aj_cent_err_frac(
       num_datatypes);
@@ -313,6 +334,8 @@ int main(int argc, char *argv[]) {
   std::vector<TH2D *> ks_hard_err;
   std::vector<TH2D *> ks_match_err;
   std::vector<TH2D *> ks_oa;
+  std::vector<TH2D *> ks_hard_full;
+  std::vector<TH2D *> ks_match_full;
 
   for (int cent = 0; cent < refcent_string.size(); ++cent) {
     ks_hard.push_back(new TH2D(
@@ -335,6 +358,16 @@ int main(int argc, char *argv[]) {
         constpt.size(), -0.5, constpt.size() - 0.5));
     ks_oa.push_back(new TH2D(
         dijetcore::MakeString("ks_values_oa_", refcent_string[cent]).c_str(),
+        ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
+        constpt.size(), -0.5, constpt.size() - 0.5));
+    ks_hard_full.push_back(new TH2D(
+        dijetcore::MakeString("ks_values_hard_full_", refcent_string[cent])
+            .c_str(),
+        ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
+        constpt.size(), -0.5, constpt.size() - 0.5));
+    ks_match_full.push_back(new TH2D(
+        dijetcore::MakeString("ks_values_match_full_", refcent_string[cent])
+            .c_str(),
         ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
         constpt.size(), -0.5, constpt.size() - 0.5));
   }
@@ -586,6 +619,23 @@ int main(int argc, char *argv[]) {
                    "", cent_boundaries.size(), -0.5,
                    cent_boundaries.size() - 0.5, 10000, 0.0001, 0.9);
 
+      hard_aj_full[data_index][key] =
+          new TH2D(dijetcore::MakeString(hist_prefix, "hardajfull").c_str(), "",
+                   cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                   25, -0.4999, 0.9);
+      match_aj_full[data_index][key] =
+          new TH2D(dijetcore::MakeString(hist_prefix, "matchajfull").c_str(),
+                   "", cent_boundaries.size(), -0.5,
+                   cent_boundaries.size() - 0.5, 25, -0.4999, 0.9);
+      hard_aj_full_test[data_index][key] =
+          new TH2D(dijetcore::MakeString(hist_prefix, "hardajfulltest").c_str(),
+                   "", cent_boundaries.size(), -0.5,
+                   cent_boundaries.size() - 0.5, 10000, -0.4999, 0.9);
+      match_aj_full_test[data_index][key] = new TH2D(
+          dijetcore::MakeString(hist_prefix, "matchajfulltest").c_str(), "",
+          cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000,
+          -0.4999, 0.9);
+
       if (auau_off_axis_present) {
         off_axis_aj[data_index][key] =
             new TH2D(dijetcore::MakeString(hist_prefix, "offaxisaj").c_str(),
@@ -629,6 +679,19 @@ int main(int argc, char *argv[]) {
                                              fabs((*jlm)->Pt() - (*jsm)->Pt()) /
                                                  ((*jlm)->Pt() + (*jsm)->Pt()));
 
+        hard_aj_full[data_index][key]->Fill(cent_bin,
+                                            ((*jl)->Pt() - (*js)->Pt()) /
+                                                ((*jl)->Pt() + (*js)->Pt()));
+        match_aj_full[data_index][key]->Fill(cent_bin,
+                                             ((*jlm)->Pt() - (*jsm)->Pt()) /
+                                                 ((*jlm)->Pt() + (*jsm)->Pt()));
+        hard_aj_full_test[data_index][key]->Fill(
+            cent_bin,
+            ((*jl)->Pt() - (*js)->Pt()) / ((*jl)->Pt() + (*js)->Pt()));
+        match_aj_full_test[data_index][key]->Fill(
+            cent_bin,
+            ((*jlm)->Pt() - (*jsm)->Pt()) / ((*jlm)->Pt() + (*jsm)->Pt()));
+
         if (auau_off_axis_present) {
           off_axis_aj[data_index][key]->Fill(
               cent_bin, fabs((*jloa)->Pt() - (*jsoa)->Pt()) /
@@ -648,15 +711,22 @@ int main(int argc, char *argv[]) {
       match_aj_test_cent[data_index][key] =
           dijetcore::Split2DByBinNormalized(match_aj_test[data_index][key]);
 
+      hard_aj_full_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(hard_aj_full[data_index][key]);
+      match_aj_full_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(match_aj_full[data_index][key]);
+      hard_aj_full_test_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(hard_aj_full_test[data_index][key]);
+      match_aj_full_test_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(
+              match_aj_full_test[data_index][key]);
+
       if (auau_off_axis_present) {
         off_axis_aj_cent[data_index][key] =
             dijetcore::Split2DByBinNormalized(off_axis_aj[data_index][key]);
         off_axis_aj_test_cent[data_index][key] =
             dijetcore::Split2DByBinNormalized(
                 off_axis_aj_test[data_index][key]);
-      }
-
-      if (auau_off_axis_present) {
         Overlay1D(off_axis_aj_cent[data_index][key], refcent_string, hopts,
                   copts, out_loc, "off_axis_aj", "", "|A_{J}|",
                   "event fraction", "Centrality");
@@ -682,6 +752,15 @@ int main(int argc, char *argv[]) {
           match_aj_cent[PP][key][i], match_aj_cent[TOWP][key][i],
           match_aj_cent[TOWM][key][i], match_aj_cent[TRACKP][key][i],
           match_aj_cent[TRACKM][key][i]));
+
+      systematic_errors_hard_full[key].push_back(dijetcore::GetSystematic(
+          hard_aj_full_cent[PP][key][i], hard_aj_full_cent[TOWP][key][i],
+          hard_aj_full_cent[TOWM][key][i], hard_aj_full_cent[TRACKP][key][i],
+          hard_aj_full_cent[TRACKM][key][i]));
+      systematic_errors_match_full[key].push_back(dijetcore::GetSystematic(
+          match_aj_full_cent[PP][key][i], match_aj_full_cent[TOWP][key][i],
+          match_aj_full_cent[TOWM][key][i], match_aj_full_cent[TRACKP][key][i],
+          match_aj_full_cent[TRACKM][key][i]));
 
       // fill fractional errors
       hard_aj_cent_err_frac[key].push_back(dijetcore::GetFractionalError(
@@ -758,18 +837,39 @@ int main(int argc, char *argv[]) {
           systematic_errors_match[key][i], 0.0, 0.3, 0.0001, 0.9, matchPave,
           "Au+Au HT", "p+p HT #oplus Au+Au MB", hopts, copts, out_loc,
           "aj_match", "", "|A_{J}|", "event fraction");
+      if (off_axis_aj_cent[AUAU].count(key)) {
+        dijetcore::AjPrintout(match_aj_cent[AUAU][key][i],
+                              off_axis_aj_cent[AUAU][key][i], nullptr, 0.0, 0.3,
+                              0.0, 0.9, matchPave, "Au+Au HT",
+                              "Au+Au HC embedded", hopts, copts, out_loc,
+                              "aj_embed", "", "|A_{J}|", "event fraction");
+      }
       dijetcore::AjPrintout(
-          match_aj_cent[AUAU][key][i], off_axis_aj_cent[AUAU][key][i], nullptr,
-          0.0, 0.3, 0.0, 0.9, matchPave, "Au+Au HT", "Au+Au HC embedded", hopts,
-          copts, out_loc, "aj_embed", "", "|A_{J}|", "event fraction");
+          hard_aj_full_cent[AUAU][key][i], hard_aj_full_cent[PP][key][i],
+          systematic_errors_hard_full[key][i], 0.0, 0.25, -0.4999, 0.9,
+          hardPave, "Au+Au HT", "p+p HT #oplus Au+Au MB", hopts, copts, out_loc,
+          "aj_hard_full", "", "A_{J}", "event fraction");
+      dijetcore::AjPrintout(
+          match_aj_full_cent[AUAU][key][i], match_aj_full_cent[PP][key][i],
+          systematic_errors_match_full[key][i], 0.0, 0.3, -0.4999, 0.9,
+          matchPave, "Au+Au HT", "p+p HT #oplus Au+Au MB", hopts, copts,
+          out_loc, "aj_match_full", "", "A_{J}", "event fraction");
 
       // run statistical tests - get ks values for each
       double ks_hard_val = hard_aj_test_cent[AUAU][key][i]->KolmogorovTest(
           hard_aj_test_cent[PP][key][i]);
       double ks_match_val = match_aj_test_cent[AUAU][key][i]->KolmogorovTest(
           match_aj_test_cent[PP][key][i]);
-      double ks_oa_val = match_aj_test_cent[AUAU][key][i]->KolmogorovTest(
-          off_axis_aj_test_cent[AUAU][key][i]);
+      double ks_oa_val = 0;
+      if (off_axis_aj[AUAU][key])
+        ks_oa_val = match_aj_test_cent[AUAU][key][i]->KolmogorovTest(
+            off_axis_aj_test_cent[AUAU][key][i]);
+      double ks_hard_full_val =
+          hard_aj_full_test_cent[AUAU][key][i]->KolmogorovTest(
+              hard_aj_full_test_cent[PP][key][i]);
+      double ks_match_full_val =
+          match_aj_full_test_cent[AUAU][key][i]->KolmogorovTest(
+              match_aj_full_test_cent[PP][key][i]);
 
       // get the error on the ks test value for hard and matched di-jets by
       // comparing AuAu to the systematic variations of PP
@@ -805,6 +905,8 @@ int main(int argc, char *argv[]) {
       ks_oa[i]->SetBinContent(x_bin, y_bin, ks_oa_val);
       ks_hard_err[i]->SetBinContent(x_bin, y_bin, max_hard_varation);
       ks_match_err[i]->SetBinContent(x_bin, y_bin, max_match_varation);
+      ks_hard_full[i]->SetBinContent(x_bin, y_bin, ks_hard_full_val);
+      ks_match_full[i]->SetBinContent(x_bin, y_bin, ks_match_full_val);
 
     } // centrality
 
@@ -832,6 +934,10 @@ int main(int argc, char *argv[]) {
                                                  radii_string[rad].c_str());
       ks_match_err[cent]->GetXaxis()->SetBinLabel(rad + 1,
                                                   radii_string[rad].c_str());
+      ks_hard_full[cent]->GetXaxis()->SetBinLabel(rad + 1,
+                                                  radii_string[rad].c_str());
+      ks_match_full[cent]->GetXaxis()->SetBinLabel(rad + 1,
+                                                   radii_string[rad].c_str());
     }
 
     for (int pt = 0; pt < constpt_string.size(); ++pt) {
@@ -844,6 +950,10 @@ int main(int argc, char *argv[]) {
                                                  constpt_string[pt].c_str());
       ks_match_err[cent]->GetYaxis()->SetBinLabel(pt + 1,
                                                   constpt_string[pt].c_str());
+      ks_hard_full[cent]->GetYaxis()->SetBinLabel(pt + 1,
+                                                  constpt_string[pt].c_str());
+      ks_match_full[cent]->GetYaxis()->SetBinLabel(pt + 1,
+                                                   constpt_string[pt].c_str());
     }
     LOG(INFO) << "printing";
     Print2DSimple(ks_hard[cent], hopts, copts, out_dir, "ks_hard", "", "R",
@@ -856,6 +966,10 @@ int main(int argc, char *argv[]) {
                   "R", "p_{T}^{const}", "TEXT COLZ");
     Print2DSimple(ks_match_err[cent], hopts, copts, out_dir, "ks_match_err", "",
                   "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_hard_full[cent], hopts, copts, out_dir, "ks_hard_full", "",
+                  "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_match_full[cent], hopts, copts, out_dir, "ks_match_full",
+                  "", "R", "p_{T}^{const}", "TEXT COLZ");
   }
 
   // ------------------------------------------------------------------------------------
@@ -873,6 +987,10 @@ int main(int argc, char *argv[]) {
   std::vector<std::vector<std::vector<TPad *>>> hard_pads;
   std::vector<TCanvas *> canvas_match;
   std::vector<std::vector<std::vector<TPad *>>> match_pads;
+  std::vector<TCanvas *> canvas_hard_full;
+  std::vector<std::vector<std::vector<TPad *>>> hard_pads_full;
+  std::vector<TCanvas *> canvas_match_full;
+  std::vector<std::vector<std::vector<TPad *>>> match_pads_full;
   std::vector<TCanvas *> canvas_oa;
   std::vector<std::vector<std::vector<TPad *>>> oa_pads;
   std::vector<TCanvas *> canvas_hard_err_frac;
@@ -894,6 +1012,16 @@ int main(int argc, char *argv[]) {
         new TCanvas(dijetcore::MakeString("match_canvas_", cent).c_str()));
     match_pads.push_back(
         dijetcore::CanvasPartition(canvas_match[cent], radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
+    canvas_hard_full.push_back(
+        new TCanvas(dijetcore::MakeString("hard_canvas_full_", cent).c_str()));
+    hard_pads_full.push_back(
+        dijetcore::CanvasPartition(canvas_hard_full[cent], radii.size(),
+                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
+    canvas_match_full.push_back(
+        new TCanvas(dijetcore::MakeString("match_canvas_full_", cent).c_str()));
+    match_pads_full.push_back(
+        dijetcore::CanvasPartition(canvas_match_full[cent], radii.size(),
                                    constpt.size(), 0.10, 0.10, 0.10, 0.10));
     canvas_oa.push_back(
         new TCanvas(dijetcore::MakeString("oa_canvas_", cent).c_str()));
@@ -933,11 +1061,25 @@ int main(int argc, char *argv[]) {
       refcent_string.size());
   std::vector<std::vector<std::vector<TH1D *>>> pp_grid_match(
       refcent_string.size());
+
+  std::vector<std::vector<std::vector<TH1D *>>> auau_grid_hard_full(
+      refcent_string.size());
+  std::vector<std::vector<std::vector<TH1D *>>> auau_grid_match_full(
+      refcent_string.size());
+  std::vector<std::vector<std::vector<TH1D *>>> pp_grid_hard_full(
+      refcent_string.size());
+  std::vector<std::vector<std::vector<TH1D *>>> pp_grid_match_full(
+      refcent_string.size());
+
   std::vector<std::vector<std::vector<TH1D *>>> auau_oa_grid(
       refcent_string.size());
   std::vector<std::vector<std::vector<TGraphErrors *>>> error_grid_hard(
       refcent_string.size());
   std::vector<std::vector<std::vector<TGraphErrors *>>> error_grid_match(
+      refcent_string.size());
+  std::vector<std::vector<std::vector<TGraphErrors *>>> error_grid_hard_full(
+      refcent_string.size());
+  std::vector<std::vector<std::vector<TGraphErrors *>>> error_grid_match_full(
       refcent_string.size());
   std::vector<std::vector<std::vector<TH1D *>>> err_frac_grid_hard(
       refcent_string.size());
@@ -967,9 +1109,15 @@ int main(int argc, char *argv[]) {
     auau_grid_match[cent].resize(radii.size());
     pp_grid_hard[cent].resize(radii.size());
     pp_grid_match[cent].resize(radii.size());
+    auau_grid_hard_full[cent].resize(radii.size());
+    auau_grid_match_full[cent].resize(radii.size());
+    pp_grid_hard_full[cent].resize(radii.size());
+    pp_grid_match_full[cent].resize(radii.size());
     auau_oa_grid[cent].resize(radii.size());
     error_grid_hard[cent].resize(radii.size());
     error_grid_match[cent].resize(radii.size());
+    error_grid_hard_full[cent].resize(radii.size());
+    error_grid_match_full[cent].resize(radii.size());
     err_frac_grid_hard[cent].resize(radii.size());
     err_frac_grid_match[cent].resize(radii.size());
     pp_grid_hard_tow_p[cent].resize(radii.size());
@@ -985,9 +1133,15 @@ int main(int argc, char *argv[]) {
       auau_grid_match[cent][rad].resize(constpt.size());
       pp_grid_hard[cent][rad].resize(constpt.size());
       pp_grid_match[cent][rad].resize(constpt.size());
+      auau_grid_hard_full[cent][rad].resize(constpt.size());
+      auau_grid_match_full[cent][rad].resize(constpt.size());
+      pp_grid_hard_full[cent][rad].resize(constpt.size());
+      pp_grid_match_full[cent][rad].resize(constpt.size());
       auau_oa_grid[cent][rad].resize(constpt.size());
       error_grid_hard[cent][rad].resize(constpt.size());
       error_grid_match[cent][rad].resize(constpt.size());
+      error_grid_hard_full[cent][rad].resize(constpt.size());
+      error_grid_match_full[cent][rad].resize(constpt.size());
       err_frac_grid_hard[cent][rad].resize(constpt.size());
       err_frac_grid_match[cent][rad].resize(constpt.size());
       pp_grid_hard_tow_p[cent][rad].resize(constpt.size());
@@ -1004,9 +1158,20 @@ int main(int argc, char *argv[]) {
         auau_grid_match[cent][rad][pt] = match_aj_cent[AUAU][key][cent];
         pp_grid_hard[cent][rad][pt] = hard_aj_cent[PP][key][cent];
         pp_grid_match[cent][rad][pt] = match_aj_cent[PP][key][cent];
-        auau_oa_grid[cent][rad][pt] = off_axis_aj_cent[AUAU][key][cent];
+        auau_grid_hard_full[cent][rad][pt] = hard_aj_full_cent[AUAU][key][cent];
+        auau_grid_match_full[cent][rad][pt] =
+            match_aj_full_cent[AUAU][key][cent];
+        pp_grid_hard_full[cent][rad][pt] = hard_aj_full_cent[PP][key][cent];
+        pp_grid_match_full[cent][rad][pt] = match_aj_full_cent[PP][key][cent];
+        if (off_axis_aj_cent[AUAU].count(key)) {
+          auau_oa_grid[cent][rad][pt] = off_axis_aj_cent[AUAU][key][cent];
+        }
         error_grid_hard[cent][rad][pt] = systematic_errors_hard[key][cent];
         error_grid_match[cent][rad][pt] = systematic_errors_match[key][cent];
+        error_grid_hard_full[cent][rad][pt] =
+            systematic_errors_hard_full[key][cent];
+        error_grid_match_full[cent][rad][pt] =
+            systematic_errors_match_full[key][cent];
         err_frac_grid_hard[cent][rad][pt] = hard_aj_cent_err_frac[key][cent];
         err_frac_grid_match[cent][rad][pt] = match_aj_cent_err_frac[key][cent];
         pp_grid_hard_tow_p[cent][rad][pt] = hard_aj_cent[TOWP][key][cent];
@@ -1097,6 +1262,78 @@ int main(int argc, char *argv[]) {
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
+  for (auto &container1 : auau_grid_hard_full)
+    for (auto &container2 : container1)
+      for (auto &h : container2) {
+        h->SetLineColor(kBlack);
+        h->SetMarkerColor(kBlack);
+        h->SetLineWidth(1);
+        h->SetMarkerSize(0.5);
+        h->GetXaxis()->SetTitle("");
+        h->GetYaxis()->SetTitle("");
+        h->GetXaxis()->SetNdivisions(305);
+        h->GetYaxis()->SetNdivisions(305);
+        h->GetXaxis()->SetLabelFont(43);
+        h->GetXaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelFont(43);
+        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+      }
+
+  for (auto &container1 : auau_grid_match_full)
+    for (auto &container2 : container1)
+      for (auto &h : container2) {
+        h->SetLineColor(kBlack);
+        h->SetMarkerColor(kBlack);
+        h->SetLineWidth(1);
+        h->SetMarkerSize(0.5);
+        h->GetXaxis()->SetTitle("");
+        h->GetYaxis()->SetTitle("");
+        h->GetXaxis()->SetNdivisions(305);
+        h->GetYaxis()->SetNdivisions(305);
+        h->GetXaxis()->SetLabelFont(43);
+        h->GetXaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelFont(43);
+        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+      }
+
+  for (auto &container1 : pp_grid_hard_full)
+    for (auto &container2 : container1)
+      for (auto &h : container2) {
+        h->SetLineColor(kRed);
+        h->SetMarkerColor(kRed);
+        h->SetLineWidth(1);
+        h->SetMarkerSize(0.5);
+        h->GetXaxis()->SetTitle("");
+        h->GetYaxis()->SetTitle("");
+        h->GetXaxis()->SetNdivisions(305);
+        h->GetYaxis()->SetNdivisions(305);
+        h->GetXaxis()->SetLabelFont(43);
+        h->GetXaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelFont(43);
+        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+      }
+
+  for (auto &container1 : pp_grid_match_full)
+    for (auto &container2 : container1)
+      for (auto &h : container2) {
+        h->SetLineColor(kRed);
+        h->SetMarkerColor(kRed);
+        h->SetLineWidth(1);
+        h->SetMarkerSize(0.5);
+        h->GetXaxis()->SetTitle("");
+        h->GetYaxis()->SetTitle("");
+        h->GetXaxis()->SetNdivisions(305);
+        h->GetYaxis()->SetNdivisions(305);
+        h->GetXaxis()->SetLabelFont(43);
+        h->GetXaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelFont(43);
+        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+      }
+
   for (auto &container1 : auau_oa_grid)
     for (auto &container2 : container1)
       for (auto &h : container2) {
@@ -1134,6 +1371,40 @@ int main(int argc, char *argv[]) {
       }
 
   for (auto &container1 : error_grid_match)
+    for (auto &container2 : container1)
+      for (auto &h : container2) {
+        h->SetFillStyle(1001);
+        h->SetLineWidth(0);
+        h->SetMarkerSize(0);
+        h->GetXaxis()->SetTitle("");
+        h->GetYaxis()->SetTitle("");
+        h->GetXaxis()->SetNdivisions(305);
+        h->GetYaxis()->SetNdivisions(305);
+        h->GetXaxis()->SetLabelFont(43);
+        h->GetXaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelFont(43);
+        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+      }
+
+  for (auto &container1 : error_grid_hard_full)
+    for (auto &container2 : container1)
+      for (auto &h : container2) {
+        h->SetFillStyle(1001);
+        h->SetLineWidth(0);
+        h->SetMarkerSize(0);
+        h->GetXaxis()->SetTitle("");
+        h->GetYaxis()->SetTitle("");
+        h->GetXaxis()->SetNdivisions(305);
+        h->GetYaxis()->SetNdivisions(305);
+        h->GetXaxis()->SetLabelFont(43);
+        h->GetXaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelFont(43);
+        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+      }
+
+  for (auto &container1 : error_grid_match_full)
     for (auto &container2 : container1)
       for (auto &h : container2) {
         h->SetFillStyle(1001);
@@ -1461,6 +1732,27 @@ int main(int argc, char *argv[]) {
                          pp_grid_match[cent], error_grid_match[cent],
                          auau_grid_match[cent], match_opts, match_aj_text[cent],
                          invis, axis_text_aj, match_aj_name.string());
+
+    // print hard aj full
+    dijetcore::GridPrintOptions hard_opts_full;
+    hard_opts_full.layer_2_print = "e2";
+    boost::filesystem::path hard_aj_full_name = grid_dir;
+    hard_aj_full_name /= "hard_aj_full.pdf";
+    dijetcore::PrintGrid(
+        canvas_hard_full[cent], hard_pads_full[cent], pp_grid_hard_full[cent],
+        error_grid_hard_full[cent], auau_grid_hard_full[cent], hard_opts_full,
+        hard_aj_text[cent], invis, axis_text_aj, hard_aj_full_name.string());
+
+    // print match aj
+    dijetcore::GridPrintOptions match_opts_full;
+    match_opts_full.layer_2_print = "e2";
+    boost::filesystem::path match_aj_full_name = grid_dir;
+    match_aj_full_name /= "match_aj_full.pdf";
+    dijetcore::PrintGrid(canvas_match_full[cent], match_pads_full[cent],
+                         pp_grid_match_full[cent], error_grid_match_full[cent],
+                         auau_grid_match_full[cent], match_opts_full,
+                         match_aj_text[cent], invis, axis_text_aj,
+                         match_aj_full_name.string());
 
     // print off axis aj
     dijetcore::GridPrintOptions oa_opts;
