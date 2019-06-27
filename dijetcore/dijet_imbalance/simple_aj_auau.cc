@@ -73,7 +73,7 @@ fastjet::PseudoJet MatchJet(fastjet::PseudoJet &ref, double jet_radius,
 }
 
 int main(int argc, char *argv[]) {
-  string usage = "Differential di-jet imbalance secondary QA for analysis note";
+  string usage = "Simple y7 Aj analysis";
 
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
@@ -121,6 +121,7 @@ int main(int argc, char *argv[]) {
   TStarJetPicoReader *reader = new TStarJetPicoReader();
   dijetcore::InitReaderWithDefaults(reader, chain, config["bad_tower_list"],
                                     config["bad_run_list"]);
+  reader->GetEventCuts()->SetVertexZDiffCut(99999);
 
   // initialize Run 7 centrality
   dijetcore::CentralityRun7 centrality;
@@ -131,7 +132,7 @@ int main(int argc, char *argv[]) {
   LOG(INFO) << "trigger ids: " << triggers;
 
   // output tree
-  TTree *output = new TTree("analysis_qa", "analysis_qa");
+  TTree *output = new TTree("ResultTree", "aj for auau");
 
   // saved output for TTree (event level)
   unsigned runid = 0;
@@ -190,10 +191,12 @@ int main(int argc, char *argv[]) {
   fastjet::Selector jet_selector =
       fastjet::SelectorPtMin(config["sublead_jet_pt"]) &&
       fastjet::SelectorAbsEtaMax(1.0 - jet_radius);
+  fastjet::Selector match_jet_selector =
+      fastjet::SelectorPtMin(0.0) && fastjet::SelectorAbsEtaMax(1.0);
   fastjet::Selector bkg_selector =
       fastjet::SelectorAbsEtaMax(1.0 - jet_radius) *
       (!fastjet::SelectorNHardest(2));
-
+  int dijets = 0;
   try {
     while (reader->NextEvent()) {
       // Print out reader status every 10 seconds
@@ -248,35 +251,21 @@ int main(int argc, char *argv[]) {
       if (hc_candidates.size() < 2)
         continue;
 
+      if (hc_candidates[0].pt() < config["lead_jet_pt"])
+        continue;
+
       double dphi = hc_candidates[0].delta_phi_to(hc_candidates[1]);
 
-      if (fabs(fabs(dphi) - TMath::Pi()) > 0.4)
+      if (fabs(dphi) < TMath::Pi() - 0.4)
         continue;
+
+      if (gref >= 269)
+        dijets++;
 
       fastjet::PseudoJet lead = hc_candidates[0];
       fastjet::PseudoJet sublead = hc_candidates[1];
 
-      // perform clustering for matched jets
-      fastjet::ClusterSequenceArea match_cluster(primary_particles, jet_def,
-                                                 area_def);
-      std::vector<fastjet::PseudoJet> match_candidates =
-          fastjet::sorted_by_pt(jet_selector(match_cluster.inclusive_jets()));
-
-      // do background subtraction
-      fastjet::JetMedianBackgroundEstimator match_bkg_est(
-          bkg_selector, bkg_jet_def, area_def);
-      match_bkg_est.set_particles(primary_particles);
-      // Subtract A*rho from the original pT
-      fastjet::Subtractor match_bkg_sub(&match_bkg_est);
-      match_candidates =
-      fastjet::sorted_by_pt(match_bkg_sub(match_candidates));
-
-      // do matching to hard-core in dR
-      fastjet::PseudoJet lead_match =
-          MatchJet(lead, jet_radius, match_candidates);
-      fastjet::PseudoJet sub_match =
-          MatchJet(sublead, jet_radius, match_candidates);
-
+      // fill this part of the tree
       jl = TLorentzVector(lead.px(), lead.py(), lead.pz(), lead.E());
       js =
           TLorentzVector(sublead.px(), sublead.py(), sublead.pz(), sublead.E());
@@ -287,30 +276,57 @@ int main(int argc, char *argv[]) {
       for (auto &c : lead.constituents())
         if (c.pt() > 0.2)
           lead_constituents++;
-      for (auto &c : sublead.constituents())
+
+      for (auto c : sublead.constituents())
         if (c.pt() > 0.2)
           sublead_constituents++;
 
       jl_const = lead_constituents;
       js_const = sublead_constituents;
 
-      jlm = TLorentzVector(lead_match.px(), lead_match.py(), lead_match.pz(), lead_match.E());
-      jsm =
-          TLorentzVector(sub_match.px(), sub_match.py(), sub_match.pz(), sub_match.E());
+      // perform clustering for matched jets
+      fastjet::ClusterSequenceArea match_cluster(primary_particles, jet_def,
+                                                 area_def);
+      std::vector<fastjet::PseudoJet> match_candidates = fastjet::sorted_by_pt(
+          match_jet_selector(match_cluster.inclusive_jets()));
+
+      // do background subtraction
+      fastjet::JetMedianBackgroundEstimator match_bkg_est(
+          bkg_selector, bkg_jet_def, area_def);
+      match_bkg_est.set_particles(primary_particles);
+      // Subtract A*rho from the original pT
+      fastjet::Subtractor match_bkg_sub(&match_bkg_est);
+      match_candidates = fastjet::sorted_by_pt(match_bkg_sub(match_candidates));
+
+      // do matching to hard-core in dR
+      fastjet::PseudoJet lead_match =
+          MatchJet(lead, jet_radius, match_candidates);
+      fastjet::PseudoJet sub_match =
+          MatchJet(sublead, jet_radius, match_candidates);
+      if (lead_match.pt() < 0.001)
+        continue;
+      if (sub_match.pt() < 0.001)
+        continue;
+      jlm = TLorentzVector(lead_match.px(), lead_match.py(), lead_match.pz(),
+                           lead_match.E());
+      jsm = TLorentzVector(sub_match.px(), sub_match.py(), sub_match.pz(),
+                           sub_match.E());
+
       jlm_area = lead_match.area();
       jsm_area = sub_match.area();
 
       int lead_match_constituents = 0, sub_match_constituents = 0;
-      for (auto &c : lead.constituents())
+      for (auto &c : lead_match.constituents())
         if (c.pt() > 0.2)
           lead_match_constituents++;
-      for (auto &c : sublead.constituents())
+
+      for (auto &c : sub_match.constituents())
         if (c.pt() > 0.2)
           sub_match_constituents++;
 
       jlm_const = lead_match_constituents;
       jsm_const = sub_match_constituents;
-      
+
       output->Fill();
     }
   } catch (std::exception &e) {
@@ -319,6 +335,8 @@ int main(int argc, char *argv[]) {
 
   output->Write();
   out.Close();
+
+  std::cout << "number of dijets: " << dijets << std::endl;
 
   gflags::ShutDownCommandLineFlags();
   return 0;
