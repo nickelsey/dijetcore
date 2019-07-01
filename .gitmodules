@@ -4,6 +4,6 @@
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
 	url = https://github.com/google/benchmark.git
-[submodule "third_party/StPicoDst"]
-	path = third_party/StPicoDst
-	url = git@github.com:nickelsey/StPicoDst.git
+[submodule "third_party/jetreader"]
+	path = third_party/jetreader
+	url = git@github.com:nickelsey/jetreader.git

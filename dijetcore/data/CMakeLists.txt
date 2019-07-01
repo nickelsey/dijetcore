@@ -32,9 +32,9 @@ add_subdirectory(run14)
 add_subdirectory(general)
 
 ## if we have StPicoDstLibrary, add subdirectory
-if (BUILD_STPICODST)
+if (BUILD_JETREADER)
 add_subdirectory(stpicodst)
-endif (BUILD_STPICODST)
+endif (BUILD_JETREADER)
 
 
 ## export file lists to parent scope

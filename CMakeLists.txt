@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE RELEASE)
 option(BUILD_SHARED_LIBS "Build libdijetcore.so" ON)
 option(BUILD_TEST "Build test suite binaries" OFF)
 option(BUILD_BINARIES "Build analysis binaries" ON)
-option(BUILD_STPICODST "Build StPicoDst library and relevant analysis routines" OFF)
+option(BUILD_JETREADER "Build jetreader library and relevant analysis routines" ON)
 option(BUILD_EXPENSIVE "Build certain routines that have large compile times" ON)
 option(BUILD_DATA_QA_BINARIES "Routines used to analyze data quality and QA productions" ON)
 
@@ -34,9 +34,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing")
 
-if (BUILD_STPICODST) 
+if (BUILD_JETREADER) 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_VANILLA_ROOT_")
-endif (BUILD_STPICODST)
+endif (BUILD_JETREADER)
 
 
 ## forcing proper include lookup paths - must take

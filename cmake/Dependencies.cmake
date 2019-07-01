@@ -58,12 +58,20 @@ else(Protobuf_FOUND)
   message(FATAL_ERROR "protobuf library not found")
 endif(Protobuf_FOUND)
 
-## StPicoDst - built internally if requested
-if (BUILD_STPICODST)
-  add_subdirectory(third_party/StPicoDst)
-  list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
-  dc_include_directories(${PICO_INCLUDE_DIRS})
-endif(BUILD_STPICODST)
+## jetreader - built internally if requested
+if (BUILD_JETREADER)
+  add_subdirectory(third_party/jetreader)
+  list(APPEND DC_DEPENDENCY_LIBS StPicoEvent)
+  list(APPEND DC_DEPENDENCY_LIBS jetreader)
+  dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/jetreader)
+  dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/jetreader/third_party/StPicoEvent/SL18h)
+endif(BUILD_JETREADER)
+
+get_cmake_property(_variableNames VARIABLES)
+list (SORT _variableNames)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
 
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
