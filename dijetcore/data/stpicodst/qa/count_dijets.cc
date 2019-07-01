@@ -127,6 +127,8 @@ int main(int argc, char *argv[]) {
   reader.towerSelector()->setEtMin(0.2);
   reader.towerSelector()->rejectEventOnEtFailure();
 
+  reader.init();
+
   // turn on centrality for low/mid luminosity
   reader.centrality().loadCentralityDef(jetreader::CentDefId::Run14LowMid);
 
