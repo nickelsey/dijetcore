@@ -141,6 +141,8 @@ int main(int argc, char *argv[]) {
   unsigned gref = 0;
   unsigned ref = 0;
   unsigned cent = 0;
+  unsigned ntow = 0;
+  unsigned ntrack = 0;
   double vz = 0.0;
   TLorentzVector jl;
   TLorentzVector js;
@@ -160,6 +162,8 @@ int main(int argc, char *argv[]) {
   output->Branch("gref", &gref);
   output->Branch("ref", &ref);
   output->Branch("cent", &cent);
+  output->Branch("ntow", &ntow);
+  output->Branch("ntrack", &ntrack);
   output->Branch("vz", &vz);
   output->Branch("jl", &jl);
   output->Branch("js", &js);
@@ -200,6 +204,8 @@ int main(int argc, char *argv[]) {
   int dijets = 0;
   try {
     while (reader.next()) {
+      ntow = 0;
+      ntrack = 0;
 
       // set event quantities for tree
       runid = reader.picoDst()->event()->runId();
@@ -213,6 +219,14 @@ int main(int argc, char *argv[]) {
 
       // select tracks above the minimum pt threshold
       primary_particles = track_pt_min_selector(primary_particles);
+
+      // count primary particles and tracks
+      for (auto& p : primary_particles) {
+        if (p.user_info<jetreader::VectorInfo>().isPrimary())
+          ntrack++;
+        else
+          ntow++;
+      }
 
       // select hard-core constituents
       std::vector<fastjet::PseudoJet> hard_particles =
