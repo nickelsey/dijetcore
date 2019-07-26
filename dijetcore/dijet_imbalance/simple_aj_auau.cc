@@ -141,6 +141,7 @@ int main(int argc, char *argv[]) {
   unsigned ref = 0;
   unsigned cent = 0;
   double vz = 0.0;
+  double rho = 0.0;
   TLorentzVector jl;
   TLorentzVector js;
   TLorentzVector jlm;
@@ -159,6 +160,7 @@ int main(int argc, char *argv[]) {
   output->Branch("gref", &gref);
   output->Branch("ref", &ref);
   output->Branch("cent", &cent);
+  output->Branch("rho", &rho);
   output->Branch("vz", &vz);
   output->Branch("jl", &jl);
   output->Branch("js", &js);
@@ -314,6 +316,7 @@ int main(int argc, char *argv[]) {
 
       jlm_area = lead_match.area();
       jsm_area = sub_match.area();
+      rho = match_bkg_est.rho();
 
       int lead_match_constituents = 0, sub_match_constituents = 0;
       for (auto &c : lead_match.constituents())
