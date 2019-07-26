@@ -108,7 +108,8 @@ void printComparisonsByBin(
 
 int main(int argc, char *argv[]) {
   // setup command line flags
-  dijetcore::SetUsageMessage("Generate a tree of all unique runids");
+  dijetcore::SetUsageMessage(
+      "Generate plots of track/embedding QA for STAR embedding.");
   dijetcore::ParseCommandLineFlags(&argc, argv);
 
   // initialize logging - search for logging related command line flags
@@ -269,181 +270,164 @@ int main(int argc, char *argv[]) {
                                           {dca_ext_data_resum, "muDst"}};
 
   printComparisonsByBin(dca_ext_container, grid_names, cent_bins, pt_bins,
-                        hopts, coptslogy, FLAGS_outputDir, "dca_ext", "DCA [cm]",
+                        hopts, coptslogy, FLAGS_outputDir, "dca_ext",
+                        "DCA [cm]", "fraction", 0.0001, 0.5);
+
+  // print out bins from the 3D histograms in slices of pT and centrality
+
+  // printout pT
+  std::vector<TH1D *> mc_pt = ptByCent(mceta);
+  std::vector<TH1D *> reco_pt = ptByCent(recoeta);
+  std::vector<TH1D *> reco_pt_cuts = ptByCent(recoetacut);
+  std::vector<TH1D *> data_pt = ptByCent(dataeta);
+
+  std::vector<TH1D *> cent_0_5_pt{mc_pt[0], reco_pt[0], reco_pt_cuts[0]};
+  std::vector<TH1D *> cent_40_50_pt{mc_pt[5], reco_pt[5], reco_pt_cuts[5]};
+  std::vector<std::string> data_names{"MC", "reco", "reco w/ cuts"};
+  cent_0_5_pt.front()->GetYaxis()->SetRangeUser(0.01, 0.08);
+  cent_40_50_pt.front()->GetYaxis()->SetRangeUser(0.01, 0.08);
+
+  dijetcore::Overlay1D(cent_0_5_pt, data_names, hopts, copts, FLAGS_outputDir,
+                       "pt_0_5", "", "p_{T} [GeV/c]", "fraction");
+  dijetcore::Overlay1D(cent_40_50_pt, data_names, hopts, copts, FLAGS_outputDir,
+                       "pt_40_50", "", "p_{T} [GeV/c]", "fraction");
+
+  // get DCA as a function of pT
+  vec2D<TH1D *> dca_reco = splitByCentAndPtNormalized(recodca);
+  vec2D<TH1D *> dca_reco_cut = splitByCentAndPtNormalized(recodcacut);
+  vec2D<TH1D *> dca_data = splitByCentAndPtNormalized(datadca);
+
+  std::vector<unsigned> dca_pt_bins{1, 2, 3, 4};
+
+  vec2D<std::pair<std::string, std::string>> dca_grid_names;
+  dca_grid_names.resize(cent_bin_names.size());
+  for (int i = 0; i < cent_bin_names.size(); ++i) {
+    for (int j = 0; j < recodca->GetYaxis()->GetNbins(); ++j) {
+      std::string pt_bin =
+          dijetcore::MakeString(0.25 * j, "_pt_", 0.25 * (j + 1));
+      dca_grid_names[i].push_back({cent_bin_names[i], pt_bin});
+    }
+  }
+
+  histContainer<TH1D *> special_dca_container{
+      {dca_reco, "reco"}, {dca_reco_cut, "reco w/ cuts"}, {dca_data, "muDst"}};
+
+  printComparisonsByBin(special_dca_container, dca_grid_names, cent_bins,
+                        dca_pt_bins, hopts, coptslogy, FLAGS_outputDir,
+                        "lowdca", "DCA [cm]", "fraction", 0.0001, 0.5);
+
+  // rebin before more general printouts of eta/phi/nhit/dca/etc
+  mceta->RebinY(4);
+  mceta->RebinZ(2);
+  mcphi->RebinY(4);
+  mcphi->RebinZ(2);
+  recodca->RebinY(4);
+  recodca->RebinZ(2);
+  recoeta->RebinY(4);
+  recoeta->RebinZ(2);
+  recophi->RebinY(4);
+  recophi->RebinZ(2);
+  recodcascale->RebinY(4);
+  recodcascale->RebinZ(2);
+  recodcacut->RebinY(4);
+  recodcacut->RebinZ(2);
+  recoetacut->RebinY(4);
+  recoetacut->RebinZ(2);
+  recophicut->RebinY(4);
+  recophicut->RebinZ(2);
+  datadca->RebinY(4);
+  datadca->RebinZ(2);
+  dataeta->RebinY(4);
+  dataeta->RebinZ(2);
+  dataphi->RebinY(4);
+  dataphi->RebinZ(2);
+  datadcascale->RebinY(4);
+  datadcascale->RebinZ(2);
+
+  vec2D<TH1D *> mc_eta_split = splitByCentAndPtNormalized(mceta);
+  vec2D<TH1D *> reco_eta_split = splitByCentAndPtNormalized(recoeta);
+  vec2D<TH1D *> reco_cut_eta_split = splitByCentAndPtNormalized(recoetacut);
+  vec2D<TH1D *> data_eta_split = splitByCentAndPtNormalized(dataeta);
+
+  histContainer<TH1D *> eta_container{{mc_eta_split, "MC"},
+                                      {reco_eta_split, "reco"},
+                                      {reco_cut_eta_split, "reco w/ cuts"},
+                                      {data_eta_split, "muDst"}};
+
+  printComparisonsByBin(eta_container, grid_names, cent_bins, pt_bins, hopts,
+                        copts, FLAGS_outputDir, "eta", "#eta", "fraction", 0.02,
+                        0.06);
+
+  // phi
+  vec2D<TH1D *> mc_phi_split = splitByCentAndPtNormalized(mcphi);
+  vec2D<TH1D *> reco_phi_split = splitByCentAndPtNormalized(recophi);
+  vec2D<TH1D *> reco_cut_phi_split = splitByCentAndPtNormalized(recophicut);
+  vec2D<TH1D *> data_phi_split = splitByCentAndPtNormalized(dataphi);
+
+  histContainer<TH1D *> phi_container{{mc_phi_split, "MC"},
+                                      {reco_phi_split, "reco"},
+                                      {reco_cut_phi_split, "reco w/ cuts"},
+                                      {data_phi_split, "muDst"}};
+
+  printComparisonsByBin(phi_container, grid_names, cent_bins, pt_bins, hopts,
+                        copts, FLAGS_outputDir, "phi", "#phi", "fraction", 0.02,
+                        0.06);
+
+  // nhit
+  vec2D<TH1D *> reco_nhit_split = splitByCentAndPtNormalized(reconhit);
+  vec2D<TH1D *> reco_cut_nhit_split = splitByCentAndPtNormalized(reconhitcut);
+  vec2D<TH1D *> data_nhit_split = splitByCentAndPtNormalized(datanhit);
+
+  histContainer<TH1D *> nhit_container{{reco_nhit_split, "reco"},
+                                       {reco_cut_nhit_split, "reco w/ cuts"},
+                                       {data_nhit_split, "muDst"}};
+
+  printComparisonsByBin(nhit_container, grid_names, cent_bins, pt_bins, hopts,
+                        cOptsTopLeftLeg, FLAGS_outputDir, "nhit", "N_{hits}",
+                        "fraction", 0.00, 0.12);
+
+  // nhitposs
+  vec2D<TH1D *> reco_nhitposs_split = splitByCentAndPtNormalized(reconhitposs);
+  vec2D<TH1D *> reco_cut_nhitposs_split =
+      splitByCentAndPtNormalized(reconhitposscut);
+  vec2D<TH1D *> data_nhitposs_split = splitByCentAndPtNormalized(datanhitposs);
+
+  histContainer<TH1D *> nhitposs_container{
+      {reco_nhitposs_split, "reco"},
+      {reco_cut_nhitposs_split, "reco w/ cuts"},
+      {data_nhitposs_split, "muDst"}};
+
+  printComparisonsByBin(nhitposs_container, grid_names, cent_bins, pt_bins,
+                        hopts, cOptsTopLeftLeg, FLAGS_outputDir, "nhitposs",
+                        "N_{hits}^{possible}", "fraction", 0.00, 0.12);
+
+  // fitfrac
+  vec2D<TH1D *> reco_fitfrac_split = splitByCentAndPtNormalized(recofitfrac);
+  vec2D<TH1D *> reco_cut_fitfrac_split =
+      splitByCentAndPtNormalized(recofitfraccut);
+  vec2D<TH1D *> data_fitfrac_split = splitByCentAndPtNormalized(datafitfrac);
+
+  histContainer<TH1D *> fitfrac_container{
+      {reco_fitfrac_split, "reco"},
+      {reco_cut_fitfrac_split, "reco w/ cuts"},
+      {data_fitfrac_split, "muDst"}};
+
+  printComparisonsByBin(fitfrac_container, grid_names, cent_bins, pt_bins,
+                        hopts, cOptsTopLeftLeg, FLAGS_outputDir, "fitfrac",
+                        "N_{hit}/N_{hit}^{possible}", "fraction", 0.00, 0.15);
+
+  // dca
+  vec2D<TH1D *> reco_dca_split = splitByCentAndPtNormalized(recodca);
+  vec2D<TH1D *> reco_cut_dca_split = splitByCentAndPtNormalized(recodcacut);
+  vec2D<TH1D *> data_dca_split = splitByCentAndPtNormalized(datadca);
+
+  histContainer<TH1D *> dca_container{{reco_dca_split, "reco"},
+                                      {reco_cut_dca_split, "reco w/ cuts"},
+                                      {data_dca_split, "muDst"}};
+
+  printComparisonsByBin(dca_container, grid_names, cent_bins, pt_bins, hopts,
+                        coptslogy, FLAGS_outputDir, "dca", "DCA [cm]",
                         "fraction", 0.0001, 0.5);
-
-  // // print out bins from the 3D histograms in slices of pT and centrality
-
-  // // printout pT
-  // std::vector<TH1D *> mc_pt = ptByCent(mceta);
-  // std::vector<TH1D *> reco_pt = ptByCent(recoeta);
-  // std::vector<TH1D *> reco_pt_cuts = ptByCent(recoetacut);
-  // std::vector<TH1D *> data_pt = ptByCent(dataeta);
-
-  // std::vector<TH1D *> cent_0_5_pt{mc_pt[0], reco_pt[0], reco_pt_cuts[0]};
-  // std::vector<TH1D *> cent_40_50_pt{mc_pt[5], reco_pt[5], reco_pt_cuts[5]};
-  // std::vector<std::string> data_names{"MC", "reco", "reco w/ cuts"};
-  // cent_0_5_pt.front()->GetYaxis()->SetRangeUser(0.01, 0.08);
-  // cent_40_50_pt.front()->GetYaxis()->SetRangeUser(0.01, 0.08);
-
-  // dijetcore::Overlay1D(cent_0_5_pt, data_names, hopts, copts,
-  // FLAGS_outputDir,
-  //                      "pt_0_5", "", "p_{T} [GeV/c]", "fraction");
-  // dijetcore::Overlay1D(cent_40_50_pt, data_names, hopts, copts,
-  // FLAGS_outputDir,
-  //                      "pt_40_50", "", "p_{T} [GeV/c]", "fraction");
-
-  // // get DCA as a function of pT
-  // vec2D<TH1D *> dca_reco = splitByCentAndPtNormalized(recodca);
-  // vec2D<TH1D *> dca_reco_cut = splitByCentAndPtNormalized(recodcacut);
-  // vec2D<TH1D *> dca_data = splitByCentAndPtNormalized(datadca);
-
-  // std::vector<unsigned> dca_pt_bins{1, 2, 3, 4};
-
-  // vec2D<std::pair<std::string, std::string>> dca_grid_names;
-  // dca_grid_names.resize(cent_bin_names.size());
-  // for (int i = 0; i < cent_bin_names.size(); ++i) {
-  //   for (int j = 0; j < recodca->GetYaxis()->GetNbins(); ++j) {
-  //     std::string pt_bin =
-  //         dijetcore::MakeString(0.25 * j, "_pt_", 0.25 * (j + 1));
-  //     dca_grid_names[i].push_back({cent_bin_names[i], pt_bin});
-  //   }
-  // }
-
-  // histContainer<TH1D *> special_dca_container{
-  //     {dca_reco, "reco"}, {dca_reco_cut, "reco w/ cuts"}, {dca_data,
-  //     "muDst"}};
-
-  // printComparisonsByBin(special_dca_container, dca_grid_names, cent_bins,
-  //                       dca_pt_bins, hopts, coptslogy, FLAGS_outputDir,
-  //                       "lowdca", "DCA [cm]", "fraction", 0.0001, 0.5);
-
-  // // rebin before more general printouts of eta/phi/nhit/dca/etc
-  // mceta->RebinY(4);
-  // mceta->RebinZ(2);
-  // mcphi->RebinY(4);
-  // mcphi->RebinZ(2);
-  // recodca->RebinY(4);
-  // recodca->RebinZ(2);
-  // recoeta->RebinY(4);
-  // recoeta->RebinZ(2);
-  // recophi->RebinY(4);
-  // recophi->RebinZ(2);
-  // recodcascale->RebinY(4);
-  // recodcascale->RebinZ(2);
-  // recodcacut->RebinY(4);
-  // recodcacut->RebinZ(2);
-  // recoetacut->RebinY(4);
-  // recoetacut->RebinZ(2);
-  // recophicut->RebinY(4);
-  // recophicut->RebinZ(2);
-  // datadca->RebinY(4);
-  // datadca->RebinZ(2);
-  // dataeta->RebinY(4);
-  // dataeta->RebinZ(2);
-  // dataphi->RebinY(4);
-  // dataphi->RebinZ(2);
-  // datadcascale->RebinY(4);
-  // datadcascale->RebinZ(2);
-
-  // vec2D<TH1D *> mc_eta_split = splitByCentAndPtNormalized(mceta);
-  // vec2D<TH1D *> reco_eta_split = splitByCentAndPtNormalized(recoeta);
-  // vec2D<TH1D *> reco_cut_eta_split =
-  // splitByCentAndPtNormalized(recoetacut); vec2D<TH1D *> data_eta_split =
-  // splitByCentAndPtNormalized(dataeta);
-
-  // histContainer<TH1D *> eta_container{{mc_eta_split, "MC"},
-  //                                     {reco_eta_split, "reco"},
-  //                                     {reco_cut_eta_split, "reco w/ cuts"},
-  //                                     {data_eta_split, "muDst"}};
-
-  // printComparisonsByBin(eta_container, grid_names, cent_bins, pt_bins,
-  // hopts,
-  //                       copts, FLAGS_outputDir, "eta", "#eta", "fraction",
-  //                       0.02, 0.06);
-
-  // // phi
-  // vec2D<TH1D *> mc_phi_split = splitByCentAndPtNormalized(mcphi);
-  // vec2D<TH1D *> reco_phi_split = splitByCentAndPtNormalized(recophi);
-  // vec2D<TH1D *> reco_cut_phi_split =
-  // splitByCentAndPtNormalized(recophicut); vec2D<TH1D *> data_phi_split =
-  // splitByCentAndPtNormalized(dataphi);
-
-  // histContainer<TH1D *> phi_container{{mc_phi_split, "MC"},
-  //                                     {reco_phi_split, "reco"},
-  //                                     {reco_cut_phi_split, "reco w/ cuts"},
-  //                                     {data_phi_split, "muDst"}};
-
-  // printComparisonsByBin(phi_container, grid_names, cent_bins, pt_bins,
-  // hopts,
-  //                       copts, FLAGS_outputDir, "phi", "#phi", "fraction",
-  //                       0.02, 0.06);
-
-  // // nhit
-  // vec2D<TH1D *> reco_nhit_split = splitByCentAndPtNormalized(reconhit);
-  // vec2D<TH1D *> reco_cut_nhit_split =
-  // splitByCentAndPtNormalized(reconhitcut); vec2D<TH1D *> data_nhit_split =
-  // splitByCentAndPtNormalized(datanhit);
-
-  // histContainer<TH1D *> nhit_container{{reco_nhit_split, "reco"},
-  //                                      {reco_cut_nhit_split, "reco w/
-  //                                      cuts"}, {data_nhit_split, "muDst"}};
-
-  // printComparisonsByBin(nhit_container, grid_names, cent_bins, pt_bins,
-  // hopts,
-  //                       cOptsTopLeftLeg, FLAGS_outputDir, "nhit",
-  //                       "N_{hits}", "fraction", 0.00, 0.12);
-
-  // // nhitposs
-  // vec2D<TH1D *> reco_nhitposs_split =
-  // splitByCentAndPtNormalized(reconhitposs); vec2D<TH1D *>
-  // reco_cut_nhitposs_split =
-  //     splitByCentAndPtNormalized(reconhitposscut);
-  // vec2D<TH1D *> data_nhitposs_split =
-  // splitByCentAndPtNormalized(datanhitposs);
-
-  // histContainer<TH1D *> nhitposs_container{
-  //     {reco_nhitposs_split, "reco"},
-  //     {reco_cut_nhitposs_split, "reco w/ cuts"},
-  //     {data_nhitposs_split, "muDst"}};
-
-  // printComparisonsByBin(nhitposs_container, grid_names, cent_bins, pt_bins,
-  //                       hopts, cOptsTopLeftLeg, FLAGS_outputDir,
-  //                       "nhitposs", "N_{hits}^{possible}", "fraction",
-  //                       0.00, 0.12);
-
-  // // fitfrac
-  // vec2D<TH1D *> reco_fitfrac_split =
-  // splitByCentAndPtNormalized(recofitfrac); vec2D<TH1D *>
-  // reco_cut_fitfrac_split =
-  //     splitByCentAndPtNormalized(recofitfraccut);
-  // vec2D<TH1D *> data_fitfrac_split =
-  // splitByCentAndPtNormalized(datafitfrac);
-
-  // histContainer<TH1D *> fitfrac_container{
-  //     {reco_fitfrac_split, "reco"},
-  //     {reco_cut_fitfrac_split, "reco w/ cuts"},
-  //     {data_fitfrac_split, "muDst"}};
-
-  // printComparisonsByBin(fitfrac_container, grid_names, cent_bins, pt_bins,
-  //                       hopts, cOptsTopLeftLeg, FLAGS_outputDir, "fitfrac",
-  //                       "N_{hit}/N_{hit}^{possible}", "fraction", 0.00,
-  //                       0.15);
-
-  // // dca
-  // vec2D<TH1D *> reco_dca_split = splitByCentAndPtNormalized(recodca);
-  // vec2D<TH1D *> reco_cut_dca_split =
-  // splitByCentAndPtNormalized(recodcacut); vec2D<TH1D *> data_dca_split =
-  // splitByCentAndPtNormalized(datadca);
-
-  // histContainer<TH1D *> dca_container{{reco_dca_split, "reco"},
-  //                                     {reco_cut_dca_split, "reco w/ cuts"},
-  //                                     {data_dca_split, "muDst"}};
-
-  // printComparisonsByBin(dca_container, grid_names, cent_bins, pt_bins,
-  // hopts,
-  //                       coptslogy, FLAGS_outputDir, "dca", "DCA [cm]",
-  //                       "fraction", 0.0001, 0.5);
 
   google::ShutdownGoogleLogging();
   google::ShutDownCommandLineFlags();
