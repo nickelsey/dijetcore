@@ -36,18 +36,22 @@ namespace dijetcore {
     bool found_sublead;
     bool found_match;
     
+    fastjet::ClusterSequenceArea* lead_hard_seq;
     fastjet::PseudoJet lead_hard;
     double lead_hard_rho;
     double lead_hard_sigma;
     
+    fastjet::ClusterSequenceArea* sublead_hard_seq;
     fastjet::PseudoJet sublead_hard;
     double sublead_hard_rho;
     double sublead_hard_sigma;
     
+    fastjet::ClusterSequenceArea* lead_match_seq;
     fastjet::PseudoJet lead_match;
     double lead_match_rho;
     double lead_match_sigma;
     
+    fastjet::ClusterSequenceArea* sublead_match_seq;
     fastjet::PseudoJet sublead_match;
     double sublead_match_rho;
     double sublead_match_sigma;

@@ -109,6 +109,12 @@ namespace dijetcore {
         fastjet::ClusterSequenceArea* cl_sub_hard = cl_sequences[1];
         fastjet::ClusterSequenceArea* cl_sub_match = cl_sequences[3];
 
+        // set cluster sequences in return container
+        dijet_container->lead_hard_seq = cl_lead_hard;
+        dijet_container->sublead_hard_seq = cl_sub_hard;
+        dijet_container->lead_match_seq = cl_lead_match;
+        dijet_container->sublead_match_seq = cl_sub_match;
+
         // now we can decide if we have hard core jets that satisfy our dijet criteria
         // get output jets, and make sure neither are zero length
         std::vector<fastjet::PseudoJet> lead_hard_jets = fastjet::sorted_by_pt(lead->initialJetDef().jetSelector()(cl_lead_hard->inclusive_jets()));
@@ -142,8 +148,10 @@ namespace dijetcore {
         }
         
         // check to make sure we still have a leading jet
-        if (lead_subtracted_hard.size() == 0)
+        if (lead_subtracted_hard.size() == 0) {
+          cluster_result[key] = std::move(dijet_container);
           continue;
+        }
         
         // select our trigger jet & recoil jet
         fastjet::PseudoJet leading_hard_jet = selectLeadingHardJet(lead_subtracted_hard);
