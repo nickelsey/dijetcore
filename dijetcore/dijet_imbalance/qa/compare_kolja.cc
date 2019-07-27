@@ -117,7 +117,8 @@ int main(int argc, char *argv[]) {
     tmp.js = *k_js;
     tmp.jlm = *k_jlm;
     tmp.jsm = *k_jsm;
-
+    if (tmp.refmult < 269)
+      continue;
     all_event_keys.insert(key);
     kolja_events[key] = tmp;
   }
@@ -133,7 +134,8 @@ int main(int argc, char *argv[]) {
     tmp.js = *m_js;
     tmp.jlm = *m_jlm;
     tmp.jsm = *m_jsm;
-
+    if (tmp.refmult < 269)
+      continue;
     all_event_keys.insert(key);
     my_events[key] = tmp;
   }
@@ -145,18 +147,20 @@ int main(int argc, char *argv[]) {
   TH1D *unmatched_jlmpt = new TH1D("unmatchedleadmatchpt", ";p_{T}", 50, 0, 50);
   TH1D *unmatched_jsmpt = new TH1D("unmatchedsubmatchpt", ";p_{T}", 50, 0, 50);
   TH1D *unmatched_ref = new TH1D("unmatched_refmult", ";remfult", 100, 0, 600);
-  TH1D *unmatched_jleta = new TH1D("unmatchedleadpt", "#eta", 50, -1.0, 1.0);
-  TH1D *unmatched_jseta = new TH1D("unmatchedsubpt", "#eta", 50, -1.0, 1.0);
+  TH1D *unmatched_jleta = new TH1D("unmatchedleadeta", "#eta", 50, -1.0, 1.0);
+  TH1D *unmatched_jseta = new TH1D("unmatchedsubeta", "#eta", 50, -1.0, 1.0);
   TH1D *unmatched_jlphi =
-      new TH1D("unmatchedleadpt", "#phi", 50, -TMath::Pi(), TMath::Pi());
+      new TH1D("unmatchedleadphi", "#phi", 50, -TMath::Pi(), TMath::Pi());
   TH1D *unmatched_jsphi =
-      new TH1D("unmatchedsubpt", "#phi", 50, -TMath::Pi(), TMath::Pi());
+      new TH1D("unmatchedsubphi", "#phi", 50, -TMath::Pi(), TMath::Pi());
   TH1D *unmatched_aj_hard = new TH1D("unmatchedajhard", "A_{J}", 20, -0.3, 0.9);
   TH1D *unmatched_aj_matched =
       new TH1D("unmatchedajmatched", "A_{J}", 20, -0.3, 0.9);
 
   for (auto &key : all_event_keys) {
     if (!my_events.count(key)) {
+      LOG(INFO) << "kolja has event that I dont: " << key;
+      LOG(INFO) << "refmult: " << kolja_events[key].refmult;
       unmatched_rho->Fill(kolja_events[key].rho);
       unmatched_jlpt->Fill(kolja_events[key].jl.Pt());
       unmatched_jspt->Fill(kolja_events[key].js.Pt());
@@ -170,6 +174,8 @@ int main(int argc, char *argv[]) {
       unmatched_aj_hard->Fill(hardAj(kolja_events[key]));
       unmatched_aj_matched->Fill(matchAj(kolja_events[key]));
     } else if (!kolja_events.count(key)) {
+      LOG(INFO) << "I have event that Kolja doesnt: " << key;
+      LOG(INFO) << "refmult: " << my_events[key].refmult;
       unmatched_rho->Fill(my_events[key].rho);
       unmatched_jlpt->Fill(my_events[key].jl.Pt());
       unmatched_jspt->Fill(my_events[key].js.Pt());
