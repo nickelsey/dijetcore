@@ -140,7 +140,7 @@ namespace dijetcore {
           auto bkg_subtractor_lead = getBackgroundSubtractor(input, lead->initialJetDef());
           auto bkg_subtractor_sub = getBackgroundSubtractor(input, sub->initialJetDef());
           lead_subtracted_hard = lead->initialJetDef().jetSelector()((*bkg_subtractor_lead.second)(lead_hard_jets));
-          sublead_hard_jets = sub->initialJetDef().jetSelector()((*bkg_subtractor_sub.second)(sublead_hard_jets));
+          sub_subtracted_hard = sub->initialJetDef().jetSelector()((*bkg_subtractor_sub.second)(sublead_hard_jets));
           dijet_container->lead_hard_rho = bkg_subtractor_lead.first->rho();
           dijet_container->sublead_hard_rho = bkg_subtractor_sub.first->rho();
           dijet_container->lead_hard_sigma = bkg_subtractor_lead.first->sigma();
