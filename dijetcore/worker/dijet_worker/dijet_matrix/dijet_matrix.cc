@@ -338,11 +338,11 @@ namespace dijetcore {
                 double bkg_jet_eta_max = lead_const_eta - bkg_R;
                 
                 // build constituent & jet selectors
-                fastjet::Selector init_const_selector = fastjet::SelectorAbsRapMax(lead_const_eta)
+                fastjet::Selector init_const_selector = fastjet::SelectorAbsEtaMax(lead_const_eta)
                 && fastjet::SelectorPtMin(lead_const_pt_init);
-                fastjet::Selector match_const_selector = fastjet::SelectorAbsRapMax(lead_const_eta)
+                fastjet::Selector match_const_selector = fastjet::SelectorAbsEtaMax(lead_const_eta)
                 && fastjet::SelectorPtMin(lead_const_pt_match);
-                fastjet::Selector init_jet_selector = fastjet::SelectorAbsRapMax(jet_eta_max)
+                fastjet::Selector init_jet_selector = fastjet::SelectorAbsEtaMax(jet_eta_max)
                 && fastjet::SelectorPtMin(lead_jet_pt);
                 fastjet::Selector match_jet_selector = fastjet::SelectorIdentity();
                 
@@ -351,7 +351,7 @@ namespace dijetcore {
                 fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
                                                  ghost_def);
                 
-                fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(lead_const_eta - bkg_R)
+                fastjet::Selector bkg_selector = fastjet::SelectorAbsEtaMax(lead_const_eta - bkg_R)
                 * (!fastjet::SelectorNHardest(2));
                 fastjet::GhostedAreaSpec bkg_ghost_def(bkg_jet_eta_max + 2 * bkg_R, ghost_repeat_, ghost_area_,
                                                        grid_scatter_, pt_scatter_, mean_ghost_pt_);
@@ -400,14 +400,14 @@ namespace dijetcore {
                 double bkg_jet_eta_max = sub_const_eta - bkg_R;
                 
                 // build constituent & jet selectors
-                fastjet::Selector init_const_selector = fastjet::SelectorAbsRapMax(sub_const_eta)
+                fastjet::Selector init_const_selector = fastjet::SelectorAbsEtaMax(sub_const_eta)
                 && fastjet::SelectorPtMin(sub_const_pt_init);
-                fastjet::Selector match_const_selector = fastjet::SelectorAbsRapMax(sub_const_eta)
+                fastjet::Selector match_const_selector = fastjet::SelectorAbsEtaMax(sub_const_eta)
                 && fastjet::SelectorPtMin(sub_const_pt_match);
-                fastjet::Selector init_jet_selector = fastjet::SelectorAbsRapMax(jet_eta_max)
+                fastjet::Selector init_jet_selector = fastjet::SelectorAbsEtaMax(jet_eta_max)
                 && fastjet::SelectorPtMin(sub_jet_pt);
                 fastjet::Selector match_jet_selector = fastjet::SelectorIdentity();
-                fastjet::Selector bkg_selector = fastjet::SelectorAbsRapMax(sub_const_eta - bkg_R)
+                fastjet::Selector bkg_selector = fastjet::SelectorAbsEtaMax(sub_const_eta - bkg_R)
                 * (!fastjet::SelectorNHardest(2));
                 
                 fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,

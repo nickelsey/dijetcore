@@ -120,8 +120,10 @@ namespace dijetcore {
         std::vector<fastjet::PseudoJet> lead_hard_jets = fastjet::sorted_by_pt(lead->initialJetDef().jetSelector()(cl_lead_hard->inclusive_jets()));
         std::vector<fastjet::PseudoJet> sublead_hard_jets = fastjet::sorted_by_pt(sub->initialJetDef().jetSelector()(cl_sub_hard->inclusive_jets()));
         
-        if (lead_hard_jets.size() == 0)
+        if (lead_hard_jets.size() == 0) {
+          cluster_result[key] = std::move(dijet_container);
           continue;
+        }
         
         // now do background subtraction for these jets
         std::vector<fastjet::PseudoJet> lead_subtracted_hard;
