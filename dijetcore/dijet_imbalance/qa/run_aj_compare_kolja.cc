@@ -123,7 +123,8 @@ int main(int argc, char *argv[]) {
       boost::filesystem::copy_option::overwrite_if_exists);
 
   // read in kolja's tree
-  TFile kolja_file(string(config["kolja_tree"]).c_str(), "READ");
+  std::string kolja_filename = config["kolja_tree"];
+  TFile kolja_file(kolja_filename.c_str(), "READ");
 
   TTreeReader kolja_tree("ResultTree", &kolja_file);
   TTreeReaderValue<unsigned> k_run(kolja_tree, "runid");
