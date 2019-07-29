@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <string>
+#include <vector>
 
 #include "dijetcore/lib/flags.h"
 #include "dijetcore/lib/json.h"
@@ -83,6 +84,28 @@ string FormatJet(TLorentzVector &v) {
 string FormatJet(fastjet::PseudoJet &v) {
   return dijetcore::MakeString(std::fixed, std::setprecision(3), "pt: ", v.pt(),
                                ", eta: ", v.eta(), ", phi: ", v.phi_std());
+}
+
+double CompareVal(double val1, double val2, double tol) {
+  if (fabs(val1 - val2) > tol)
+    return false;
+  return true;
+}
+
+std::vector<string> CompareJets(fastjet::PseudoJet &m, fastjet::PseudoJet &k) {
+  std::vector<string> ret;
+  if (!CompareVal(m.pt(), k.pt(), 0.01)) {
+    ret.push_back(dijetcore::MakeString("my pt: ", m.pt(), " k pt: ", k.pt()));
+  }
+  if (!CompareVal(m.eta(), k.eta(), 0.01)) {
+    ret.push_back(
+        dijetcore::MakeString("my eta: ", m.eta(), " k eta: ", k.eta()));
+  }
+  if (!CompareVal(m.phi(), k.phi(), 0.01)) {
+    ret.push_back(
+        dijetcore::MakeString("my phi: ", m.phi(), " k phi: ", k.phi()));
+  }
+  return ret;
 }
 
 int main(int argc, char *argv[]) {
@@ -215,26 +238,20 @@ int main(int argc, char *argv[]) {
   // fastjet definitions
   double jet_radius = static_cast<double>(config["jet_radius"]);
 
-  fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, jet_radius);
-  fastjet::JetDefinition bkg_jet_def(fastjet::kt_algorithm, jet_radius);
-  fastjet::GhostedAreaSpec area_spec(1.0 + jet_radius, 1, 0.01);
-  fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
-                                   area_spec);
+  // create worker
+  dijetcore::DijetWorker worker(fastjet::antikt_algorithm, 20.0, 0.4, 0.4, 10.0,
+                                0.4, 0.4, 2.0, 0.2, 2.0, 0.2, 1.0);
+  worker.forceConstituentPtEquality(true);
+  worker.forceConstituentEtaEquality(true);
+  worker.forceJetResolutionEquality(true);
+  worker.forceMatchJetResolutionEquality(true);
 
-  // define track and jet selectors
-  fastjet::Selector track_pt_min_selector =
-      fastjet::SelectorPtMin(0.2) && fastjet::SelectorAbsRapMax(1.0);
-  fastjet::Selector hard_core_track_selector =
-      fastjet::SelectorPtMin(config["hard_core_cut"]) &&
-      fastjet::SelectorAbsRapMax(1.0);
-  fastjet::Selector jet_selector =
+  fastjet::Selector lead_selector =
+      fastjet::SelectorPtMin(config["lead_jet_pt"]) &&
+      fastjet::SelectorAbsEtaMax(1.0 - jet_radius);
+  fastjet::Selector sublead_selector =
       fastjet::SelectorPtMin(config["sublead_jet_pt"]) &&
-      fastjet::SelectorAbsRapMax(1.0 - jet_radius);
-  fastjet::Selector match_jet_selector =
-      fastjet::SelectorPtMin(0.0) && fastjet::SelectorAbsRapMax(1.0);
-  fastjet::Selector bkg_selector =
-      fastjet::SelectorAbsRapMax(1.0 - jet_radius) *
-      (!fastjet::SelectorNHardest(2));
+      fastjet::SelectorAbsEtaMax(1.0 - jet_radius);
 
   int dijets = 0;
   try {
@@ -269,16 +286,12 @@ int main(int argc, char *argv[]) {
       vz = header->GetPrimaryVertexZ();
       cent = centrality_bin;
 
+      if (gref < 269)
+        continue;
+
       bool kolja_found = false;
       if (kolja_events.count({runid, eventid}) && gref >= 269) {
-        LOG(INFO) << "";
         kolja_found = true;
-        LOG(INFO) << "kolja had a dijet in this event: "
-                  << std::pair<unsigned, unsigned>(runid, eventid);
-        unsigned tree_idx = kolja_events[{runid, eventid}];
-        kolja_tree.GetTree()->GetEntry(tree_idx);
-        LOG(INFO) << "leading jet: " << FormatJet(*k_jl);
-        LOG(INFO) << "subleading jet: " << FormatJet(*k_js);
       }
 
       // get the vector container
@@ -287,138 +300,97 @@ int main(int argc, char *argv[]) {
       std::vector<fastjet::PseudoJet> primary_particles;
       dijetcore::ConvertTStarJetVector(container, primary_particles);
 
-      // select tracks above the minimum pt threshold
-      primary_particles = track_pt_min_selector(primary_particles);
+      // run the worker
+      auto &worker_out = worker.run(primary_particles);
 
-      // select hard-core constituents
-      std::vector<fastjet::PseudoJet> hard_particles =
-          hard_core_track_selector(primary_particles);
-
-      // do hard-core jetfinding
-      fastjet::ClusterSequenceArea hc_cluster(hard_particles, jet_def,
-                                              area_def);
-      std::vector<fastjet::PseudoJet> hc_candidates =
-          fastjet::sorted_by_pt(jet_selector(hc_cluster.inclusive_jets()));
-
-      if (hc_candidates.size() < 2) {
+      for (auto &result : worker_out) {
+        std::string key = result.first;
+        dijetcore::ClusterOutput &out = *result.second.get();
+        if (out.foundDijet())
+          dijets++;
+        LOG(INFO) << "event: " << std::pair<unsigned, unsigned>(runid, eventid);
         if (kolja_found) {
-          if (hc_candidates.size() == 1) {
-            LOG(INFO) << "MISSED: ----------------------------------";
-            LOG(INFO) << "we did not find a jet pair to match, only one jet:";
-            LOG(INFO) << "leading jet: " << FormatJet(hc_candidates[0]);
-          } else {
-            LOG(INFO) << "MISSED: ----------------------------------";
-            LOG(INFO) << "we did not find a jet pair to match";
+          kolja_tree.GetTree()->GetEntry(kolja_events[{runid, eventid}]);
+        }
+        // case where kolja and I found di-jets
+        if (kolja_found && out.found_lead && out.found_sublead) {
+          fastjet::PseudoJet k_vl;
+          k_vl.reset_momentum_PtYPhiM((*k_jl).Pt(), (*k_jl).Eta(),
+                                      (*k_jl).Phi(), 0.0);
+          fastjet::PseudoJet k_vs;
+          k_vs.reset_momentum_PtYPhiM((*k_js).Pt(), (*k_js).Eta(),
+                                      (*k_js).Phi(), 0.0);
+
+          std::vector<string> lead_dif = CompareJets(out.lead_hard, k_vl);
+          std::vector<string> sub_dif = CompareJets(out.sublead_hard, k_vs);
+
+          if (lead_dif.size()) {
+            LOG(INFO) << "difference in lead jets:";
+            for (auto &e : lead_dif)
+              LOG(INFO) << e;
+            LOG(INFO) << "rho? : " << out.lead_hard_rho;
+          }
+          if (sub_dif.size()) {
+            LOG(INFO) << "difference in sublead jets:";
+            for (auto &e : sub_dif)
+              LOG(INFO) << e;
+            LOG(INFO) << "rho? : " << out.lead_hard_rho;
           }
         }
-        continue;
-      }
 
-      if (hc_candidates[0].pt() < config["lead_jet_pt"]) {
-        if (kolja_found) {
-          LOG(INFO) << "MISSED: ----------------------------------";
-          LOG(INFO) << "we found a pair but the leading jet's pT was below "
-                       "threshold: ";
-          LOG(INFO) << "leading jet: " << FormatJet(hc_candidates[0]);
+        // case where I found a di-jet pair and he didn't
+        if (out.found_lead && out.found_sublead && !kolja_found) {
+          LOG(INFO) << "We found di-jets that kolja did not";
+          LOG(INFO) << "lead jet: " << FormatJet(out.lead_hard);
+          LOG(INFO) << "sublead jet: " << FormatJet(out.sublead_hard);
+          LOG(INFO) << "dphi: " << out.lead_hard.delta_phi_to(out.sublead_hard);
         }
-        continue;
-      }
 
-      double dphi = hc_candidates[0].delta_phi_to(hc_candidates[1]);
+        // case where He found a di-jet pair and I did not
+        if (kolja_found && (!out.found_lead || !out.found_sublead)) {
+          LOG(INFO) << "Kolja found jets that we didn't";
+          LOG(INFO) << "lead jet: " << FormatJet(*k_jl);
+          LOG(INFO) << "sublead jet: " << FormatJet(*k_js);
 
-      if (fabs(dphi) < TMath::Pi() - 0.4) {
-        if (kolja_found) {
-          LOG(INFO) << "MISSED: ----------------------------------";
-          LOG(INFO) << "found a pair but they weren't back to back: ";
-          LOG(INFO) << "leading jet: " << FormatJet(hc_candidates[0]);
-          LOG(INFO) << "subleading jet: " << FormatJet(hc_candidates[0]);
-          LOG(INFO) << "dphi: "
-                    << hc_candidates[0].delta_phi_to(hc_candidates[1]);
+          // find most probable pair
+          auto lead_cl = out.lead_hard_seq;
+          auto sublead_cl = out.sublead_hard_seq;
+
+          auto lead_jets =
+              fastjet::sorted_by_pt(lead_selector(lead_cl->inclusive_jets()));
+          auto sublead_jets = fastjet::sorted_by_pt(
+              sublead_selector(sublead_cl->inclusive_jets()));
+
+          if (lead_jets.size() == 0) {
+            LOG(INFO) << "we don't have a lead jet";
+            if (sublead_jets.size()) {
+              LOG(INFO) << "highest pt jet: " << FormatJet(sublead_jets[0]);
+            }
+            continue;
+          }
+          auto lead_jet = lead_jets[0];
+          double dphi = 0.0;
+          fastjet::PseudoJet sublead_jet;
+          for (auto & j : sublead_jets) {
+            dphi = fabs(lead_jet.delta_phi_to(j));
+            if (dphi > TMath::Pi() - 0.4) {
+              sublead_jet = j;
+              break;
+            }
+          }
+
+          if (sublead_jet.pt() < config["sublead_jet_pt"]) {
+            LOG(INFO) << "we don't have a sublead jet";
+            continue;
+          }
+
+          LOG(INFO) << "my jets that are closest: ";
+          LOG(INFO) << "lead: " << FormatJet(lead_jet);
+          LOG(INFO) << "sublead: " << FormatJet(sublead_jet);
+          LOG(INFO) << "dphi: " << dphi;
+          LOG(INFO) << "rho? : " << out.lead_hard_rho;
         }
-        continue;
       }
-
-      if (gref >= 269)
-        dijets++;
-
-      fastjet::PseudoJet lead = hc_candidates[0];
-      fastjet::PseudoJet sublead = hc_candidates[1];
-
-      if (kolja_found) {
-        LOG(INFO) << "we found jets in this event as well: ";
-        LOG(INFO) << "leading jet: " << FormatJet(lead);
-        LOG(INFO) << "subleading jet: " << FormatJet(sublead);
-      } else if (gref >= 269) {
-        LOG(INFO) << "ERROR -------------------------";
-        LOG(INFO) << "We found jets that kolja didn't";
-        LOG(INFO) << "leading jet: " << FormatJet(lead);
-        LOG(INFO) << "subleading jet: " << FormatJet(sublead);
-      }
-
-      // fill this part of the tree
-      jl = TLorentzVector(lead.px(), lead.py(), lead.pz(), lead.E());
-      js =
-          TLorentzVector(sublead.px(), sublead.py(), sublead.pz(), sublead.E());
-      jl_area = lead.area();
-      js_area = sublead.area();
-
-      int lead_constituents = 0, sublead_constituents = 0;
-      for (auto &c : lead.constituents())
-        if (c.pt() > 0.2)
-          lead_constituents++;
-
-      for (auto c : sublead.constituents())
-        if (c.pt() > 0.2)
-          sublead_constituents++;
-
-      jl_const = lead_constituents;
-      js_const = sublead_constituents;
-
-      // perform clustering for matched jets
-      fastjet::ClusterSequenceArea match_cluster(primary_particles, jet_def,
-                                                 area_def);
-      std::vector<fastjet::PseudoJet> match_candidates = fastjet::sorted_by_pt(
-          match_jet_selector(match_cluster.inclusive_jets()));
-
-      // do background subtraction
-      fastjet::JetMedianBackgroundEstimator match_bkg_est(
-          bkg_selector, bkg_jet_def, area_def);
-      match_bkg_est.set_particles(primary_particles);
-      // Subtract A*rho from the original pT
-      fastjet::Subtractor match_bkg_sub(&match_bkg_est);
-      match_candidates = fastjet::sorted_by_pt(match_bkg_sub(match_candidates));
-
-      // do matching to hard-core in dR
-      fastjet::PseudoJet lead_match =
-          MatchJet(lead, jet_radius, match_candidates);
-      fastjet::PseudoJet sub_match =
-          MatchJet(sublead, jet_radius, match_candidates);
-      if (lead_match.pt() < 0.001)
-        continue;
-      if (sub_match.pt() < 0.001)
-        continue;
-      jlm = TLorentzVector(lead_match.px(), lead_match.py(), lead_match.pz(),
-                           lead_match.E());
-      jsm = TLorentzVector(sub_match.px(), sub_match.py(), sub_match.pz(),
-                           sub_match.E());
-
-      jlm_area = lead_match.area();
-      jsm_area = sub_match.area();
-      rho = match_bkg_est.rho();
-
-      int lead_match_constituents = 0, sub_match_constituents = 0;
-      for (auto &c : lead_match.constituents())
-        if (c.pt() > 0.2)
-          lead_match_constituents++;
-
-      for (auto &c : sub_match.constituents())
-        if (c.pt() > 0.2)
-          sub_match_constituents++;
-
-      jlm_const = lead_match_constituents;
-      jsm_const = sub_match_constituents;
-
-      output->Fill();
     }
   } catch (std::exception &e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
