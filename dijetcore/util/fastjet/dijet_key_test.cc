@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <string>
+#include <iostream>
 
 #include "dijetcore/util/fastjet/dijet_key.h"
 #include "dijetcore/worker/dijet_worker/dijet_matrix/jet_def.h"
@@ -16,8 +17,8 @@ TEST(DijetKey, CompleteKey) {
   
   string expected = "LEAD_INIT_R_0.4_alg_2_pt_20_const_eta_1_const_pt_2_MATCH_R_0.5_alg_2_pt_0_const_eta_1_const_pt_0.2_SUB_INIT_R_0.6_alg_2_pt_20_const_eta_1_const_pt_2_MATCH_R_0.7_alg_2_pt_0_const_eta_1_const_pt_0.2";
   
-  fastjet::Selector const_sel = fastjet::SelectorPtMin(0.2) && fastjet::SelectorAbsRapMax(1.0);
-  fastjet::Selector const_sel_2 = fastjet::SelectorPtMin(2.0) && fastjet::SelectorAbsRapMax(1.0);
+  fastjet::Selector const_sel = fastjet::SelectorPtMin(0.2) && fastjet::SelectorAbsEtaMax(1.0);
+  fastjet::Selector const_sel_2 = fastjet::SelectorPtMin(2.0) && fastjet::SelectorAbsEtaMax(1.0);
   fastjet::Selector jet_sel = fastjet::SelectorPtMin(10.0);
   fastjet::Selector jet_sel_2 = fastjet::SelectorPtMin(20.0);
   

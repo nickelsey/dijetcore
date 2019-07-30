@@ -131,11 +131,11 @@ string MakeKeyFromDijetDefinition(const DijetDefinition &def) {
   stream >> leadMatchPt;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      lead_match->initialJetDef().constituentSelector(), "|rap| <=");
+      lead_match->initialJetDef().constituentSelector(), "|eta| <=");
   stream >> leadInitConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      lead_match->matchedJetDef().constituentSelector(), "|rap| <=");
+      lead_match->matchedJetDef().constituentSelector(), "|eta| <=");
   stream >> leadMatchConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
@@ -169,11 +169,11 @@ string MakeKeyFromDijetDefinition(const DijetDefinition &def) {
   stream >> subMatchPt;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      sub_match->initialJetDef().constituentSelector(), "|rap| <=");
+      sub_match->initialJetDef().constituentSelector(), "|eta| <=");
   stream >> subInitConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      sub_match->matchedJetDef().constituentSelector(), "|rap| <=");
+      sub_match->matchedJetDef().constituentSelector(), "|eta| <=");
   stream >> subMatchConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
@@ -230,11 +230,11 @@ string MakeSortedKeyFromDijetDefinition(const DijetDefinition &def) {
   stream >> leadMatchAlg;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      lead_match->initialJetDef().constituentSelector(), "|rap| <=");
+      lead_match->initialJetDef().constituentSelector(), "|eta| <=");
   stream >> leadInitConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      lead_match->matchedJetDef().constituentSelector(), "|rap| <=");
+      lead_match->matchedJetDef().constituentSelector(), "|eta| <=");
   stream >> leadMatchConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
@@ -260,11 +260,11 @@ string MakeSortedKeyFromDijetDefinition(const DijetDefinition &def) {
   stream >> subMatchAlg;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      sub_match->initialJetDef().constituentSelector(), "|rap| <=");
+      sub_match->initialJetDef().constituentSelector(), "|eta| <=");
   stream >> subInitConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
-      sub_match->matchedJetDef().constituentSelector(), "|rap| <=");
+      sub_match->matchedJetDef().constituentSelector(), "|eta| <=");
   stream >> subMatchConstEta;
   stream.clear();
   stream << ExtractDoubleFromSelector(
