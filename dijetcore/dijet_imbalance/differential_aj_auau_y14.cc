@@ -141,6 +141,19 @@ int main(int argc, char* argv[]) {
   std::set<double> sublead_R_match        = dijetcore::ParseArgString<double>(FLAGS_subMatchR);
   std::set<double> sublead_hard_pt        = dijetcore::ParseArgString<double>(FLAGS_subJetPt);
   
+  LOG(INFO) << "grid variables ";
+  LOG(INFO) << "constituent eta: " << const_eta;
+  LOG(INFO) << "lead constituent hard pt cut: " << lead_const_hard_pt;
+  LOG(INFO) << "lead constituent match pt cut: " << lead_const_match_pt;
+  LOG(INFO) << "lead hard R: " << lead_R;
+  LOG(INFO) << "lead match R: " << lead_R_match;
+  LOG(INFO) << "lead hard jet pt: " << lead_hard_pt;
+  LOG(INFO) << "sublead constituent hard pt cut: " << sublead_const_hard_pt;
+  LOG(INFO) << "sublead constituent match pt cut: " << sublead_const_match_pt;
+  LOG(INFO) << "sublead hard R: " << sublead_R;
+  LOG(INFO) << "sublead match R: " << sublead_R_match;
+  LOG(INFO) << "sublead hard jet pt: " << sublead_hard_pt;
+
   // here we can initialize the worker
   LOG(INFO) << "initializing worker...";
   dijetcore::DijetWorker worker(alg, lead_hard_pt, lead_R, lead_R_match, sublead_hard_pt, sublead_R,
