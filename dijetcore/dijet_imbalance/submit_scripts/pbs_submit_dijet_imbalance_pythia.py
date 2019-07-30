@@ -187,7 +187,7 @@ def main(args):
                 qsubfail = qsubfail + 1
             njobs = njobs - 1
 
-        if qsubfail > args.maxFailures:
+        if qsubfail > int(args.maxFailures):
             print("qsub failure too many times - exiting")
             return
 
