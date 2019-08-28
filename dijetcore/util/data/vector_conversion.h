@@ -8,7 +8,6 @@
 #include "fastjet/PseudoJet.hh"
 #include "TStarJetVectorContainer.h"
 #include "TStarJetVector.h"
-#include "Pythia8/Pythia.h"
 
 namespace dijetcore {
   
