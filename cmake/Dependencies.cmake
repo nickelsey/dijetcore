@@ -8,8 +8,9 @@ find_package(FastJet REQUIRED)
 list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
 
 ## eventstructure
-find_package(TStarJetPico REQUIRED)
-list(APPEND DC_DEPENDENCY_LIBS ${TSTARJETPICO_LIBRARIES})
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
+list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
+dc_include_directories(${PICO_INCLUDE_DIRS})
 
 ## boost
 set(Boost_USE_STATIC_LIBS OFF)
