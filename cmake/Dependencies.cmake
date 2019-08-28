@@ -7,10 +7,6 @@ set(DC_DEPENDENCY_LIBS "")
 find_package(FastJet REQUIRED)
 list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
 
-## pythia
-find_package(Pythia8 REQUIRED)
-list(APPEND DC_DEPENDENCY_LIBS ${PYTHIA8_LIBRARIES})
-
 ## eventstructure
 find_package(TStarJetPico REQUIRED)
 list(APPEND DC_DEPENDENCY_LIBS ${TSTARJETPICO_LIBRARIES})
