@@ -4,9 +4,6 @@
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
 	url = https://github.com/google/benchmark.git
-[submodule "third_party/jetreader"]
-	path = third_party/jetreader
-	url = git@github.com:nickelsey/jetreader.git
 [submodule "third_party/gflags"]
 	path = third_party/gflags
 	url = https://github.com/gflags/gflags.git

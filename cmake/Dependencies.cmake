@@ -49,16 +49,6 @@ else(GLOG_FOUND)
   message(FATAL_ERROR "glog library not found")
 endif(GLOG_FOUND)
 
-## jetreader - built internally if requested
-if (BUILD_JETREADER)
-  set(BUILD_TESTS OFF)
-  add_subdirectory(third_party/jetreader)
-  list(APPEND DC_DEPENDENCY_LIBS StPicoEvent)
-  list(APPEND DC_DEPENDENCY_LIBS jetreader)
-  dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/jetreader)
-  dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/jetreader/third_party/StPicoEvent/SL18h)
-endif(BUILD_JETREADER)
-
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
 ## and embedded in the test binaries

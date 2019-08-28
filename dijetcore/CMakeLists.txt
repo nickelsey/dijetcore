@@ -19,9 +19,6 @@ add_subdirectory(worker)
 add_subdirectory(test)
 add_subdirectory(dijet_imbalance)
 add_subdirectory(resources)
-if (BUILD_DATA_QA_BINARIES)
-  add_subdirectory(data)
-endif(BUILD_DATA_QA_BINARIES)
 
 ## compile libraries
 
