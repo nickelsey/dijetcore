@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package DijetCore;
-
-message TestMessage {
-  int32 test1 = 1;
-  int32 test2 = 2;
-}

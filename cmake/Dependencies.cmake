@@ -49,15 +49,6 @@ else(GLOG_FOUND)
   message(FATAL_ERROR "glog library not found")
 endif(GLOG_FOUND)
 
-## protobuf
-find_package(Protobuf)
-if (Protobuf_FOUND)
-  dc_include_directories(${Protobuf_INCLUDE_DIRS})
-  list(APPEND DC_DEPENDENCY_LIBS ${Protobuf_LIBRARIES})
-else(Protobuf_FOUND)
-  message(FATAL_ERROR "protobuf library not found")
-endif(Protobuf_FOUND)
-
 ## jetreader - built internally if requested
 if (BUILD_JETREADER)
   set(BUILD_TESTS OFF)

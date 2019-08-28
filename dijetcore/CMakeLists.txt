@@ -15,7 +15,6 @@ set(DC_BINARY_SRCS)
 ## add all subdirectories
 add_subdirectory(lib)
 add_subdirectory(util)
-add_subdirectory(proto)
 add_subdirectory(worker)
 add_subdirectory(test)
 add_subdirectory(dijet_imbalance)
