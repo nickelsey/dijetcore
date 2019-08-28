@@ -28,7 +28,7 @@ if (TARGET dijetcore_proto)
   target_link_libraries(dijetcore PRIVATE dijetcore_proto)
 endif(TARGET dijetcore_proto)
 target_include_directories(dijetcore INTERFACE $<INSTALL_INTERFACE:include>)
-target_compile_options(dijetcore INTERFACE "--std=c++17")
+target_compile_options(dijetcore INTERFACE "--std=c++11")
 install(TARGETS dijetcore EXPORT DCTargets DESTINATION lib)
 
 ### declare libraries
