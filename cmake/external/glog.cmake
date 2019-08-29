@@ -2,7 +2,7 @@ if (NOT _GLOG_INCLUDE)
     set(_GLOG_INCLUDE TRUE)
 
     # if glog is installed on the system, we will use that
-    find_package(Glog)
+    find_package(glog)
     if (GLOG_FOUND)
         set(GLOG_EXTERNAL FALSE)
     else(GLOG_FOUND)

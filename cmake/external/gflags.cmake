@@ -2,7 +2,7 @@ if (NOT _GFLAGS_INCLUDE)
     set(_GFLAGS_INCLUDE TRUE)
 
     # look if gflags has been installed on the system
-    find_package(GFlags)
+    find_package(gflags)
     if (GFLAGS_FOUND)
         set(GFLAGS_EXTERNAL FALSE)
     else(GFLAGS_FOUND)
