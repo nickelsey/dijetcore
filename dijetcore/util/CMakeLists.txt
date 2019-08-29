@@ -31,7 +31,6 @@ install(FILES ${DC_HDRS} DESTINATION include/dijetcore/util)
 add_subdirectory(data)
 add_subdirectory(fastjet)
 add_subdirectory(root)
-add_subdirectory(mc)
 add_subdirectory(dijet_imbalance)
 
 ## export file lists to parent scope
