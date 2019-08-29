@@ -15,8 +15,8 @@
 
 
 
-#include "sct/lib/root_ext/TTreeReaderValue.h"
-#include "sct/lib/root_ext/TTreeReaderUtils.h"
+#include "dijetcore/lib/root_ext/TTreeReaderValue.h"
+#include "dijetcore/lib/root_ext/TTreeReaderUtils.h"
 #include <type_traits>
 
 namespace ROOT {

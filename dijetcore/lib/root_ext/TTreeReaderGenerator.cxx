@@ -9,7 +9,7 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
-#include "sct/lib/root_ext/TTreeReaderGenerator.h"
+#include "dijetcore/lib/root_ext/TTreeReaderGenerator.h"
 #include <algorithm>
 #include <stdio.h>
 #include <fstream>

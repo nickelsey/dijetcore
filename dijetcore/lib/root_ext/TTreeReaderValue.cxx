@@ -9,9 +9,9 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
-#include "sct/lib/root_ext/TTreeReaderValue.h"
+#include "dijetcore/lib/root_ext/TTreeReaderValue.h"
 
-#include "sct/lib/root_ext/TTreeReader.h"
+#include "dijetcore/lib/root_ext/TTreeReader.h"
 #include "TBranchClones.h"
 #include "TBranchElement.h"
 #include "TBranchRef.h"
@@ -22,7 +22,7 @@
 #include "TFriendProxy.h"
 #include "TLeaf.h"
 #include "TTreeProxyGenerator.h"
-#include "sct/lib/root_ext/TTreeReaderValue.h"
+#include "dijetcore/lib/root_ext/TTreeReaderValue.h"
 #include "TRegexp.h"
 #include "TStreamerInfo.h"
 #include "TStreamerElement.h"

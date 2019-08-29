@@ -24,7 +24,7 @@
 
 #include "TBranchProxyDirector.h"
 #include "TBranchProxy.h"
-#include "sct/lib/root_ext/TTreeReaderValue.h"
+#include "dijetcore/lib/root_ext/TTreeReaderValue.h"
 
 class TDictionary;
 class TTree;

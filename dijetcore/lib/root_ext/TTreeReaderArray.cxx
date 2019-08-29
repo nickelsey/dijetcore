@@ -23,7 +23,7 @@
 #include "TROOT.h"
 #include "TStreamerInfo.h"
 #include "TStreamerElement.h"
-#include "sct/lib/root_ext/TTreeReader.h"
+#include "dijetcore/lib/root_ext/TTreeReader.h"
 #include "TGenCollectionProxy.h"
 #include "TRegexp.h"
 #include "ROOT/RMakeUnique.hxx"

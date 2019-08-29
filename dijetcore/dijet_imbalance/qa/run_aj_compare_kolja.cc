@@ -23,7 +23,7 @@
 #include "TH2.h"
 #include "TProfile2D.h"
 #include "TTree.h"
-#include "sct/lib/root_ext/TTreeReader.h"
+#include "dijetcore/lib/root_ext/TTreeReader.h"
 #include "TTreeReaderValue.h"
 
 #include "TStarJetPicoEvent.h"

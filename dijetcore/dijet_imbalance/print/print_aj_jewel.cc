@@ -19,7 +19,7 @@
 #include "TStyle.h"
 #include "TText.h"
 #include "TTree.h"
-#include "sct/lib/root_ext/TTreeReader.h"
+#include "dijetcore/lib/root_ext/TTreeReader.h"
 #include "TTreeReaderValue.h"
 #include "TVector2.h"
 

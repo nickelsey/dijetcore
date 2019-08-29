@@ -24,7 +24,7 @@
 
 #include "THashTable.h"
 #include "TTree.h"
-#include "sct/lib/root_ext/TTreeReaderUtils.h"
+#include "dijetcore/lib/root_ext/TTreeReaderUtils.h"
 #include "TNotifyLink.h"
 
 #include <deque>

@@ -9,13 +9,13 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
-#include "sct/lib/root_ext/TTreeReader.h"
+#include "dijetcore/lib/root_ext/TTreeReader.h"
 
 #include "TChain.h"
 #include "TDirectory.h"
 #include "TEntryList.h"
 #include "TTreeCache.h"
-#include "sct/lib/root_ext/TTreeReaderValue.h"
+#include "dijetcore/lib/root_ext/TTreeReaderValue.h"
 #include "TFriendProxy.h"
 
 
