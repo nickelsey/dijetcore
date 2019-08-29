@@ -39,6 +39,8 @@ if (NOT _FASTJET_INCLUDE)
         set(FJ_SOURCE_DIR ${CMAKE_BINARY_DIR}/external/fastjet-${FASTJET_VERSION})
         set(FJ_INSTALL_DIR ${CMAKE_BINARY_DIR}/external/fastjet)
 
+        set(FJ_EXTRA_COMPILER_FLAGS -m32)
+
         # build the configure command 
         set(FJ_CONFIGURE ./configure
             --prefix=${FJ_INSTALL_DIR}
@@ -51,13 +53,16 @@ if (NOT _FASTJET_INCLUDE)
             set (configure_command ${configure_command} --enable-debug)
         endif ()
 
+        set(FJ_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${FJ_EXTRA_COMPILER_FLAGS})
+        set(FJ_C_FLAGS ${CMAKE_C_FLAGS} ${FJ_EXTRA_COMPILER_FLAGS})
+
         # define the external project
         ExternalProject_Add(FastJet
             URL ${FJ_URL}
             URL_MD5 ${FJ_MD5}
             DOWNLOAD_DIR ${FJ_DOWNLOAD_DIR}
             SOURCE_DIR ${FJ_SOURCE_DIR}
-            CONFIGURE_COMMAND ${FJ_CONFIGURE}
+            CONFIGURE_COMMAND env "CFLAGS=${FJ_C_FLAGS}" "CXXFLAGS=${FJ_CXX_FLAGS}" ${FJ_CONFIGURE}
             BUILD_IN_SOURCE 1
             BUILD_COMMAND make
             INSTALL_COMMAND make install
