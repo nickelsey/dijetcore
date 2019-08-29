@@ -105,18 +105,17 @@ endif(${ROOT_USE_FILE})
 message(STATUS "Found ROOT")
 
 ## gflags
-message(STATUS "loading gflags")
 include("cmake/external/gflags.cmake")
 dc_include_directories(${GFLAGS_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${GFLAGS_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${GFLAGS_LIBRARIES})
-message(STATUS "loading glog")
+
 ## glog
 include("cmake/external/glog.cmake")
 dc_include_directories(${GLOG_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${GLOG_LIBRARIES})
-message(STATUS "done loading gflags and glogs")
+
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
 ## and embedded in the test binaries
