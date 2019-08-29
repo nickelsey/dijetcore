@@ -47,7 +47,6 @@ if (NOT _GLOG_INCLUDE)
             BUILD_COMMAND make
             INSTALL_COMMAND make install
             BUILD_IN_SOURCE 1
-            BUILD_COMMAND make
             LOG_DOWNLOAD 1
             LOG_CONFIGURE 1
             LOG_BUILD 1
