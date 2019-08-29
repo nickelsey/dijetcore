@@ -11,6 +11,8 @@ if (NOT _GLOG_INCLUDE)
         set(glog_PREFIX ${CMAKE_BINARY_DIR}/external/glog-build)
         set(glog_INSTALL ${CMAKE_BINARY_DIR}/external/glog-install)
 
+        set(glog_SOURCE_DIR ${CMAKE_BINARY_DIR}/external/glog-build/GLog)
+
         # we build statically and link into a shared object - requires position independent code
         if (UNIX)
             set(GLOG_EXTRA_COMPILER_FLAGS "-fPIC")
@@ -23,6 +25,16 @@ if (NOT _GLOG_INCLUDE)
         if (GFLAGS_EXTERNAL)
             set(GLOG_DEPENDS GFlags)
         endif()
+
+        # build the configure command 
+        set(GLOG_CONFIGURE 
+            ./autogen.sh &&
+            ./configure
+            --prefix=${glog_INSTALL
+            --enable-shared=no 
+            --enable-static=yes 
+            --with-gflags=${GFLAGS_LIBRARY_DIRS}/..
+            )
         
         ExternalProject_Add(GLog
             DEPENDS ${GLOG_DEPENDS}
@@ -31,9 +43,12 @@ if (NOT _GLOG_INCLUDE)
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
             INSTALL_DIR ${glog_INSTALL}
-            CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "cd ${glog_PREFIX}/src/GLog" "./autogen.sh" "./configure --prefix=${glog_INSTALL} --enable-shared=no --enable-static=yes --with-gflags=${GFLAGS_LIBRARY_DIRS}/.. && cd -"
-            BUILD_COMMAND "cd ${glog_PREFIX}/src/GLog && make"
-            INSTALL_COMMAND "cd ${glog_PREFIX}/src/glog && make install"
+            SOURCE_DIR ${glog_SOURCE_DIR}
+            CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" ${GLOG_CONFIGURE}
+            BUILD_COMMAND make
+            INSTALL_COMMAND make install
+            BUILD_IN_SOURCE 1
+            BUILD_COMMAND make
             LOG_DOWNLOAD 1
             LOG_CONFIGURE 1
             LOG_BUILD 1
