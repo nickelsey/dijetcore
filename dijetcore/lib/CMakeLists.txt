@@ -32,7 +32,6 @@ add_subdirectory(memory)
 add_subdirectory(string)
 add_subdirectory(random)
 
-add_subdirectory(root_ext)
 ## export file lists to parent scope
 set(DC_SRCS ${DC_SRCS} PARENT_SCOPE)
 set(DC_HDRS ${DC_HDRS} PARENT_SCOPE)

@@ -8,7 +8,7 @@
 #include "TLorentzVector.h"
 #include "TStyle.h"
 #include "TTree.h"
-#include "dijetcore/lib/root_ext/TTreeReader.h"
+#include "TTreeReader.h"
 #include "TTreeReaderValue.h"
 #include "TVector2.h"
 #include "TH2D.h"

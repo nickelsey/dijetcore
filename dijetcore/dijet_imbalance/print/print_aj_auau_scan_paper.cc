@@ -25,7 +25,7 @@
 #include "TStyle.h"
 #include "TText.h"
 #include "TTree.h"
-#include "dijetcore/lib/root_ext/TTreeReader.h"
+#include "TTreeReader.h"
 #include "TTreeReaderValue.h"
 
 #include "dijetcore/lib/map.h"
