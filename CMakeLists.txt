@@ -23,6 +23,10 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 ## helper functions
 include(cmake/Utils.cmake)
 
+## some of the dependencies are external projects - we add some helper functionality
+include(ExternalProject)
+include(cmake/ExternalProjectAddOns.cmake)
+
 ## dependencies
 include(cmake/Dependencies.cmake)
 

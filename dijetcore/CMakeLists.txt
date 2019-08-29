@@ -31,6 +31,11 @@ target_include_directories(dijetcore INTERFACE $<INSTALL_INTERFACE:include>)
 target_compile_options(dijetcore INTERFACE "--std=c++11")
 install(TARGETS dijetcore EXPORT DCTargets DESTINATION lib)
 
+## dijetcore depends on our external projects
+if(${DIJETCORE_EXTERNAL_DEPS})
+  add_dependencies(dijetcore ${DIJETCORE_EXTERNAL_DEPS})
+endif(${DIJETCORE_EXTERNAL_DEPS})
+
 ### declare libraries
 set(DC_LIBS dijetcore)
 if (TARGET dijetcore_proto)

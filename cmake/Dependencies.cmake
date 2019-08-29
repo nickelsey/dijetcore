@@ -1,13 +1,16 @@
 ## packages are either found or built, depending on if
 ## they are statically or dynamically linked
 
-include(ExternalProject)
-
 set(DC_DEPENDENCY_LIBS "")
+set(DC_EXTERNAL_DEPS "")
 
 ## fastjet
-find_package(FastJet REQUIRED)
+include("cmake/external/fastjet.cmake")
+dc_include_directories(${FASTJET_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
+message(STATUS HERE)
+message(STATUS ${FASTJET_LIBRARIES})
+list(APPEND DC_EXTERNAL_DEPS ${FASTJET_LIBRARIES})
 
 ## eventstructure
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
@@ -33,11 +36,13 @@ message(STATUS "Found ROOT")
 include("cmake/external/gflags.cmake")
 dc_include_directories(${GFLAGS_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${GFLAGS_LIBRARIES})
+list(APPEND DC_EXTERNAL_DEPS ${GFLAGS_LIBRARIES})
 
 ## glog
 include("cmake/external/glog.cmake")
 dc_include_directories(${GLOG_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
+list(APPEND DC_EXTERNAL_DEPS ${GLOG_LIBRARIES})
 
 
 ## testing is done via gtest, gmock (currently not used)
