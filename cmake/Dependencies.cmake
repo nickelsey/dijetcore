@@ -48,6 +48,11 @@ if(NOT ROOT_FOUND)
             )
 
         execute_process(
+            COMMAND ${ROOT_CONFIG} --version 
+            OUTPUT_VARIABLE ROOT_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+        execute_process(
             COMMAND ${ROOT_CONFIG} --incdir
             OUTPUT_VARIABLE ROOT_INCLUDE_DIRS
             OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -64,6 +69,22 @@ if(NOT ROOT_FOUND)
             OUTPUT_VARIABLE ROOT_LIBRARY_DIRS
             OUTPUT_STRIP_TRAILING_WHITESPACE
             )
+
+        string(SUBSTRING ${ROOT_VERSION} 0 1 ROOT_MAJOR_VERSION)
+        string(SUBSTRING ${ROOT_VERSION} 2 2 ROOT_MINOR_VERSION)
+        string(SUBSTRING ${ROOT_VERSION} 5 2 ROOT_PATCH_VERSION)
+
+        if(${ROOT_MAJOR_VERSION} STREQUAL 5)
+          set(ROOT_V5 TRUE)
+        else(${ROOT_MAJOR_VERSION} STREQUAL 5)
+          set(ROOT_V5 FALSE)
+        endif(${ROOT_MAJOR_VERSION} STREQUAL 5)
+
+        if(${ROOT_MAJOR_VERSION} STREQUAL 6)
+          set(ROOT_V6 TRUE)
+        else(${ROOT_MAJOR_VERSION} STREQUAL 6)
+          set(ROOT_V6 FALSE)
+        endif(${ROOT_MAJOR_VERSION} STREQUAL 6)
     endif(ROOT_CONFIG)
 endif(NOT ROOT_FOUND)
 

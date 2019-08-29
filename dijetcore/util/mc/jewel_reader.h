@@ -8,7 +8,7 @@
 #include "fastjet/PseudoJet.hh"
 
 #include "TFile.h"
-#include "TTreeReader.h"
+#include "sct/lib/root_ext/TTreeReader.h"
 #include "TTreeReaderArray.h"
 #include "TTreeReaderValue.h"
 

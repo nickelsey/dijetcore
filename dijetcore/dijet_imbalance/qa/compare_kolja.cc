@@ -17,7 +17,7 @@
 #include "TFile.h"
 #include "TStyle.h"
 #include "TTree.h"
-#include "TTreeReader.h"
+#include "sct/lib/root_ext/TTreeReader.h"
 #include "TTreeReaderValue.h"
 
 // define a structure to store event-by-event results

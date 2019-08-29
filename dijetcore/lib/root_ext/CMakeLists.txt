@@ -1,5 +1,5 @@
 ## get source files for libdijetcore
-file(GLOB tmp *.cc)
+file(GLOB tmp *.cxx)
 set(DC_SRCS ${DC_SRCS} ${tmp})
 
 ## get header files for libdijetcore
@@ -25,14 +25,11 @@ list(REMOVE_ITEM DC_SRCS ${DC_BENCH_SRCS})
 endif(DC_BENCH_SRCS)
 
 ## install headers
-install(FILES ${DC_HDRS} DESTINATION include/dijetcore/lib)
+install(FILES ${DC_HDRS} DESTINATION include/dijetcore/lib/root_ext)
 
 ## add subdirectories
-add_subdirectory(memory)
-add_subdirectory(string)
-add_subdirectory(random)
+## none
 
-add_subdirectory(root_ext)
 ## export file lists to parent scope
 set(DC_SRCS ${DC_SRCS} PARENT_SCOPE)
 set(DC_HDRS ${DC_HDRS} PARENT_SCOPE)

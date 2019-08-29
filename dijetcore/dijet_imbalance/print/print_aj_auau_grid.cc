@@ -8,7 +8,7 @@
 #include "TROOT.h"
 #include "TCanvas.h"
 #include "TTree.h"
-#include "TTreeReader.h"
+#include "sct/lib/root_ext/TTreeReader.h"
 #include "TTreeReaderValue.h"
 #include "TLorentzVector.h"
 #include "TFile.h"
