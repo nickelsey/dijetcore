@@ -31,7 +31,7 @@ if (NOT _GLOG_INCLUDE)
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
             INSTALL_DIR ${glog_INSTALL}
-            CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "cd ${glog_PREFIX}/src/GLog && ./autogen.sh && ./configure --prefix=${glog_INSTALL} --enable-shared=no --enable-static=yes --with-gflags=${GFLAGS_LIBRARY_DIRS}/.. && cd -"
+            CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "cd ${glog_PREFIX}/src/GLog" "./autogen.sh" "./configure --prefix=${glog_INSTALL} --enable-shared=no --enable-static=yes --with-gflags=${GFLAGS_LIBRARY_DIRS}/.. && cd -"
             BUILD_COMMAND "cd ${glog_PREFIX}/src/GLog && make"
             INSTALL_COMMAND "cd ${glog_PREFIX}/src/glog && make install"
             LOG_DOWNLOAD 1
