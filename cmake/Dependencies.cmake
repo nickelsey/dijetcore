@@ -1,6 +1,8 @@
 ## packages are either found or built, depending on if
 ## they are statically or dynamically linked
 
+include(ExternalProject)
+
 set(DC_DEPENDENCY_LIBS "")
 
 ## fastjet
@@ -28,23 +30,15 @@ include(${ROOT_USE_FILE})
 message(STATUS "Found ROOT")
 
 ## gflags
-find_package(gflags)
-if(GFLAGS_FOUND)
-  dc_include_directories(${GFLAGS_INCLUDE_DIRS})
-  list(APPEND DC_DEPENDENCY_LIBS ${GFLAGS_LIBRARIES})
-else(GFLAGS_FOUND)
-  message(FATAL_ERROR "gflags library not found")
-endif(GFLAGS_FOUND)
+include("cmake/external/gflags.cmake")
+dc_include_directories(${GFLAGS_INCLUDE_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${GFLAGS_LIBRARIES})
 
 ## glog
-find_package(glog)
-if(GLOG_FOUND)
-  set(DC_USE_GLOG 1)
-  dc_include_directories(${GLOG_INCLUDE_DIRS})
-  list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
-else(GLOG_FOUND)
-  message(FATAL_ERROR "glog library not found")
-endif(GLOG_FOUND)
+include("cmake/external/glog.cmake")
+dc_include_directories(${GLOG_INCLUDE_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
+
 
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
