@@ -37,7 +37,7 @@ if (NOT _FASTJET_INCLUDE)
         set(FJ_DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/external/fastjet_source)
         set(FJ_SOURCE ${FJ_DOWNLOAD_DIR}/${FJ_FILENAME})
         set(FJ_SOURCE_DIR ${CMAKE_BINARY_DIR}/external/fastjet-${FASTJET_VERSION})
-        set(FJ_INSTALL_DIR ${CMAKE_BINARY_DIR}/fastjet)
+        set(FJ_INSTALL_DIR ${CMAKE_BINARY_DIR}/external/fastjet)
 
         # build the configure command 
         set(FJ_CONFIGURE ./configure
@@ -97,7 +97,7 @@ if (NOT _FASTJET_INCLUDE)
 
         set(FASTJET_FOUND TRUE)
         set(FASTJET_INCLUDE_DIRS ${FJ_INSTALL_DIR}/include)
-        set(FASTJET_LIBRARIES ${FJ_INSTALL_DIR}/lib/libfastjet ${FJ_INSTALL_DIR}/lib/libsiscone ${FJ_INSTALL_DIR}/lib/libfastjetplugins ${FJ_INSTALL_DIR}/libfastjettools)
+        set(FASTJET_LIBRARIES fastjet siscone fastjetplugins fastjettools)
         set(FASTJET_LIBRARY_DIRS ${FJ_INSTALL_DIR}/lib)
         set(FASTJET_EXTERNAL TRUE)
 
