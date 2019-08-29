@@ -36,6 +36,7 @@ if (NOT _GLOG_INCLUDE)
             INSTALL_COMMAND "cd ${glog_PREFIX}/src/glog && make install"
             LOG_DOWNLOAD 1
             LOG_CONFIGURE 1
+            LOG_BUILD 1
             LOG_INSTALL 1
             )
 
