@@ -67,7 +67,7 @@ if (NOT _FASTJET_INCLUDE)
         ExternalProject_Get_Property(FastJet stamp_dir)
 
         # custom uninstall script for fastjet
-        file(WRITE ${stamp_dir}/fastjet-uninstall.cmake
+        file(WRITE ${stamp_dir}/FastJet-uninstall.cmake
             "
             set(bins ${FJ_INSTALL_DIR}/bin/fastjet-config)
             foreach(bin ${bins})
@@ -84,14 +84,14 @@ if (NOT _FASTJET_INCLUDE)
             "
             )
         # add default uninstall and clean targets
-        ExternalProject_Add_Uninstall(fastjet
-            ${CMAKE_COMMAND} -P ${stamp_dir}/fastjet-uninstall.cmake
+        ExternalProject_Add_Uninstall(FastJet
+            ${CMAKE_COMMAND} -P ${stamp_dir}/FastJet-uninstall.cmake
             )
-        ExternalProject_Add_Clean(fastjet
+        ExternalProject_Add_Clean(FastJet
             make clean
             )
-        ExternalProject_Add_Distclean(fastjet)
-        ExternalProject_Add_Fullclean(fastjet
+        ExternalProject_Add_Distclean(FastJet)
+        ExternalProject_Add_Fullclean(FastJet
             ${CMAKE_COMMAND} -E remove -f ${source_file}
             )
 
