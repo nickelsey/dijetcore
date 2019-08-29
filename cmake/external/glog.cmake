@@ -37,7 +37,7 @@ if (NOT _GLOG_INCLUDE)
         #    LOG_INSTALL 1
         #    )
 
-        ExternalProject_Add(glog
+        ExternalProject_Add(GLog
             DEPENDS ${GLOG_DEPENDS}
             PREFIX ${glog_PREFIX}
             GIT_REPOSITORY "https://github.com/google/glog"

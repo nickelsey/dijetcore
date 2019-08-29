@@ -22,7 +22,7 @@ if (NOT _GFLAGS_INCLUDE)
         set(GFLAGS_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${GFLAGS_EXTRA_COMPILER_FLAGS})
         set(GFLAGS_C_FLAGS ${CMAKE_C_FLAGS} ${GFLAGS_EXTRA_COMPILER_FLAGS})
 
-        ExternalProject_Add(gflags
+        ExternalProject_Add(GFlags
             PREFIX ${gflags_PREFIX}
             GIT_REPOSITORY "https://github.com/gflags/gflags.git"
             GIT_TAG "v2.2.2"
