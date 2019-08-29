@@ -32,6 +32,8 @@ if (NOT _GLOG_INCLUDE)
             UPDATE_COMMAND ""
             INSTALL_DIR ${glog_INSTALL}
             CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "cd ${glog_PREFIX}/src/glog && ./autogen.sh && ${glog_PREFIX}/src/glog/configure --prefix=${glog_INSTALL} --enable-shared=no --enable-static=yes --with-gflags=${GFLAGS_LIBRARY_DIRS}/.. && cd -"
+            BUILD_COMMAND "cd ${glog_PREFIX}/src/glog && make"
+            INSTALL_COMMAND "cd ${glog_PREFIX}/src/glog && make install"
             LOG_DOWNLOAD 1
             LOG_CONFIGURE 1
             LOG_INSTALL 1
