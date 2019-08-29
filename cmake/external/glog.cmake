@@ -42,7 +42,6 @@ if (NOT _GLOG_INCLUDE)
             GIT_REPOSITORY "https://github.com/google/glog"
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
-            SOURCE_DIR ${glog_SOURCE_DIR}
             CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" ${GLOG_CONFIGURE}
             BUILD_COMMAND make
             INSTALL_COMMAND make install
