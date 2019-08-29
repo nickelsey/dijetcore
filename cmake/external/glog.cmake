@@ -30,7 +30,7 @@ if (NOT _GLOG_INCLUDE)
         set(GLOG_CONFIGURE 
             ./autogen.sh &&
             ./configure
-            --prefix=${glog_INSTALL
+            --prefix=${glog_INSTALL}
             --enable-shared=no 
             --enable-static=yes 
             --with-gflags=${GFLAGS_LIBRARY_DIRS}/..
@@ -42,7 +42,6 @@ if (NOT _GLOG_INCLUDE)
             GIT_REPOSITORY "https://github.com/google/glog"
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
-            INSTALL_DIR ${glog_INSTALL}
             SOURCE_DIR ${glog_SOURCE_DIR}
             CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" ${GLOG_CONFIGURE}
             BUILD_COMMAND make
@@ -54,6 +53,7 @@ if (NOT _GLOG_INCLUDE)
             LOG_BUILD 1
             LOG_INSTALL 1
             )
+            #INSTALL_DIR ${glog_INSTALL}
 
         #ExternalProject_Add(GLog
         #    DEPENDS ${GLOG_DEPENDS}
