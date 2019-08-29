@@ -98,7 +98,7 @@ endif(NOT ROOT_FOUND)
 
 link_directories(${ROOT_LIBRARY_DIRS})
 dc_include_directories(${ROOT_INCLUDE_DIRS})
-list(APPEND PICO_DEPENDENCY_LIBS ${ROOT_LIBRARIES})
+list(APPEND DC_DEPENDENCY_LIBS ${ROOT_LIBRARIES})
 if(${ROOT_USE_FILE})
   include(${ROOT_USE_FILE})
 endif(${ROOT_USE_FILE})
