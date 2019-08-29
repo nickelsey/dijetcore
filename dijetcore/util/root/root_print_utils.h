@@ -42,7 +42,7 @@ namespace dijetcore {
     
     histogramOpts() :
     colors({kBlack, kRed, kBlue, kGreen, kCyan, kMagenta, kOrange, kYellow, kRed+2, kGreen+3, kBlue-7}),
-    markers({kFullCircle, kFullSquare, kFullDiamond, kFullCrossX}){
+    markers({kFullCircle, kFullSquare, kFullDiamond}){
       label_size_x = 0.060;
       title_size_x = 0.075;
       title_offset_x = 0.800;
