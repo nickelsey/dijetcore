@@ -24,7 +24,7 @@ if (NOT _GLOG_INCLUDE)
             set(GLOG_DEPENDS GFlags)
         endif()
         
-        ExternalProject_Add(glog
+        ExternalProject_Add(GLog
             DEPENDS ${GLOG_DEPENDS}
             PREFIX ${glog_PREFIX}
             GIT_REPOSITORY "https://github.com/google/glog"
