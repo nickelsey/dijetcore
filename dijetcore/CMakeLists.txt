@@ -24,9 +24,6 @@ add_subdirectory(resources)
 
 add_library(dijetcore ${DC_SRCS} ${DC_HDRS})
 target_link_libraries(dijetcore PRIVATE ${DC_DEPENDENCY_LIBS})
-if (TARGET dijetcore_proto)
-  target_link_libraries(dijetcore PRIVATE dijetcore_proto)
-endif(TARGET dijetcore_proto)
 target_include_directories(dijetcore INTERFACE $<INSTALL_INTERFACE:include>)
 target_compile_options(dijetcore INTERFACE "--std=c++11")
 install(TARGETS dijetcore EXPORT DCTargets DESTINATION lib)
@@ -38,9 +35,6 @@ endif(${DIJETCORE_EXTERNAL_DEPS})
 
 ### declare libraries
 set(DC_LIBS dijetcore)
-if (TARGET dijetcore_proto)
-  set(DC_LIBS ${DC_LIBS} dijetcore_proto)
-endif(TARGET dijetcore_proto)
 
 ## build binaries
 if (BUILD_BINARIES)

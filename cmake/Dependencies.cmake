@@ -10,6 +10,9 @@ dc_include_directories(${FASTJET_INCLUDE_DIRS})
 link_directories(${FASTJET_LIBRARY_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${FASTJET_LIBRARIES})
+message(STATUS "fastjet libs: ")
+message(STATUS ${DC_DEPENDENCY_LIBS})
+message(STATUS ${DC_EXTENRAL_DEPS})
 
 ## eventstructure
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
