@@ -55,9 +55,17 @@ if (NOT _GLOG_INCLUDE)
 
         set(GLOG_FOUND TRUE)
         set(GLOG_INCLUDE_DIRS ${glog_INSTALL}/include)
-        set(GLOG_LIBRARIES ${GFLAGS_LIBRARIES} glog)
         set(GLOG_LIBRARY_DIRS ${glog_INSTALL}/lib)
         set(GLOG_EXTERNAL TRUE)
+
+        # identify libraries
+        set(GLOG_LIBRARIES ${GFLAGS_LIBRARIES})
+        find_library(lib glog PATHS ${GLOG_LIBRARY_DIRS} NO_DEFAULT_PATH)
+        if(NOT lib)
+            message(FATAL_ERROR "could not find glog library")
+        else(NOT lib)
+            set(GLOG_LIBRARIES ${GLOG_LIBRARIES} ${lib})
+        endif(NOT lib)
 
     endif(GLOG_FOUND)
 

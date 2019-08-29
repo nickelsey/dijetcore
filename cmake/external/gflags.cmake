@@ -45,9 +45,17 @@ if (NOT _GFLAGS_INCLUDE)
 
         set(GFLAGS_FOUND TRUE)
         set(GFLAGS_INCLUDE_DIRS ${gflags_INSTALL}/include)
-        set(GFLAGS_LIBRARIES gflags ${CMAKE_THREAD_LIBS_INIT})
         set(GFLAGS_LIBRARY_DIRS ${gflags_INSTALL}/lib)
         set(GFLAGS_EXTERNAL TRUE)
+        
+        # identify libraries
+        set(GFLAGS_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+        find_library(lib gflags PATHS ${GFLAGS_LIBRARY_DIRS} NO_DEFAULT_PATH)
+        if(NOT lib)
+            message(FATAL_ERROR "could not find gflags library")
+        else(NOT lib)
+            set(GFLAGS_LIBRARIES ${GFLAGS_LIBRARIES} ${lib})
+        endif(NOT lib)
 
     endif(GFLAGS_FOUND)
 
