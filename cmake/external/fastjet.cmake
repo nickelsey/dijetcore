@@ -52,7 +52,7 @@ if (NOT _FASTJET_INCLUDE)
         endif ()
 
         # define the external project
-        ExternalProject_Add(fastjet
+        ExternalProject_Add(FastJet
             URL ${FJ_URL}
             URL_MD5 ${FJ_MD5}
             DOWNLOAD_DIR ${FJ_DOWNLOAD_DIR}
@@ -63,8 +63,8 @@ if (NOT _FASTJET_INCLUDE)
             INSTALL_COMMAND make install
             )
 
-        ExternalProject_Add_Finish(fastjet ${FJ_INSTALL_DIR})
-        ExternalProject_Get_Property(fastjet stamp_dir)
+        ExternalProject_Add_Finish(FastJet ${FJ_INSTALL_DIR})
+        ExternalProject_Get_Property(FastJet stamp_dir)
 
         # custom uninstall script for fastjet
         file(WRITE ${stamp_dir}/fastjet-uninstall.cmake
