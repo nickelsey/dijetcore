@@ -26,9 +26,11 @@ if (NOT _GLOG_INCLUDE)
             set(GLOG_DEPENDS GFlags)
         endif()
 
-        # build the configure command 
+        # build the configure and autogen commands
+        set(GLOG_AUTOGEN
+            ./autogen.sh
+            )
         set(GLOG_CONFIGURE 
-            ./autogen.sh &&
             ./configure
             --prefix=${glog_INSTALL}
             --enable-shared=no 
@@ -42,6 +44,7 @@ if (NOT _GLOG_INCLUDE)
             GIT_REPOSITORY "https://github.com/google/glog"
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
+            CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "${GLOG_AUTOGEN}"
             CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "${GLOG_CONFIGURE}"
             BUILD_COMMAND make
             INSTALL_COMMAND make install
