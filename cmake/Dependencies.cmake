@@ -3,20 +3,18 @@
 
 set(DC_DEPENDENCY_LIBS "")
 set(DC_EXTERNAL_DEPS "")
-
+message(STATUS "fastjet")
 ## fastjet
 include("cmake/external/fastjet.cmake")
 dc_include_directories(${FASTJET_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
-message(STATUS HERE)
-message(STATUS ${FASTJET_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${FASTJET_LIBRARIES})
-
+message(STATUS "eventstructure")
 ## eventstructure
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
 list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
 dc_include_directories(${PICO_INCLUDE_DIRS})
-
+message(STATUS "boost")
 ## boost
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -24,27 +22,27 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 dc_include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
-
+message(STATUS "root")
 ## ROOT
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 find_package(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net)
 list(APPEND DC_DEPENDENCY_LIBS ${ROOT_LIBRARIES})
 include(${ROOT_USE_FILE})
 message(STATUS "Found ROOT")
-
+message(STATUS "gflags")
 ## gflags
 include("cmake/external/gflags.cmake")
 dc_include_directories(${GFLAGS_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${GFLAGS_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${GFLAGS_LIBRARIES})
-
+message(STATUS "glog")
 ## glog
 include("cmake/external/glog.cmake")
 dc_include_directories(${GLOG_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${GLOG_LIBRARIES})
 
-
+message(STATUS "testing")
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
 ## and embedded in the test binaries

@@ -83,7 +83,7 @@ if (NOT _FASTJET_INCLUDE)
         message(STATUS "here")
         message(STATUS "fj install " ${fastjet_INSTALL})
         set(FASTJET_INCLUDE_DIRS ${FJ_INSTALL_DIR}/include)
-        set(FASTJET_LIBRARIES ${FJ_INSTALL_DIR}/lib/libfastjet.so)    
+        set(FASTJET_LIBRARIES ${FJ_INSTALL_DIR}/lib/libfastjet ${FJ_INSTALL_DIR}/lib/libsiscone ${FJ_INSTALL_DIR/lib/libfastjetplugins ${FJ_INSTALL_DIR}/libfastjettools)
         set(FASTJET_LIBRARY_DIRS ${FJ_INSTALL_DIR}/lib)
         set(FASTJET_EXTERNAL TRUE)
 
