@@ -1,5 +1,4 @@
-#define AuAuReader_cxx
-#include "AuAuReader.h"
+#include "dijetcore/util/dijet_imbalance/auau_reader.h"
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>

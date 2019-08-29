@@ -1,5 +1,4 @@
-#define PPReader_cxx
-#include "PPReader.h"
+#include "dijetcore/util/dijet_imbalance/pp_reader.h"
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
