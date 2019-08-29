@@ -4,8 +4,24 @@ if (NOT _FASTJET_INCLUDE)
     # if fastjet is installed on the system, we will use that
     find_package(fastjet)
     if (FASTJET_FOUND)
-        set(GLOG_EXTERNAL FALSE)
-    else(FASTJET_FOUND)
+        set(FASTJET_EXTERNAL FALSE)
+        find_program(FJ_CONFIG fastjet-config)
+        
+        execute_process(
+            COMMAND ${FJ_CONFIG} --version 
+            OUTPUT_VARIABLE FJ_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        
+        string(SUBSTRING ${FJ_VERSION} 0 1 FJ_MAJOR_VERSION)
+        string(SUBSTRING ${FJ_VERSION} 2 1 FJ_MINOR_VERSION)
+        string(SUBSTRING ${FJ_VERSION} 4 1 FJ_PATCH_VERSION)
+
+        if (FJ_MAJOR_VERSION STRLESS 2 OR FJ_MINOR_VERSION STRLESS 3)
+            set(FASTJET_FOUND FALSE)
+        endif(FJ_MAJOR_VERSION STRLESS 2 OR FJ_MINOR_VERSION STRLESS 3)
+    endif(FASTJET_FOUND)
+
+    IF(NOT FASTJET_FOUND)
         # otherwise we build from github
 
         # we exclude fastjet targets from cmake clean
@@ -85,6 +101,6 @@ if (NOT _FASTJET_INCLUDE)
         set(FASTJET_LIBRARY_DIRS ${FJ_INSTALL_DIR}/lib)
         set(FASTJET_EXTERNAL TRUE)
 
-    endif(FASTJET_FOUND)
+    endif(NOT FASTJET_FOUND)
 
 endif(NOT _FASTJET_INCLUDE)
