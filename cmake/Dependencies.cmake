@@ -4,29 +4,6 @@
 set(DC_DEPENDENCY_LIBS "")
 set(DC_EXTERNAL_DEPS "")
 
-## fastjet
-include("cmake/external/fastjet.cmake")
-dc_include_directories(${FASTJET_INCLUDE_DIRS})
-link_directories(${FASTJET_LIBRARY_DIRS})
-list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
-list(APPEND DC_EXTERNAL_DEPS ${FASTJET_LIBRARIES})
-message(STATUS "fastjet libs: ")
-message(STATUS ${DC_DEPENDENCY_LIBS})
-message(STATUS ${DC_EXTERNAL_DEPS})
-
-## eventstructure
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
-list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
-dc_include_directories(${PICO_INCLUDE_DIRS})
-
-## boost
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS filesystem)
-dc_include_directories(${Boost_INCLUDE_DIRS})
-list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
-
 ## ROOT
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 find_package(ROOT
@@ -104,6 +81,14 @@ if(${ROOT_USE_FILE})
 endif(${ROOT_USE_FILE})
 message(STATUS "Found ROOT")
 
+## boost
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS filesystem)
+dc_include_directories(${Boost_INCLUDE_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
+
 ## gflags
 include("cmake/external/gflags.cmake")
 dc_include_directories(${GFLAGS_INCLUDE_DIRS})
@@ -115,6 +100,21 @@ include("cmake/external/glog.cmake")
 dc_include_directories(${GLOG_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${GLOG_LIBRARIES})
+
+## fastjet
+include("cmake/external/fastjet.cmake")
+dc_include_directories(${FASTJET_INCLUDE_DIRS})
+link_directories(${FASTJET_LIBRARY_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
+list(APPEND DC_EXTERNAL_DEPS ${FASTJET_LIBRARIES})
+message(STATUS "fastjet libs: ")
+message(STATUS ${DC_DEPENDENCY_LIBS})
+message(STATUS ${DC_EXTERNAL_DEPS})
+
+## eventstructure
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
+list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
+dc_include_directories(${PICO_INCLUDE_DIRS})
 
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
