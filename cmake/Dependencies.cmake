@@ -4,6 +4,14 @@
 set(DC_DEPENDENCY_LIBS "")
 set(DC_EXTERNAL_DEPS "")
 
+## boost
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS filesystem)
+dc_include_directories(${Boost_INCLUDE_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
+
 ## ROOT
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 find_package(ROOT
@@ -80,14 +88,6 @@ if(${ROOT_USE_FILE})
   include(${ROOT_USE_FILE})
 endif(${ROOT_USE_FILE})
 message(STATUS "Found ROOT")
-
-## boost
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS filesystem)
-dc_include_directories(${Boost_INCLUDE_DIRS})
-list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
 
 ## fastjet
 include("cmake/external/fastjet.cmake")

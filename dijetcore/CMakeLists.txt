@@ -49,8 +49,9 @@ if (BUILD_BINARIES)
 
     add_executable(${bin_name} "${bin_src}")
     add_dependencies(${bin_name} ${DC_LIBS})
-    target_link_libraries(${bin_name} ${DC_LIBS}
-                          ${DC_DEPENDENCY_LIBS})
+    target_link_libraries(${bin_name}
+                          ${DC_DEPENDENCY_LIBS}
+                          ${DC_LIBS})
     if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
       target_compile_features(${bin_name} PRIVATE cxx_range_for)
     endif()
@@ -65,8 +66,10 @@ if (BUILD_TEST)
     get_filename_component(test_name ${test_src} NAME_WE)
     add_executable(${test_name} "${test_src}")
     add_dependencies(${test_name} ${DC_LIBS})
-    target_link_libraries(${test_name} ${DC_LIBS}
-                    ${DC_DEPENDENCY_LIBS} gtest_main)
+    target_link_libraries(${test_name}
+                    ${DC_DEPENDENCY_LIBS} 
+                    gtest_main
+                    ${DC_LIBS})
     if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
       target_compile_features(${test_name} PRIVATE cxx_range_for)
     endif()
@@ -77,8 +80,11 @@ if (BUILD_TEST)
   ## build gtest main
   add_executable(dijetcore_gtest_main ${DC_TEST_MAIN} ${DC_TEST_SRCS})
   add_dependencies(dijetcore_gtest_main ${DC_LIBS})
-  target_link_libraries(dijetcore_gtest_main ${DC_LIBS} 
-                        ${DC_DEPENDENCY_LIBS} gtest_main)
+  target_link_libraries(dijetcore_gtest_main
+                        ${DC_DEPENDENCY_LIBS}
+                        gtest_main
+                        ${DC_LIBS}
+                        )
   #add_test(NAME dijetcore_gtest_main COMMAND $<TARGET_FILE:$dijetcore_gtest_main>)
   install(TARGETS dijetcore_gtest_main DESTINATION test)
 endif()
@@ -89,8 +95,10 @@ if (BUILD_TEST)
     get_filename_component(bm_name ${bm_src} NAME_WE)
     add_executable(${bm_name} "${bm_src}")
     add_dependencies(${bm_name} ${DC_LIBS})
-    target_link_libraries(${bm_name} ${DC_LIBS}
-                  ${DC_DEPENDENCY_LIBS})
+    target_link_libraries(${bm_name}
+                  ${DC_DEPENDENCY_LIBS}
+                  ${DC_LIBS}
+                  )
     if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
       target_compile_features(${bm_name} PRIVATE cxx_range_for)
     endif()
