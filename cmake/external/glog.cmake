@@ -47,7 +47,7 @@ if (NOT _GLOG_INCLUDE)
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ${GLOG_AUTOGEN}
-            COMMAND env "${GLOG_CONFIGURE}" "CFLAGS=\"${GLOG_C_FLAGS}\"" "CXXFLAGS=\"${GLOG_CXX_FLAGS}\""
+            COMMAND env "${GLOG_CONFIGURE}" CFLAGS=\"${GLOG_C_FLAGS}\" CXXFLAGS=\"${GLOG_CXX_FLAGS}\"
             BUILD_COMMAND make
             INSTALL_COMMAND make install
             BUILD_IN_SOURCE 1
