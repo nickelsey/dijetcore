@@ -23,6 +23,15 @@ if (NOT _GLOG_INCLUDE)
         set(GLOG_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${GLOG_EXTRA_COMPILER_FLAGS})
         set(GLOG_C_FLAGS ${CMAKE_C_FLAGS} ${GLOG_EXTRA_COMPILER_FLAGS})
 
+        set_property(
+            GLOBAL PROPERTY 
+            RULE_LAUNCH_CUSTOM [=[env CFLAGS="-fPIC -m32" CXXFLAGS="-fPIC -m32"]=]
+        )
+        add_custom_target(
+            GFLAGS_ENV_VARS
+            COMMAND env | grep -E 'CFLAGS|CXXFLAGS'
+        )
+
         # if gflags is being built internally, it must be built before glog
         if (GFLAGS_EXTERNAL)
             set(GLOG_DEPENDS GFlags)
@@ -47,7 +56,7 @@ if (NOT _GLOG_INCLUDE)
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ${GLOG_AUTOGEN}
-            COMMAND env "${GLOG_CONFIGURE}" CFLAGS=\"${GLOG_C_FLAGS}\" CXXFLAGS=\"${GLOG_CXX_FLAGS}\"
+            COMMAND env "${GLOG_CONFIGURE}" ${GFLAGS_ENV_VARS}
             BUILD_COMMAND make
             INSTALL_COMMAND make install
             BUILD_IN_SOURCE 1
