@@ -89,6 +89,11 @@ if(${ROOT_USE_FILE})
 endif(${ROOT_USE_FILE})
 message(STATUS "Found ROOT")
 
+## eventstructure
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
+list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
+dc_include_directories(${PICO_INCLUDE_DIRS})
+
 ## fastjet
 include("cmake/external/fastjet.cmake")
 dc_include_directories(${FASTJET_INCLUDE_DIRS})
@@ -98,11 +103,6 @@ list(APPEND DC_EXTERNAL_DEPS ${FASTJET_LIBRARIES})
 message(STATUS "fastjet libs: ")
 message(STATUS ${DC_DEPENDENCY_LIBS})
 message(STATUS ${DC_EXTERNAL_DEPS})
-
-## eventstructure
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
-list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
-dc_include_directories(${PICO_INCLUDE_DIRS})
 
 ## gflags
 include("cmake/external/gflags.cmake")
