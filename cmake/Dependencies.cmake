@@ -89,18 +89,6 @@ find_package(Boost REQUIRED COMPONENTS filesystem)
 dc_include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
 
-## gflags
-include("cmake/external/gflags.cmake")
-dc_include_directories(${GFLAGS_INCLUDE_DIRS})
-list(APPEND DC_DEPENDENCY_LIBS ${GFLAGS_LIBRARIES})
-list(APPEND DC_EXTERNAL_DEPS ${GFLAGS_LIBRARIES})
-
-## glog
-include("cmake/external/glog.cmake")
-dc_include_directories(${GLOG_INCLUDE_DIRS})
-list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
-list(APPEND DC_EXTERNAL_DEPS ${GLOG_LIBRARIES})
-
 ## fastjet
 include("cmake/external/fastjet.cmake")
 dc_include_directories(${FASTJET_INCLUDE_DIRS})
@@ -115,6 +103,18 @@ message(STATUS ${DC_EXTERNAL_DEPS})
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
 list(APPEND DC_DEPENDENCY_LIBS ${PICO_LIBS})
 dc_include_directories(${PICO_INCLUDE_DIRS})
+
+## gflags
+include("cmake/external/gflags.cmake")
+dc_include_directories(${GFLAGS_INCLUDE_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${GFLAGS_LIBRARIES})
+list(APPEND DC_EXTERNAL_DEPS ${GFLAGS_LIBRARIES})
+
+## glog
+include("cmake/external/glog.cmake")
+dc_include_directories(${GLOG_INCLUDE_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${GLOG_LIBRARIES})
+list(APPEND DC_EXTERNAL_DEPS ${GLOG_LIBRARIES})
 
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
