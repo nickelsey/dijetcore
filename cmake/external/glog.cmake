@@ -18,7 +18,7 @@ if (NOT _GLOG_INCLUDE)
         if (UNIX)
             set(GLOG_EXTRA_COMPILER_FLAGS "-fPIC")
         endif()
-        set(GLOG_EXTRA_COMPILER_FLAGS ${GLOG_EXTRA_COMPILER_FLAGS},-m32)
+        set(GLOG_EXTRA_COMPILER_FLAGS ${GLOG_EXTRA_COMPILER_FLAGS} -m32)
 
         set(GLOG_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${GLOG_EXTRA_COMPILER_FLAGS})
         set(GLOG_C_FLAGS ${CMAKE_C_FLAGS} ${GLOG_EXTRA_COMPILER_FLAGS})
@@ -47,9 +47,9 @@ if (NOT _GLOG_INCLUDE)
             GIT_TAG "v0.4.0"
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "${GLOG_AUTOGEN}"
-            COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "${GLOG_CONFIGURE}"
-            BUILD_COMMAND "make -m32"
-            INSTALL_COMMAND "make install -m32"
+            COMMAND env "${GLOG_CONFIGURE}" "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}"
+            BUILD_COMMAND make
+            INSTALL_COMMAND make install
             BUILD_IN_SOURCE 1
             LOG_DOWNLOAD 1
             LOG_CONFIGURE 1
