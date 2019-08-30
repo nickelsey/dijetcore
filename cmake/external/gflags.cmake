@@ -32,8 +32,8 @@ if (NOT _GFLAGS_INCLUDE)
             INSTALL_DIR ${gflags_INSTALL}
             CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DCMAKE_INSTALL_PREFIX=${gflags_INSTALL}
-            -DCMAKE_C_FLAGS=-m32,-fPIC
-            -DCMAKE_CXX_FLAGS=-m32,-fPIC
+            -DCMAKE_C_FLAGS=-m32 -fPIC
+            -DCMAKE_CXX_FLAGS=-m32 -fPIC
             -DBUILD_SHARED_LIBS=ON
             -DBUILD_STATIC_LIBS=OFF
             -DBUILD_PACKAGING=OFF
