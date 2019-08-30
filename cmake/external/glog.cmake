@@ -48,8 +48,8 @@ if (NOT _GLOG_INCLUDE)
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "${GLOG_AUTOGEN}"
             COMMAND env "CFLAGS=${GLOG_C_FLAGS}" "CXXFLAGS=${GLOG_CXX_FLAGS}" "${GLOG_CONFIGURE}"
-            BUILD_COMMAND make
-            INSTALL_COMMAND make install
+            BUILD_COMMAND "make -m32"
+            INSTALL_COMMAND "make install -m32"
             BUILD_IN_SOURCE 1
             LOG_DOWNLOAD 1
             LOG_CONFIGURE 1

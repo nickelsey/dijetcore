@@ -39,8 +39,8 @@ if (NOT _GFLAGS_INCLUDE)
             -DBUILD_NC_TESTS=OFF
             -BUILD_CONFIG_TESTS=OFF
             -DINSTALL_HEADERS=ON
-            -DCMAKE_C_FLAGS=${GFLAGS_C_FLAGS}
-            -DCMAKE_CXX_FLAGS=${GFLAGS_CXX_FLAGS}
+            -DCMAKE_C_FLAGS=${GFLAGS_C_FLAGS} "-m32"
+            -DCMAKE_CXX_FLAGS=${GFLAGS_CXX_FLAGS} "-m32"
             LOG_DOWNLOAD 1
             LOG_INSTALL 1
             )
