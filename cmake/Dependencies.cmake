@@ -100,9 +100,6 @@ dc_include_directories(${FASTJET_INCLUDE_DIRS})
 link_directories(${FASTJET_LIBRARY_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
 list(APPEND DC_EXTERNAL_DEPS ${FASTJET_LIBRARIES})
-message(STATUS "fastjet libs: ")
-message(STATUS ${DC_DEPENDENCY_LIBS})
-message(STATUS ${DC_EXTERNAL_DEPS})
 
 ## gflags
 include("cmake/external/gflags.cmake")
