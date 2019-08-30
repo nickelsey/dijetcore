@@ -9,7 +9,8 @@ if (NOT _GLOG_INCLUDE)
         # otherwise we build from github
 
         set(glog_PREFIX ${CMAKE_BINARY_DIR}/external/glog-build)
-        set(glog_INSTALL ${CMAKE_BINARY_DIR}/external/glog-install)
+        #set(glog_INSTALL ${CMAKE_BINARY_DIR}/external/glog-install)
+        set(glog_INSTALL ${CMAKE_INSTALL_PREFIX})
 
         set(glog_SOURCE_DIR ${CMAKE_BINARY_DIR}/external/glog-build/GLog)
 
@@ -33,8 +34,8 @@ if (NOT _GLOG_INCLUDE)
         set(GLOG_CONFIGURE 
             ./configure
             --prefix=${glog_INSTALL}
-            --enable-shared=no 
-            --enable-static=yes 
+            --enable-shared=yes 
+            --enable-static=no 
             --with-gflags=${GFLAGS_LIBRARY_DIRS}/..
             )
         

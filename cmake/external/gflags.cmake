@@ -12,7 +12,8 @@ if (NOT _GFLAGS_INCLUDE)
         find_package(Threads)
 
         set(gflags_PREFIX ${CMAKE_BINARY_DIR}/external/gflags-build)
-        set(gflags_INSTALL ${CMAKE_BINARY_DIR}/external/gflags-install)
+        #set(gflags_INSTALL ${CMAKE_BINARY_DIR}/external/gflags-install)
+        set(gflags_INSTALL ${CMAKE_INSTALL_PREFIX})
 
         # we build statically and link into a shared object - requires position independent code
         if (UNIX)
@@ -30,8 +31,8 @@ if (NOT _GFLAGS_INCLUDE)
             INSTALL_DIR ${gflags_INSTALL}
             CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DCMAKE_INSTALL_PREFIX=${gflags_INSTALL}
-            -DBUILD_SHARED_LIBS=OFF
-            -DBUILD_STATIC_LIBS=ON
+            -DBUILD_SHARED_LIBS=ON
+            -DBUILD_STATIC_LIBS=OFF
             -DBUILD_PACKAGING=OFF
             -DBUILD_TESTING=OFF
             -DBUILD_NC_TESTS=OFF
