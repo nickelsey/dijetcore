@@ -50,7 +50,12 @@ if (BUILD_BINARIES)
     add_executable(${bin_name} "${bin_src}")
     add_dependencies(${bin_name} ${DC_LIBS})
     target_link_libraries(${bin_name}
-                          ${DC_DEPENDENCY_LIBS}
+                          ${GFLAGS_LIBRARIES}
+                          ${GLOGS_LIBRARIES}
+                          ${FASTJET_LIBRARIES}
+                          ${ROOT_LIBRARIES}
+                          ${Boost_LIBRARIES}
+                          ${PICO_LIBS}
                           ${DC_LIBS})
     if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
       target_compile_features(${bin_name} PRIVATE cxx_range_for)
