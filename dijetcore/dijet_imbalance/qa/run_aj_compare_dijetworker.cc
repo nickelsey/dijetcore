@@ -233,6 +233,9 @@ int main(int argc, char *argv[]) {
   TH1D *aj_m_worker = new TH1D("worker", "", 2500, -0.4999, 0.9);
   TH1D *aj_m_ana = new TH1D("ana", "", 2500, -0.4999, 0.9);
 
+  TH1D *aj_h_worker = new TH1D("workerh", "", 2500, -0.4999, 0.9);
+  TH1D *aj_h_ana = new TH1D("anah", "", 2500, -0.4999, 0.9);
+
   try {
     while (reader->NextEvent()) {
       // Print out reader status every 10 seconds
@@ -323,6 +326,10 @@ int main(int argc, char *argv[]) {
           double aj = (worker_lead_match.pt() - worker_sublead_match.pt()) /
                       (worker_lead_match.pt() + worker_sublead_match.pt());
           aj_m_worker->Fill(aj);
+
+          double aj_h = (worker_lead.pt() - worker_sublead.pt()) /
+                      (worker_lead.pt() + worker_sublead.pt());
+          aj_h_worker->Fill(aj_h);
         }
 
         fastjet::ClusterSequenceArea *cl = out.lead_hard_seq;
@@ -579,18 +586,33 @@ int main(int argc, char *argv[]) {
       double aj = (jlm.Pt() - jsm.Pt()) / (jlm.Pt() + jsm.Pt());
       aj_m_ana->Fill(aj);
 
+      double aj_h = (jl.Pt() - js.Pt()) / (jl.Pt() + js.Pt());
+      aj_h_ana->Fill(aj_h);
+
       output->Fill();
     }
   } catch (std::exception &e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
   }
 
-  LOG(INFO) << "KS test: " << aj_m_worker->KolmogorovTest(aj_m_ana);
-  LOG(INFO) << "worker mean: " << aj_m_worker->GetMean();
-  LOG(INFO) << "analysis mean: " << aj_m_worker->GetMean();
-  LOG(INFO) << "worker std: " << aj_m_worker->GetStdDev();
-  LOG(INFO) << "analysis std: " << aj_m_worker->GetStdDev();
+  LOG(INFO) << "KS test hard: " << aj_h_worker->KolmogorovTest(aj_h_ana);
+  LOG(INFO) << "KS test matched: " << aj_m_worker->KolmogorovTest(aj_m_ana);
+
+  LOG(INFO) << "worker hard mean: " << aj_h_worker->GetMean();
+  LOG(INFO) << "analysis hard mean: " << aj_h_ana->GetMean();
+  LOG(INFO) << "worker hard std: " << aj_h_worker->GetStdDev();
+  LOG(INFO) << "analysis hard std: " << aj_h_ana->GetStdDev();
+
+  LOG(INFO) << "worker matched mean: " << aj_m_worker->GetMean();
+  LOG(INFO) << "analysis matched mean: " << aj_m_ana->GetMean();
+  LOG(INFO) << "worker matched std: " << aj_m_worker->GetStdDev();
+  LOG(INFO) << "analysis matched std: " << aj_m_ana->GetStdDev();
   TCanvas c;
+  aj_h_worker->RebinX(100);
+  aj_h_ana->RebinX(100);
+  aj_h_worker->Scale(1.0 / aj_h_worker->Integral());
+  aj_h_ana->Scale(1.0 / aj_h_ana->Integral());
+  aj_h_ana->SetLineColor(kRed);
   aj_m_worker->RebinX(100);
   aj_m_ana->RebinX(100);
   aj_m_worker->Scale(1.0 / aj_m_worker->Integral());
@@ -600,7 +622,12 @@ int main(int argc, char *argv[]) {
   aj_m_worker->Draw();
   aj_m_ana->Draw("SAME");
   
-  c.SaveAs("test.pdf");
+  c.SaveAs("matchaj.pdf");
+
+  aj_h_worker->Draw();
+  aj_h_ana->Draw("SAME");
+
+  c.SaveAs("hardaj.pdf");
 
   output->Write();
   out.Close();
