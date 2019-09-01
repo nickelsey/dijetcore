@@ -38,6 +38,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing")
 
 if(BUILD_32BIT)
    add_compile_options(-m32)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
 endif(BUILD_32BIT)
 
 ## forcing proper include lookup paths - must take
