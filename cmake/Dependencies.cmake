@@ -20,7 +20,7 @@ dc_include_directories(${PICO_INCLUDE_DIRS})
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 dc_include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND DC_LINKER_LIBS ${Boost_LIBRARIES})
 
