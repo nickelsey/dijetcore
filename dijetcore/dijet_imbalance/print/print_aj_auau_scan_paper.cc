@@ -332,7 +332,9 @@ int main(int argc, char *argv[]) {
   std::vector<TH2D *> ks_hard;
   std::vector<TH2D *> ks_match;
   std::vector<TH2D *> ks_hard_err;
+  std::vector<TH2D *> ks_hard_rel_err;
   std::vector<TH2D *> ks_match_err;
+  std::vector<TH2D *> ks_match_rel_err;
   std::vector<TH2D *> ks_oa;
   std::vector<TH2D *> ks_hard_full;
   std::vector<TH2D *> ks_match_full;
@@ -351,8 +353,18 @@ int main(int argc, char *argv[]) {
             .c_str(),
         ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
         constpt.size(), -0.5, constpt.size() - 0.5));
+    ks_hard_rel_err.push_back(new TH2D(
+        dijetcore::MakeString("ks_values_hard_rel_err_", refcent_string[cent])
+            .c_str(),
+        ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
+        constpt.size(), -0.5, constpt.size() - 0.5));
     ks_match_err.push_back(new TH2D(
         dijetcore::MakeString("ks_values_match_err_", refcent_string[cent])
+            .c_str(),
+        ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
+        constpt.size(), -0.5, constpt.size() - 0.5));
+    ks_match_rel_err.push_back(new TH2D(
+        dijetcore::MakeString("ks_values_match_rel_err_", refcent_string[cent])
             .c_str(),
         ";R;p_{T}^{const}", radii.size(), -0.5, radii.size() - 0.5,
         constpt.size(), -0.5, constpt.size() - 0.5));
@@ -873,21 +885,29 @@ int main(int argc, char *argv[]) {
 
       // get the error on the ks test value for hard and matched di-jets by
       // comparing AuAu to the systematic variations of PP
-      double max_hard_varation = 0;
-      double max_match_varation = 0;
+      double max_hard_variation = 0;
+      double max_match_variation = 0;
+      double max_hard_rel_var = 0.0;
+      double max_match_rel_var = 0.0;
 
       for (int var = TOWP; var < DATATYPE_SIZE; ++var) {
-        double var_hard =
-            ks_hard_val - hard_aj_test_cent[AUAU][key][i]->KolmogorovTest(
-                              hard_aj_test_cent[var][key][i]);
-        double var_match =
-            ks_match_val - match_aj_test_cent[AUAU][key][i]->KolmogorovTest(
-                               match_aj_test_cent[var][key][i]);
+        double var_hard = hard_aj_test_cent[AUAU][key][i]->KolmogorovTest(
+            hard_aj_test_cent[var][key][i]);
+        double var_match = match_aj_test_cent[AUAU][key][i]->KolmogorovTest(
+            match_aj_test_cent[var][key][i]);
 
-        if (abs(var_hard) > max_hard_varation)
-          max_hard_varation = abs(var_hard);
-        if (abs(var_match) > max_match_varation)
-          max_match_varation = abs(var_match);
+        if (max_hard_variation == 0.0 ||
+            fabs(var_hard - ks_hard_val) >
+                fabs(max_hard_variation - ks_hard_val)) {
+          max_hard_variation = var_hard;
+          max_hard_rel_var = (var_hard - ks_hard_val) / ks_hard_val;
+        }
+        if (max_match_variation == 0.0 ||
+            fabs(var_match - ks_match_val) >
+                fabs(max_match_variation - ks_match_val)) {
+          max_match_variation = var_match;
+          max_match_rel_var = (var_match - ks_match_val) / ks_match_val;
+        }
       }
 
       // get the parsed key
@@ -903,8 +923,10 @@ int main(int argc, char *argv[]) {
       ks_hard[i]->SetBinContent(x_bin, y_bin, ks_hard_val);
       ks_match[i]->SetBinContent(x_bin, y_bin, ks_match_val);
       ks_oa[i]->SetBinContent(x_bin, y_bin, ks_oa_val);
-      ks_hard_err[i]->SetBinContent(x_bin, y_bin, max_hard_varation);
-      ks_match_err[i]->SetBinContent(x_bin, y_bin, max_match_varation);
+      ks_hard_err[i]->SetBinContent(x_bin, y_bin, max_hard_variation);
+      ks_hard_rel_err[i]->SetBinContent(x_bin, y_bin, max_hard_rel_var);
+      ks_match_err[i]->SetBinContent(x_bin, y_bin, max_match_variation);
+      ks_match_rel_err[i]->SetBinContent(x_bin, y_bin, max_match_rel_var);
       ks_hard_full[i]->SetBinContent(x_bin, y_bin, ks_hard_full_val);
       ks_match_full[i]->SetBinContent(x_bin, y_bin, ks_match_full_val);
 
@@ -964,8 +986,12 @@ int main(int argc, char *argv[]) {
                   "p_{T}^{const}", "TEXT COLZ");
     Print2DSimple(ks_hard_err[cent], hopts, copts, out_dir, "ks_hard_err", "",
                   "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_hard_rel_err[cent], hopts, copts, out_dir,
+                  "ks_hard_rel_err", "", "R", "p_{T}^{const}", "TEXT COLZ");
     Print2DSimple(ks_match_err[cent], hopts, copts, out_dir, "ks_match_err", "",
                   "R", "p_{T}^{const}", "TEXT COLZ");
+    Print2DSimple(ks_match_rel_err[cent], hopts, copts, out_dir,
+                  "ks_match_rel_err", "", "R", "p_{T}^{const}", "TEXT COLZ");
     Print2DSimple(ks_hard_full[cent], hopts, copts, out_dir, "ks_hard_full", "",
                   "R", "p_{T}^{const}", "TEXT COLZ");
     Print2DSimple(ks_match_full[cent], hopts, copts, out_dir, "ks_match_full",
