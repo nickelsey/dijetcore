@@ -13,6 +13,7 @@ option(BUILD_SHARED_LIBS "Build libdijetcore.so" ON)
 option(BUILD_TEST "Build test suite binaries" OFF)
 option(BUILD_BINARIES "Build analysis binaries" ON)
 option(BUILD_32BIT "Build 32 bit library and binaries" OFF)
+option(BUILD_EXPENSIVE "Build analysis routines that have long compile times" ON)
 
 ## compiler & system checks
 include(cmake/SysCheck.cmake)
