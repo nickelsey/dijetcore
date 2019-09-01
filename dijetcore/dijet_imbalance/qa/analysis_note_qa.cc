@@ -102,9 +102,14 @@ int main(int argc, char* argv[]) {
   boost::filesystem::path input_file(FLAGS_config.c_str());
   boost::filesystem::path copy_path(dir);
   copy_path /= input_file.filename();
+
+  /*
+   * this is copied out in the paper branch because there seems to be some 
+   * ABI compatibility problems on RCF with the boost library - thanks RCF
   boost::filesystem::copy_file(
       input_file, copy_path,
       boost::filesystem::copy_option::overwrite_if_exists);
+  */
 
   // create output file from the given directory, name & id
   string outfile_name =
