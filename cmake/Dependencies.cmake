@@ -22,7 +22,7 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 dc_include_directories(${Boost_INCLUDE_DIRS})
-list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
+list(APPEND DC_LINKER_LIBS ${Boost_LIBRARIES})
 
 ## glog
 include("cmake/external/glog.cmake")
