@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE RELEASE)
 option(BUILD_SHARED_LIBS "Build libdijetcore.so" ON)
 option(BUILD_TEST "Build test suite binaries" OFF)
 option(BUILD_BINARIES "Build analysis binaries" ON)
-option(BUILD_EXPENSIVE "Build certain routines that have large compile times" ON)
+option(BUILD_32BIT "Build 32 bit library and binaries" OFF)
 
 ## compiler & system checks
 include(cmake/SysCheck.cmake)
@@ -25,7 +25,6 @@ include(cmake/Utils.cmake)
 
 ## some of the dependencies are external projects - we add some helper functionality
 include(ExternalProject)
-include(cmake/ExternalProjectAddOns.cmake)
 
 ## dependencies
 include(cmake/Dependencies.cmake)
@@ -33,9 +32,13 @@ include(cmake/Dependencies.cmake)
 ## build options
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC -m32")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing")
 
+if(BUILD_32BIT)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+endif(BUILD_32BIT)
 
 ## forcing proper include lookup paths - must take
 ## configured files in build dir before empty files

@@ -16,22 +16,21 @@ set(DC_BINARY_SRCS)
 add_subdirectory(lib)
 add_subdirectory(util)
 add_subdirectory(worker)
-add_subdirectory(test)
 add_subdirectory(dijet_imbalance)
 add_subdirectory(resources)
 
 ## compile libraries
 
-add_library(dijetcore ${DC_SRCS} ${DC_HDRS})
-target_link_libraries(dijetcore PRIVATE ${DC_DEPENDENCY_LIBS})
+add_library(dijetcore ${DC_SRCS})
+target_link_libraries(dijetcore PRIVATE ${DC_DEPENDENCY_LIBS} ${DC_LINKER_LIBS})
 target_include_directories(dijetcore INTERFACE $<INSTALL_INTERFACE:include>)
 target_compile_options(dijetcore INTERFACE "--std=c++11")
 install(TARGETS dijetcore EXPORT DCTargets DESTINATION lib)
 
 ## dijetcore depends on our external projects
-if(${DIJETCORE_EXTERNAL_DEPS})
-  add_dependencies(dijetcore ${DIJETCORE_EXTERNAL_DEPS})
-endif(${DIJETCORE_EXTERNAL_DEPS})
+if(DC_EXTERNAL_DEPS)
+  add_dependencies(dijetcore ${DC_EXTERNAL_DEPS})
+endif(DC_EXTERNAL_DEPS)
 
 ### declare libraries
 set(DC_LIBS dijetcore)
@@ -50,65 +49,13 @@ if (BUILD_BINARIES)
     add_executable(${bin_name} "${bin_src}")
     add_dependencies(${bin_name} ${DC_LIBS})
     target_link_libraries(${bin_name}
-                          ${GFLAGS_LIBRARIES}
-                          ${GLOGS_LIBRARIES}
-                          ${FASTJET_LIBRARIES}
-                          ${ROOT_LIBRARIES}
-                          ${Boost_LIBRARIES}
-                          ${PICO_LIBS}
-                          ${DC_LIBS})
+                          ${DC_LIBS}
+                          ${DC_LINKER_LIBS})
     if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
       target_compile_features(${bin_name} PRIVATE cxx_range_for)
     endif()
     add_test(NAME ${bin_name} COMMAND $<TARGET_FILE:${bin_name}>)
     install(TARGETS ${bin_name} DESTINATION bin/${bin_path})
-  endforeach()
-endif()
-
-## test binaries
-if (BUILD_TEST)
-  foreach(test_src ${DC_TEST_SRCS})
-    get_filename_component(test_name ${test_src} NAME_WE)
-    add_executable(${test_name} "${test_src}")
-    add_dependencies(${test_name} ${DC_LIBS})
-    target_link_libraries(${test_name}
-                    ${DC_DEPENDENCY_LIBS} 
-                    gtest_main
-                    ${DC_LIBS})
-    if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
-      target_compile_features(${test_name} PRIVATE cxx_range_for)
-    endif()
-    add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
-    install(TARGETS ${test_name} DESTINATION test)
-  endforeach()
-
-  ## build gtest main
-  add_executable(dijetcore_gtest_main ${DC_TEST_MAIN} ${DC_TEST_SRCS})
-  add_dependencies(dijetcore_gtest_main ${DC_LIBS})
-  target_link_libraries(dijetcore_gtest_main
-                        ${DC_DEPENDENCY_LIBS}
-                        gtest_main
-                        ${DC_LIBS}
-                        )
-  #add_test(NAME dijetcore_gtest_main COMMAND $<TARGET_FILE:$dijetcore_gtest_main>)
-  install(TARGETS dijetcore_gtest_main DESTINATION test)
-endif()
-
-## benchmark binaries
-if (BUILD_TEST)
-  foreach(bm_src ${DC_BENCH_SRCS})
-    get_filename_component(bm_name ${bm_src} NAME_WE)
-    add_executable(${bm_name} "${bm_src}")
-    add_dependencies(${bm_name} ${DC_LIBS})
-    target_link_libraries(${bm_name}
-                  ${DC_DEPENDENCY_LIBS}
-                  ${DC_LIBS}
-                  )
-    if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
-      target_compile_features(${bm_name} PRIVATE cxx_range_for)
-    endif()
-    add_test(NAME ${bm_name} COMMAND $<TARGET_FILE:${bm_name}>)
-    install(TARGETS ${bm_name} DESTINATION test)
   endforeach()
 endif()
 
