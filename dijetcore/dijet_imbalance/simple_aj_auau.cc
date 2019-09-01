@@ -40,7 +40,9 @@
 #include "fastjet/tools/Subtractor.hh"
 
 // include boost for filesystem manipulation
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include "boost/filesystem.hpp"
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 using std::string;
 
