@@ -43,15 +43,19 @@ list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
 
 if(BUILD_TEST)
   set(TEMP_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
+  set(TEMP_CXX_FLAGS ${CMAKE_CXX_FLAGS})
   set(BUILD_SHARED_LIBS OFF)
   set(BUILD_GTEST ON CACHE BOOL "build core gtest")
   set(INSTALL_GTEST OFF CACHE BOOL "do not install gtest to install directory")
+  if(BUILD_32BIT)
+    set(CMAKE_CXX_FLAGS "-m32" CACHE STRING "set 32 bit for googletest and benchmark")
+  endif(BUILD_32BIT)
   ## gmock currently not used
   set(BUILD_GMOCK OFF CACHE BOOL "do not build gmock")
   add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/googletest)
   dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/googletest/googletest/include)
   list(APPEND DC_TEST_LIBS gtest)
-  
+
   # We will not need to test benchmark lib itself.
   set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark testing.")
   set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "Disable benchmark install to avoid overwriting.")
@@ -61,4 +65,5 @@ if(BUILD_TEST)
 
   # restore the build shared libs option.
   set(BUILD_SHARED_LIBS ${TEMP_BUILD_SHARED_LIBS})
+  set(CMAKE_CXX_FLAGS ${TEMP_CXX_FLAGS})
 endif(BUILD_TEST)
