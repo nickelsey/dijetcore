@@ -48,6 +48,7 @@ if(BUILD_TEST)
   set(BUILD_GTEST ON CACHE BOOL "build core gtest")
   set(INSTALL_GTEST OFF CACHE BOOL "do not install gtest to install directory")
   if(BUILD_32BIT)
+    add_compile_options(-m32)
     set(CMAKE_CXX_FLAGS "-m32" CACHE STRING "set 32 bit for googletest and benchmark")
   endif(BUILD_32BIT)
   ## gmock currently not used
