@@ -59,5 +59,32 @@ if (BUILD_BINARIES)
   endforeach()
 endif()
 
+## test binaries
+if (BUILD_TEST)
+  ## build gtest main
+  add_executable(dijetcore_gtest_main ${DC_TEST_MAIN} ${DC_TEST_SRCS})
+  add_dependencies(dijetcore_gtest_main ${DC_LIBS} ${DC_TEST_LIBS})
+  target_link_libraries(dijetcore_gtest_main ${DC_LIBS} 
+                        ${DC_LINKER_LIBS} gtest_main)
+  #add_test(NAME dijetcore_gtest_main COMMAND $<TARGET_FILE:$dijetcore_gtest_main>)
+  install(TARGETS dijetcore_gtest_main DESTINATION test)
+endif()
+
+## benchmark binaries
+if (BUILD_TEST)
+  foreach(bm_src ${DC_BENCH_SRCS})
+    get_filename_component(bm_name ${bm_src} NAME_WE)
+    add_executable(${bm_name} "${bm_src}")
+    add_dependencies(${bm_name} ${DC_LIBS} ${DC_TEST_LIBS})
+    target_link_libraries(${bm_name} ${DC_LIBS}
+                  ${DC_LINKER_LIBS} ${DC_TEST_LIBS})
+    if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
+      target_compile_features(${bm_name} PRIVATE cxx_range_for)
+    endif()
+    add_test(NAME ${bm_name} COMMAND $<TARGET_FILE:${bm_name}>)
+    install(TARGETS ${bm_name} DESTINATION test)
+  endforeach()
+endif()
+
 ## export libraries to parent scope
 set(DC_LIBS ${DC_LIBS} PARENT_SCOPE)
