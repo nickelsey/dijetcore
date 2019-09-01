@@ -464,8 +464,8 @@ namespace dijetcore {
             continue;
         }
         if (force_constituent_eta_equality_) {
-          double lead_eta = ExtractDoubleFromSelector(lead->initialJetDef().constituentSelector(), "|rap| <=");
-          double sub_eta = ExtractDoubleFromSelector(sub->initialJetDef().constituentSelector(), "|rap| <=");
+          double lead_eta = ExtractDoubleFromSelector(lead->initialJetDef().constituentSelector(), "|eta| <=");
+          double sub_eta = ExtractDoubleFromSelector(sub->initialJetDef().constituentSelector(), "|eta| <=");
           if (lead_eta != sub_eta)
             continue;
         }
