@@ -28,7 +28,6 @@ endif(BUILD_DATA_QA_BINARIES)
 
 ## compile libraries
 
-message(STATUS "HEADERS: " ${DC_SRCS})
 add_library(dijetcore ${DC_SRCS} ${DC_HDRS})
 target_link_libraries(dijetcore PRIVATE ${DC_DEPENDENCY_LIBS})
 if (TARGET dijetcore_proto)
@@ -88,7 +87,7 @@ if (BUILD_TEST)
   ## build gtest main
   add_executable(dijetcore_gtest_main ${DC_TEST_MAIN} ${DC_TEST_SRCS})
   add_dependencies(dijetcore_gtest_main ${DC_LIBS})
-  target_link_libraries(dijetcore_gtest_main ${DC_LIBS} 
+  target_link_libraries(dijetcore_gtest_main ${DC_LIBS}
                         ${DC_DEPENDENCY_LIBS} gtest_main)
   #add_test(NAME dijetcore_gtest_main COMMAND $<TARGET_FILE:$dijetcore_gtest_main>)
   install(TARGETS dijetcore_gtest_main DESTINATION test)
