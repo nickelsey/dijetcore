@@ -333,8 +333,10 @@ namespace dijetcore {
                 
                 // get a few needed parameters
                 double R = lead_fj_def.R();
+                double match_R = lead_match_fj_def.R();
                 double bkg_R = bkg_definition_.R();
                 double jet_eta_max = lead_const_eta - R;
+                double jet_eta_max_match = lead_const_eta - match_R;
                 double bkg_jet_eta_max = lead_const_eta - bkg_R;
                 
                 // build constituent & jet selectors
@@ -348,8 +350,12 @@ namespace dijetcore {
                 
                 fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,
                                                    grid_scatter_, pt_scatter_, mean_ghost_pt_);
+                fastjet::GhostedAreaSpec ghost_def_match(jet_eta_max_match + 2 * match_R, ghost_repeat_, ghost_area_,
+                                                   grid_scatter_, pt_scatter_, mean_ghost_pt_);
                 fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
                                                  ghost_def);
+                fastjet::AreaDefinition area_def_match(fastjet::active_area_explicit_ghosts,
+                                                 ghost_def_match);
                 
                 fastjet::Selector bkg_selector = fastjet::SelectorAbsEtaMax(lead_const_eta - bkg_R)
                 * (!fastjet::SelectorNHardest(2));
@@ -362,7 +368,7 @@ namespace dijetcore {
                 JetDef init_def(lead_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
                 init_def.setConstituentSelector(init_const_selector);
                 init_def.setJetSelector(init_jet_selector);
-                JetDef match_def(lead_match_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
+                JetDef match_def(lead_match_fj_def, area_def_match, bkg_definition_, bkg_area_def, bkg_selector);
                 match_def.setConstituentSelector(match_const_selector);
                 match_def.setJetSelector(match_jet_selector);
                 
@@ -395,8 +401,10 @@ namespace dijetcore {
                 
                 // get a few needed parameters
                 double R = sub_fj_def.R();
+                double match_R = sub_match_fj_def.R();
                 double bkg_R = bkg_definition_.R();
                 double jet_eta_max = sub_const_eta - R;
+                double jet_eta_max_match = sub_const_eta - match_R;
                 double bkg_jet_eta_max = sub_const_eta - bkg_R;
                 
                 // build constituent & jet selectors
@@ -412,8 +420,12 @@ namespace dijetcore {
                 
                 fastjet::GhostedAreaSpec ghost_def(jet_eta_max + 2 * R, ghost_repeat_, ghost_area_,
                                                    grid_scatter_, pt_scatter_, mean_ghost_pt_);
+                fastjet::GhostedAreaSpec ghost_def_match(jet_eta_max_match + 2 * match_R, ghost_repeat_, ghost_area_,
+                                                   grid_scatter_, pt_scatter_, mean_ghost_pt_);
                 fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts,
                                                  ghost_def);
+                fastjet::AreaDefinition area_def_match(fastjet::active_area_explicit_ghosts,
+                                                 ghost_def_match);
                 
                 fastjet::GhostedAreaSpec bkg_ghost_def(bkg_jet_eta_max + 2 * bkg_R, ghost_repeat_, ghost_area_,
                                                        grid_scatter_, pt_scatter_, mean_ghost_pt_);
@@ -425,7 +437,7 @@ namespace dijetcore {
                 JetDef init_def(sub_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
                 init_def.setConstituentSelector(init_const_selector);
                 init_def.setJetSelector(init_jet_selector);
-                JetDef match_def(sub_match_fj_def, area_def, bkg_definition_, bkg_area_def, bkg_selector);
+                JetDef match_def(sub_match_fj_def, area_def_match, bkg_definition_, bkg_area_def, bkg_selector);
                 match_def.setConstituentSelector(match_const_selector);
                 match_def.setJetSelector(match_jet_selector);
                 
