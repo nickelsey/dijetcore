@@ -2,121 +2,7 @@
 
 #include "dijetcore/worker/dijet_worker/dijet_worker.h"
 #include "dijetcore/util/fastjet/selector_compare.h"
-
-bool CheckDijetDefinition(dijetcore::DijetDefinition def, fastjet::JetAlgorithm lead_alg, fastjet::JetAlgorithm sub_alg,
-                          double lead_R, double sub_R, double lead_pt, double sub_pt, double lead_const_init_pt,
-                          double lead_const_match_pt, double sub_const_init_pt, double sub_const_match_pt,
-                          double const_eta, fastjet::RecombinationScheme scheme, fastjet::Strategy strategy,
-                          fastjet::AreaType area_type, int ghost_repeat, double ghost_area, double grid_scatter,
-                          double pt_scatter, double mean_ghost_pt, fastjet::JetDefinition bkg_def,
-                          fastjet::AreaDefinition bkg_area_lead, fastjet::AreaDefinition bkg_area_sub) {
-  dijetcore::MatchDef* lead = def.lead;
-  dijetcore::MatchDef* sub = def.sub;
-  
-  // check the leading jet
-  if (lead->initialJetDef().R() != lead_R ||
-      lead->matchedJetDef().R() != lead_R ||
-      lead->initialJetDef().jet_algorithm() != lead_alg ||
-      lead->matchedJetDef().jet_algorithm() != lead_alg ||
-      dijetcore::ExtractDoubleFromSelector(lead->initialJetDef().constituentSelector(), "pt >=") != lead_const_init_pt ||
-      dijetcore::ExtractDoubleFromSelector(lead->matchedJetDef().constituentSelector(), "pt >=") != lead_const_match_pt ||
-      dijetcore::ExtractDoubleFromSelector(lead->initialJetDef().jetSelector(), "pt >=") != lead_pt ||
-      dijetcore::ExtractDoubleFromSelector(lead->matchedJetDef().jetSelector(), "pt >=") != 0 ||
-      lead->initialJetDef().recombination_scheme() != scheme ||
-      lead->matchedJetDef().recombination_scheme() != scheme ||
-      lead->initialJetDef().strategy() != strategy ||
-      lead->matchedJetDef().strategy() != strategy ||
-      lead->initialJetDef().areaDefinition().area_type() != area_type ||
-      lead->matchedJetDef().areaDefinition().area_type() != area_type ||
-      lead->initialJetDef().areaDefinition().ghost_spec().ghost_maxrap() != (const_eta + lead_R) ||
-      lead->matchedJetDef().areaDefinition().ghost_spec().ghost_maxrap() != (const_eta + lead_R) ||
-      lead->initialJetDef().areaDefinition().ghost_spec().repeat() != ghost_repeat ||
-      lead->matchedJetDef().areaDefinition().ghost_spec().repeat() != ghost_repeat ||
-      lead->initialJetDef().areaDefinition().ghost_spec().ghost_area() != ghost_area ||
-      lead->matchedJetDef().areaDefinition().ghost_spec().ghost_area() != ghost_area ||
-      lead->initialJetDef().areaDefinition().ghost_spec().grid_scatter() != grid_scatter ||
-      lead->matchedJetDef().areaDefinition().ghost_spec().grid_scatter() != grid_scatter ||
-      lead->initialJetDef().areaDefinition().ghost_spec().pt_scatter() != pt_scatter ||
-      lead->matchedJetDef().areaDefinition().ghost_spec().pt_scatter() != pt_scatter ||
-      lead->initialJetDef().areaDefinition().ghost_spec().mean_ghost_pt() != mean_ghost_pt ||
-      lead->matchedJetDef().areaDefinition().ghost_spec().mean_ghost_pt() != mean_ghost_pt ||
-      lead->initialJetDef().backgroundJetDef().R() != bkg_def.R() ||
-      lead->matchedJetDef().backgroundJetDef().R() != bkg_def.R() ||
-      lead->initialJetDef().backgroundJetDef().jet_algorithm() != bkg_def.jet_algorithm() ||
-      lead->matchedJetDef().backgroundJetDef().jet_algorithm() != bkg_def.jet_algorithm() ||
-      lead->initialJetDef().backgroundJetDef().strategy() != bkg_def.strategy() ||
-      lead->matchedJetDef().backgroundJetDef().strategy() != bkg_def.strategy() ||
-      lead->initialJetDef().backgroundJetDef().recombination_scheme() != bkg_def.recombination_scheme() ||
-      lead->matchedJetDef().backgroundJetDef().recombination_scheme() != bkg_def.recombination_scheme() ||
-      lead->initialJetDef().backgroundAreaDef().area_type() != bkg_area_lead.area_type() ||
-      lead->matchedJetDef().backgroundAreaDef().area_type() != bkg_area_lead.area_type() ||
-      lead->initialJetDef().backgroundAreaDef().ghost_spec().ghost_maxrap() != bkg_area_lead.ghost_spec().ghost_maxrap() ||
-      lead->matchedJetDef().backgroundAreaDef().ghost_spec().ghost_maxrap() != bkg_area_lead.ghost_spec().ghost_maxrap() ||
-      lead->initialJetDef().backgroundAreaDef().ghost_spec().repeat() != bkg_area_lead.ghost_spec().repeat() ||
-      lead->matchedJetDef().backgroundAreaDef().ghost_spec().repeat() != bkg_area_lead.ghost_spec().repeat() ||
-      lead->initialJetDef().backgroundAreaDef().ghost_spec().ghost_area() != bkg_area_lead.ghost_spec().ghost_area() ||
-      lead->matchedJetDef().backgroundAreaDef().ghost_spec().ghost_area() != bkg_area_lead.ghost_spec().ghost_area() ||
-      lead->initialJetDef().backgroundAreaDef().ghost_spec().grid_scatter() != bkg_area_lead.ghost_spec().grid_scatter()  ||
-      lead->matchedJetDef().backgroundAreaDef().ghost_spec().grid_scatter() != bkg_area_lead.ghost_spec().grid_scatter()  ||
-      lead->initialJetDef().backgroundAreaDef().ghost_spec().pt_scatter() != bkg_area_lead.ghost_spec().pt_scatter()  ||
-      lead->matchedJetDef().backgroundAreaDef().ghost_spec().pt_scatter() != bkg_area_lead.ghost_spec().pt_scatter()  ||
-      lead->initialJetDef().backgroundAreaDef().ghost_spec().mean_ghost_pt() != bkg_area_lead.ghost_spec().mean_ghost_pt()  ||
-      lead->matchedJetDef().backgroundAreaDef().ghost_spec().mean_ghost_pt() != bkg_area_lead.ghost_spec().mean_ghost_pt() )
-    return false;
-  
-  // and check subleading jet
-  if (sub->initialJetDef().R() != sub_R ||
-      sub->matchedJetDef().R() != sub_R ||
-      sub->initialJetDef().jet_algorithm() != sub_alg ||
-      sub->matchedJetDef().jet_algorithm() != sub_alg ||
-      dijetcore::ExtractDoubleFromSelector(sub->initialJetDef().constituentSelector(), "pt >=") != sub_const_init_pt ||
-      dijetcore::ExtractDoubleFromSelector(sub->matchedJetDef().constituentSelector(), "pt >=") != sub_const_match_pt ||
-      dijetcore::ExtractDoubleFromSelector(sub->initialJetDef().jetSelector(), "pt >=") != sub_pt ||
-      dijetcore::ExtractDoubleFromSelector(sub->matchedJetDef().jetSelector(), "pt >=") != 0 ||
-      sub->initialJetDef().recombination_scheme() != scheme ||
-      sub->matchedJetDef().recombination_scheme() != scheme ||
-      sub->initialJetDef().strategy() != strategy ||
-      sub->matchedJetDef().strategy() != strategy ||
-      sub->initialJetDef().areaDefinition().area_type() != area_type ||
-      sub->matchedJetDef().areaDefinition().area_type() != area_type ||
-      sub->initialJetDef().areaDefinition().ghost_spec().ghost_maxrap() != (const_eta + sub_R) ||
-      sub->matchedJetDef().areaDefinition().ghost_spec().ghost_maxrap() != (const_eta + sub_R) ||
-      sub->initialJetDef().areaDefinition().ghost_spec().repeat() != ghost_repeat ||
-      sub->matchedJetDef().areaDefinition().ghost_spec().repeat() != ghost_repeat ||
-      sub->initialJetDef().areaDefinition().ghost_spec().ghost_area() != ghost_area ||
-      sub->matchedJetDef().areaDefinition().ghost_spec().ghost_area() != ghost_area ||
-      sub->initialJetDef().areaDefinition().ghost_spec().grid_scatter() != grid_scatter ||
-      sub->matchedJetDef().areaDefinition().ghost_spec().grid_scatter() != grid_scatter ||
-      sub->initialJetDef().areaDefinition().ghost_spec().pt_scatter() != pt_scatter ||
-      sub->matchedJetDef().areaDefinition().ghost_spec().pt_scatter() != pt_scatter ||
-      sub->initialJetDef().areaDefinition().ghost_spec().mean_ghost_pt() != mean_ghost_pt ||
-      sub->matchedJetDef().areaDefinition().ghost_spec().mean_ghost_pt() != mean_ghost_pt ||
-      sub->initialJetDef().backgroundJetDef().R() != bkg_def.R() ||
-      sub->matchedJetDef().backgroundJetDef().R() != bkg_def.R() ||
-      sub->initialJetDef().backgroundJetDef().jet_algorithm() != bkg_def.jet_algorithm() ||
-      sub->matchedJetDef().backgroundJetDef().jet_algorithm() != bkg_def.jet_algorithm() ||
-      sub->initialJetDef().backgroundJetDef().strategy() != bkg_def.strategy() ||
-      sub->matchedJetDef().backgroundJetDef().strategy() != bkg_def.strategy() ||
-      sub->initialJetDef().backgroundJetDef().recombination_scheme() != bkg_def.recombination_scheme() ||
-      sub->matchedJetDef().backgroundJetDef().recombination_scheme() != bkg_def.recombination_scheme() ||
-      sub->initialJetDef().backgroundAreaDef().area_type() != bkg_area_sub.area_type() ||
-      sub->matchedJetDef().backgroundAreaDef().area_type() != bkg_area_sub.area_type() ||
-      sub->initialJetDef().backgroundAreaDef().ghost_spec().ghost_maxrap() != bkg_area_sub.ghost_spec().ghost_maxrap() ||
-      sub->matchedJetDef().backgroundAreaDef().ghost_spec().ghost_maxrap() != bkg_area_sub.ghost_spec().ghost_maxrap() ||
-      sub->initialJetDef().backgroundAreaDef().ghost_spec().repeat() != bkg_area_sub.ghost_spec().repeat() ||
-      sub->matchedJetDef().backgroundAreaDef().ghost_spec().repeat() != bkg_area_sub.ghost_spec().repeat() ||
-      sub->initialJetDef().backgroundAreaDef().ghost_spec().ghost_area() != bkg_area_sub.ghost_spec().ghost_area() ||
-      sub->matchedJetDef().backgroundAreaDef().ghost_spec().ghost_area() != bkg_area_sub.ghost_spec().ghost_area() ||
-      sub->initialJetDef().backgroundAreaDef().ghost_spec().grid_scatter() != bkg_area_sub.ghost_spec().grid_scatter()  ||
-      sub->matchedJetDef().backgroundAreaDef().ghost_spec().grid_scatter() != bkg_area_sub.ghost_spec().grid_scatter()  ||
-      sub->initialJetDef().backgroundAreaDef().ghost_spec().pt_scatter() != bkg_area_sub.ghost_spec().pt_scatter()  ||
-      sub->matchedJetDef().backgroundAreaDef().ghost_spec().pt_scatter() != bkg_area_sub.ghost_spec().pt_scatter()  ||
-      sub->initialJetDef().backgroundAreaDef().ghost_spec().mean_ghost_pt() != bkg_area_sub.ghost_spec().mean_ghost_pt()  ||
-      sub->matchedJetDef().backgroundAreaDef().ghost_spec().mean_ghost_pt() != bkg_area_sub.ghost_spec().mean_ghost_pt() )
-    return false;
-  
-  return true;
-}
+#include "dijetcore/test/dijetcore_test_helper.h"
 
 TEST(DijetWorker, Default) {
   // fast default settings test
@@ -130,9 +16,9 @@ TEST(DijetWorker, Default) {
   fastjet::GhostedAreaSpec ghost_spec(1.4, 1, 0.01, 1, 0.1, 1e-100);
   fastjet::AreaDefinition area_def(fastjet::active_area_explicit_ghosts, ghost_spec);
   
-  EXPECT_TRUE(CheckDijetDefinition(*(worker.dijetDefinitions().begin()->second), fastjet::antikt_algorithm, fastjet::antikt_algorithm,
-                                   0.4, 0.4, 20.0, 10.0, 2.0, 0.2, 2.0, 0.2, 1.0, fastjet::E_scheme, fastjet::Best,
-                                   fastjet::active_area_explicit_ghosts, 1, 0.01, 1, 0.1, 1e-100, bkg_def, area_def, area_def));
+  dijetcore::testing::CheckDijetDefinition(worker.dijetDefinitions().begin()->second.get(), fastjet::antikt_algorithm, fastjet::antikt_algorithm,
+                                   0.4, 0.4, 0.4, 0.4, 20.0, 10.0, 2.0, 0.2, 2.0, 0.2, 1.0, fastjet::E_scheme, fastjet::Best,
+                                   fastjet::active_area_explicit_ghosts, 1, 0.01, 1, 0.1, 1e-100, bkg_def, area_def, area_def);
 }
 
 TEST(DijetWorker, SimpleCluster) {
