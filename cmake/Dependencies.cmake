@@ -74,6 +74,7 @@ endif(BUILD_JETREADER)
 if(BUILD_TEST)
   set(TEMP_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
   set(BUILD_SHARED_LIBS OFF)
+  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} CACHE STRING "build gtest with correct cxx flags")
   set(BUILD_GTEST ON CACHE BOOL "build core gtest")
   set(INSTALL_GTEST OFF CACHE BOOL "do not install gtest to install directory")
   ## gmock currently not used
