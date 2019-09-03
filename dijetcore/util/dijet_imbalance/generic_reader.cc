@@ -1,14 +1,14 @@
-#include "dijetcore/util/dijet_imbalance/auau_reader.h"
+#include "dijetcore/util/dijet_imbalance/generic_reader.h"
 #include <TCanvas.h>
 #include <TH2.h>
 #include <TStyle.h>
 
 namespace dijetcore {
 
-void AuAuReader::Loop() {
+void GenericReader::Loop() {
   //   In a ROOT session, you can do:
-  //      root> .L AuAuReader.C
-  //      root> AuAuReader t
+  //      root> .L GenericReader.C
+  //      root> GenericReader t
   //      root> t.GetEntry(12); // Fill t data members with entry number 12
   //      root> t.Show();       // Show values of entry 12
   //      root> t.Show(16);     // Read and show values of entry 16
@@ -45,37 +45,38 @@ void AuAuReader::Loop() {
   }
 }
 
-AuAuReader::AuAuReader(TTree *tree) : fChain(0) {
-  // if parameter tree is not specified (or zero), connect the file
-  // used to generate this class and read the Tree.
-  if (tree == 0) {
-    TFile *f = (TFile *)gROOT->GetListOfFiles()->FindObject(
-        "trees/y7/y7_grid_20_10.root");
-    if (!f || !f->IsOpen()) {
-      f = new TFile("trees/y7/y7_grid_20_10.root");
-    }
-    f->GetObject(
-        "LEAD_INIT_R_0.4_alg_2_pt_20_const_eta_1_const_pt_1.5_MATCH_R_0.4_alg_"
-        "2_pt_0_const_eta_1_const_pt_0.2_SUB_INIT_R_0.4_alg_2_pt_10_const_eta_"
-        "1_const_pt_1.5_MATCH_R_0.4_alg_2_pt_0_const_eta_1_const_pt_0.2",
-        tree);
+GenericReader::GenericReader(TTree *tree, bool off_axis, bool pp, bool embed)
+    : fChain(0) {
+  if (tree != 0) {
+    Init(tree, off_axis, pp, embed);
   }
-  Init(tree);
 }
 
-AuAuReader::~AuAuReader() {
+GenericReader::~GenericReader() {
   if (!fChain)
     return;
   delete fChain->GetCurrentFile();
 }
 
-Int_t AuAuReader::GetEntry(Long64_t entry) {
+Int_t GenericReader::GetEntry(Long64_t entry) {
   // Read contents of entry.
   if (!fChain)
     return 0;
   return fChain->GetEntry(entry);
 }
-Long64_t AuAuReader::LoadTree(Long64_t entry) {
+
+bool GenericReader::Next() {
+   if (!fChain)
+      return false;
+   if (fChain->GetReadEntry() >= fChain->GetEntries() - 1)
+      return false;
+   int status = GetEntry(fChain->GetReadEntry() + 1);
+   if (status <= 0)
+      return false;
+   return true;
+}
+
+Long64_t GenericReader::LoadTree(Long64_t entry) {
   // Set the environment to read one entry
   if (!fChain)
     return -5;
@@ -89,7 +90,7 @@ Long64_t AuAuReader::LoadTree(Long64_t entry) {
   return centry;
 }
 
-void AuAuReader::Init(TTree *tree) {
+void GenericReader::Init(TTree *tree, bool off_axis, bool pp, bool embed) {
   // The Init() function is called when the selector needs to initialize
   // a new tree or chain. Typically here the branch addresses and branch
   // pointers of the tree will be set.
@@ -105,6 +106,10 @@ void AuAuReader::Init(TTree *tree) {
   jsm = 0;
   jloa = 0;
   jsoa = 0;
+  ppjl = 0;
+  ppjs = 0;
+  ppjlm = 0;
+  ppjsm = 0;
   // Set branch addresses and branch pointers
   if (!tree)
     return;
@@ -128,8 +133,6 @@ void AuAuReader::Init(TTree *tree) {
   fChain->SetBranchAddress("js", &js, &b_js);
   fChain->SetBranchAddress("jlm", &jlm, &b_jlm);
   fChain->SetBranchAddress("jsm", &jsm, &b_jsm);
-  fChain->SetBranchAddress("jloa", &jloa, &b_jloa);
-  fChain->SetBranchAddress("jsoa", &jsoa, &b_jsoa);
   fChain->SetBranchAddress("jlconst", &jlconst, &b_jlconst);
   fChain->SetBranchAddress("jlrho", &jlrho, &b_jlrho);
   fChain->SetBranchAddress("jlsig", &jlsig, &b_jlsig);
@@ -146,17 +149,46 @@ void AuAuReader::Init(TTree *tree) {
   fChain->SetBranchAddress("jsmrho", &jsmrho, &b_jsmrho);
   fChain->SetBranchAddress("jsmsig", &jsmsig, &b_jsmsig);
   fChain->SetBranchAddress("jsmarea", &jsmarea, &b_jsmarea);
-  fChain->SetBranchAddress("oacent", &oacent, &b_oacent);
-  fChain->SetBranchAddress("jloaconst", &jloaconst, &b_jloaconst);
-  fChain->SetBranchAddress("jloarho", &jloarho, &b_jloarho);
-  fChain->SetBranchAddress("jloasig", &jloasig, &b_jloasig);
-  fChain->SetBranchAddress("jsoaconst", &jsoaconst, &b_jsoaconst);
-  fChain->SetBranchAddress("jsoarho", &jsoarho, &b_jsoarho);
-  fChain->SetBranchAddress("jsoasig", &jsoasig, &b_jsoasig);
+
+  // auau branches
+  if (off_axis) {
+    fChain->SetBranchAddress("jloa", &jloa, &b_jloa);
+    fChain->SetBranchAddress("jsoa", &jsoa, &b_jsoa);
+    fChain->SetBranchAddress("oacent", &oacent, &b_oacent);
+    fChain->SetBranchAddress("jloaconst", &jloaconst, &b_jloaconst);
+    fChain->SetBranchAddress("jloarho", &jloarho, &b_jloarho);
+    fChain->SetBranchAddress("jloasig", &jloasig, &b_jloasig);
+    fChain->SetBranchAddress("jsoaconst", &jsoaconst, &b_jsoaconst);
+    fChain->SetBranchAddress("jsoarho", &jsoarho, &b_jsoarho);
+    fChain->SetBranchAddress("jsoasig", &jsoasig, &b_jsoasig);
+  }
+  if (embed) {
+    fChain->SetBranchAddress("embed_eventid", &embed_eventid, &b_embed_eventid);
+    fChain->SetBranchAddress("embed_runid", &embed_runid, &b_embed_runid);
+    fChain->SetBranchAddress("embed_refmult", &embed_refmult, &b_embed_refmult);
+    fChain->SetBranchAddress("embed_grefmult", &embed_grefmult,
+                             &b_embed_grefmult);
+    fChain->SetBranchAddress("embed_refmultcorr", &embed_refmultcorr,
+                             &b_embed_refmultcorr);
+    fChain->SetBranchAddress("embed_grefmultcorr", &embed_grefmultcorr,
+                             &b_embed_grefmultcorr);
+    fChain->SetBranchAddress("embed_cent", &embed_cent, &b_embed_cent);
+    fChain->SetBranchAddress("embed_npart", &embed_npart, &b_embed_npart);
+    fChain->SetBranchAddress("embed_rp", &embed_rp, &b_embed_rp);
+    fChain->SetBranchAddress("embed_zdcrate", &embed_zdcrate, &b_embed_zdcrate);
+    fChain->SetBranchAddress("embed_vz", &embed_vz, &b_embed_vz);
+  }
+  if (pp) {
+    fChain->SetBranchAddress("foundpp", &foundpp, &b_foundpp);
+    fChain->SetBranchAddress("ppjl", &ppjl, &b_ppjl);
+    fChain->SetBranchAddress("ppjs", &ppjs, &b_ppjs);
+    fChain->SetBranchAddress("ppjlm", &ppjlm, &b_ppjlm);
+    fChain->SetBranchAddress("ppjsm", &ppjsm, &b_ppjsm);
+  }
   Notify();
 }
 
-Bool_t AuAuReader::Notify() {
+Bool_t GenericReader::Notify() {
   // The Notify() function is called when a new file is opened. This
   // can be either for a new TTree in a TChain or when when a new TTree
   // is started when using PROOF. It is normally not necessary to make changes
@@ -166,14 +198,14 @@ Bool_t AuAuReader::Notify() {
   return kTRUE;
 }
 
-void AuAuReader::Show(Long64_t entry) {
+void GenericReader::Show(Long64_t entry) {
   // Print contents of entry.
   // If entry is not specified, print current entry
   if (!fChain)
     return;
   fChain->Show(entry);
 }
-Int_t AuAuReader::Cut(Long64_t entry) {
+Int_t GenericReader::Cut(Long64_t entry) {
   // This function may be called from Loop.
   // returns  1 if entry is accepted.
   // returns -1 otherwise.

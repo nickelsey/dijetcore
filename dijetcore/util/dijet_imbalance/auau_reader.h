@@ -15,6 +15,8 @@
 // Header file for the classes stored in the TTree if any.
 #include "TLorentzVector.h"
 
+namespace dijetcore {
+
 class AuAuReader {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
@@ -118,5 +120,7 @@ public :
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 };
+
+} // namespace dijetcore 
 
 #endif // DIJETCORE_UTIL_DIJET_IMBALANCE_AUAUREADER_H
