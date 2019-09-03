@@ -111,6 +111,11 @@ int main(int argc, char *argv[]) {
   gStyle->SetHatchesSpacing(1.0);
   gStyle->SetHatchesLineWidth(2);
 
+  // histograms are to calculate errors by default
+  TH1::SetDefaultSumw2();
+  TH2::SetDefaultSumw2();
+  TH3::SetDefaultSumw2();
+
   // turn off print messages
   gErrorIgnoreLevel = kInfo + 1;
 
