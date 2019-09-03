@@ -53,9 +53,9 @@ GenericReader::GenericReader(TTree *tree, bool off_axis, bool pp, bool embed)
 }
 
 GenericReader::~GenericReader() {
-  if (!fChain)
-    return;
-  delete fChain->GetCurrentFile();
+  //if (!fChain)
+  //  return;
+  //delete fChain->GetCurrentFile();
 }
 
 Int_t GenericReader::GetEntry(Long64_t entry) {
