@@ -72,6 +72,7 @@ endif(BUILD_JETREADER)
 ## and google benchmark. They are compiled as static libraries
 ## and embedded in the test binaries
 if(BUILD_TEST)
+  add_compile_options(-fPIC)
   set(TEMP_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
   set(BUILD_SHARED_LIBS OFF)
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} CACHE STRING "build gtest with correct cxx flags")
