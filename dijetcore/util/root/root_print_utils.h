@@ -206,8 +206,8 @@ namespace dijetcore {
     copts.SetLogScale(&c);
     
     if (find_good_range) {
-      double lowest, highest;
-      h[0]->GetMinimumAndMaximum(lowest, highest);
+      double lowest = h[0]->GetMinimum();
+      double highest = h[0]->GetMaximum();
       for (int i = 1; i < h.size(); ++i) {
         if (h[i]->GetMinimum() < lowest)
           lowest = h[i]->GetMinimum();
