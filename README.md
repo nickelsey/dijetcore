@@ -95,7 +95,7 @@ Where tow_0_trk_0.root is the hadd'ed contents of the tow_0_trk_0 subdirectory o
 To produce all four grid plots from the paper, the submit scripts must be run for both the grid and the radial scan trees. Once all the data has been hadded (so you have two Au+Au files, one for the grid and one for the radial scan, and two p+p directories each with the required five root files), then producing the plots is relatively easy, with the following two commands.
 ```
 ./bin/dijet_imbalance/print/print_aj_auau_scan_paper --auau=/path/to/auau/grid/root/file --ppDir=/path/to/pp/grid/directory --setScanning=false --outputDir=results/grid_16_8_plots
-./bin/dijet_imbalance/print/print_aj_auau_scan_paper --auau=/path/to/auau/scanning/root/file --ppDir=/path/to/pp/scanning/directory --setScanning=false --outputDir=results/scanning_16_8_plots
+./bin/dijet_imbalance/print/print_aj_auau_scan_paper --auau=/path/to/auau/scanning/root/file --ppDir=/path/to/pp/scanning/directory --setScanning=true --outputDir=results/scanning_16_8_plots
 ```
 
 In the resulting directories grid_print and test_results, which hold the final plots and the ks test values respectively. The other directories all have individual plots for each di-jet definition.
