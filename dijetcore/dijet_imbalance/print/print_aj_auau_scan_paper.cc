@@ -292,6 +292,11 @@ int main(int argc, char *argv[]) {
   std::vector<std::unordered_map<string, TH2D *>> off_axis_aj_test(
       num_datatypes);
 
+  std::vector<std::unordered_map<string, TH2D *>> hard_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_rho(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> hard_sigma(num_datatypes);
+  std::vector<std::unordered_map<string, TH2D *>> match_sigma(num_datatypes);
+
   std::vector<std::unordered_map<string, std::vector<TH1D *>>> hard_aj_cent(
       num_datatypes);
   std::vector<std::unordered_map<string, std::vector<TH1D *>>> match_aj_cent(
@@ -314,6 +319,15 @@ int main(int argc, char *argv[]) {
       num_datatypes);
   std::vector<std::unordered_map<string, std::vector<TH1D *>>>
       off_axis_aj_test_cent(num_datatypes);
+
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> hard_rho_cent(
+      num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> match_rho_cent(
+      num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> hard_sigma_cent(
+      num_datatypes);
+  std::vector<std::unordered_map<string, std::vector<TH1D *>>> match_sigma_cent(
+      num_datatypes);
 
   std::unordered_map<string, std::vector<TGraphErrors *>>
       systematic_errors_hard;
@@ -503,6 +517,23 @@ int main(int argc, char *argv[]) {
           cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5, 10000,
           -0.4999, 0.9);
 
+      hard_rho[data_index][key] =
+          new TH2D(dijetcore::MakeString(hist_prefix, "hardrho").c_str(), "",
+                   cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                   100, 0, 100);
+      match_rho[data_index][key] =
+          new TH2D(dijetcore::MakeString(hist_prefix, "matchrho").c_str(), "",
+                   cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                   100, 0, 100);
+      hard_sigma[data_index][key] =
+          new TH2D(dijetcore::MakeString(hist_prefix, "hardsigma").c_str(), "",
+                   cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                   100, 0, 100);
+      match_sigma[data_index][key] =
+          new TH2D(dijetcore::MakeString(hist_prefix, "matchsigma").c_str(), "",
+                   cent_boundaries.size(), -0.5, cent_boundaries.size() - 0.5,
+                   100, 0, 100);
+
       if (auau_off_axis_present) {
         off_axis_aj[data_index][key] =
             new TH2D(dijetcore::MakeString(hist_prefix, "offaxisaj").c_str(),
@@ -556,6 +587,11 @@ int main(int argc, char *argv[]) {
         match_aj_full_test[data_index][key]->Fill(
             cent_bin, (jlm_pt - jsm_pt) / (jlm_pt + jsm_pt));
 
+        hard_rho[data_index][key]->Fill(cent_bin, reader.jlrho);
+        match_rho[data_index][key]->Fill(cent_bin, reader.jlmrho);
+        hard_sigma[data_index][key]->Fill(cent_bin, reader.jlsig);
+        match_sigma[data_index][key]->Fill(cent_bin, reader.jlmsig);
+
         if (auau_off_axis_present) {
           double jloa_pt = reader.jloa->Pt();
           double jsoa_pt = reader.jsoa->Pt();
@@ -586,6 +622,15 @@ int main(int argc, char *argv[]) {
           dijetcore::Split2DByBinNormalized(
               match_aj_full_test[data_index][key]);
 
+      hard_rho_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(hard_rho[data_index][key]);
+      match_rho_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(match_rho[data_index][key]);
+      hard_sigma_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(hard_sigma[data_index][key]);
+      match_sigma_cent[data_index][key] =
+          dijetcore::Split2DByBinNormalized(match_sigma[data_index][key]);
+
       if (auau_off_axis_present) {
         off_axis_aj_cent[data_index][key] =
             dijetcore::Split2DByBinNormalized(off_axis_aj[data_index][key]);
@@ -595,6 +640,29 @@ int main(int argc, char *argv[]) {
         Overlay1D(off_axis_aj_cent[data_index][key], refcent_string, hopts,
                   copts, out_loc, "off_axis_aj", "", "|A_{J}|",
                   "event fraction", "Centrality");
+      }
+
+      // print out rho and sigma for QA
+      for (int i = 0; i < refcent_string.size(); ++i) {
+        // make our output directory
+        string out_loc = key_loc + "/cent_" + refcent_string_fs[i];
+        boost::filesystem::path dir(out_loc.c_str());
+        boost::filesystem::create_directories(dir);
+
+        dijetcore::PrettyPrint1D(hard_rho_cent[data_index][key][i], hopts,
+                                 copts, "0-20% centrality", out_loc, "hard_rho",
+                                 "", "#rho", "event fraction", "");
+        dijetcore::PrettyPrint1D(match_rho_cent[data_index][key][i], hopts,
+                                 copts, "0-20% centrality", out_loc,
+                                 "match_rho", "", "#rho", "event fraction", "");
+        dijetcore::PrettyPrint1D(hard_sigma_cent[data_index][key][i], hopts,
+                                 copts, "0-20% centrality", out_loc,
+                                 "hard_sigma", "", "#rho", "event fraction",
+                                 "");
+        dijetcore::PrettyPrint1D(match_sigma_cent[data_index][key][i], hopts,
+                                 copts, "0-20% centrality", out_loc,
+                                 "match_sigma", "", "#rho", "event fraction",
+                                 "");
       }
     } // datatype
 
