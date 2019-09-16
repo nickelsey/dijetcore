@@ -124,7 +124,7 @@ std::vector<TH2D *> Split3DByBin(H1 *h, int split_on_axis = 1,
 // on, and name_suffix is appended to each individual TH1D's name to make it
 // easier to avoid ROOT object name clashes
 template <class H1>
-std::vector<TH1D *> Split2DByBinNormalized(H1 *h, int split_on_x = true,
+std::vector<TH1D *> Split2DByBinNormalized(H1 *h, int split_on_x = 1,
                                            string name_suffix = "") {
   auto ret = Split2DByBin(h, split_on_x, name_suffix);
   for (auto hist : ret)
