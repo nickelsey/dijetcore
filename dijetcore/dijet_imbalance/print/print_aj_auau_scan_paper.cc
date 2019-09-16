@@ -404,6 +404,8 @@ int main(int argc, char *argv[]) {
 
   // create our histogram and canvas options
   dijetcore::histogramOpts hopts;
+  dijetcore::histogramOpts hoptsRhoSig;
+  hoptsRhoSig.title_offset_y = 0.95;
   dijetcore::canvasOpts copts;
   copts.leg_left_bound = 0.6;
   dijetcore::canvasOpts coptslogz;
@@ -431,6 +433,10 @@ int main(int argc, char *argv[]) {
   dijetcore::canvasOpts cOptsTopLeftLeg;
   cOptsTopLeftLeg.leg_right_bound = 0.18;
   cOptsTopLeftLeg.leg_left_bound = 0.4;
+  dijetcore::canvasOpts cOptsRhoSig;
+  cOptsRhoSig.leg_lower_bound = 0.75;
+  cOptsRhoSig.leg_upper_bound = 0.89;
+  cOptsRhoSig.left_margin = 0.17;
 
   // start loop over all keys
   // start entry at -1 so that the indexing starts at 0 :)
@@ -649,20 +655,22 @@ int main(int argc, char *argv[]) {
         boost::filesystem::path dir(out_loc.c_str());
         boost::filesystem::create_directories(dir);
 
-        dijetcore::PrettyPrint1D(hard_rho_cent[data_index][key][i], hopts,
-                                 copts, "0-20% centrality", out_loc, "hard_rho",
-                                 "", "#rho", "event fraction", "");
-        dijetcore::PrettyPrint1D(match_rho_cent[data_index][key][i], hopts,
-                                 copts, "0-20% centrality", out_loc,
-                                 "match_rho", "", "#rho", "event fraction", "");
-        dijetcore::PrettyPrint1D(hard_sigma_cent[data_index][key][i], hopts,
-                                 copts, "0-20% centrality", out_loc,
-                                 "hard_sigma", "", "#rho", "event fraction",
-                                 "");
-        dijetcore::PrettyPrint1D(match_sigma_cent[data_index][key][i], hopts,
-                                 copts, "0-20% centrality", out_loc,
-                                 "match_sigma", "", "#rho", "event fraction",
-                                 "");
+        dijetcore::PrettyPrint1D(hard_rho_cent[data_index][key][i], hoptsRhoSig,
+                                 cOptsRhoSig, "0-20% centrality", out_loc,
+                                 "hard_rho", "", "#rho [p_{T}/A]",
+                                 "event fraction", "");
+        dijetcore::PrettyPrint1D(match_rho_cent[data_index][key][i],
+                                 hoptsRhoSig, cOptsRhoSig, "0-20% centrality",
+                                 out_loc, "match_rho", "", "#rho [p_{T}/A]",
+                                 "event fraction", "");
+        dijetcore::PrettyPrint1D(hard_sigma_cent[data_index][key][i],
+                                 hoptsRhoSig, cOptsRhoSig, "0-20% centrality",
+                                 out_loc, "hard_sigma", "", "#sigma [p_{T}/A]",
+                                 "event fraction", "");
+        dijetcore::PrettyPrint1D(match_sigma_cent[data_index][key][i],
+                                 hoptsRhoSig, cOptsRhoSig, "0-20% centrality",
+                                 out_loc, "match_sigma", "", "#sigma [p_{T}/A]",
+                                 "event fraction", "");
       }
     } // datatype
 
