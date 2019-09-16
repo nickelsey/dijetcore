@@ -804,18 +804,18 @@ int main(int argc, char *argv[]) {
 
         dijetcore::PrettyPrint1D(hard_rho_cent[data_index][key][i], hoptsRhoSig,
                                  cOptsRhoSig, "0-20% centrality", out_loc,
-                                 "hard_rho", "", "#rho [p_{T}/A]", "event fraction", "");
+                                 "hard_rho", "", "#rho [GeV/A]", "event fraction", "");
         dijetcore::PrettyPrint1D(match_rho_cent[data_index][key][i],
                                  hoptsRhoSig, cOptsRhoSig, "0-20% centrality",
-                                 out_loc, "match_rho", "", "#rho [p_{T}/A]",
+                                 out_loc, "match_rho", "", "#rho [GeV/A]",
                                  "event fraction", "");
         dijetcore::PrettyPrint1D(hard_sigma_cent[data_index][key][i],
                                  hoptsRhoSig, cOptsRhoSig, "0-20% centrality",
-                                 out_loc, "hard_sigma", "", "#sigma [p_{T}/A]",
+                                 out_loc, "hard_sigma", "", "#sigma [GeV/A]",
                                  "event fraction", "");
         dijetcore::PrettyPrint1D(match_sigma_cent[data_index][key][i],
                                  hoptsRhoSig, cOptsRhoSig, "0-20% centrality",
-                                 out_loc, "match_sigma", "", "#sigma [p_{T}/A]",
+                                 out_loc, "match_sigma", "", "#sigma [GeV/A]",
                                  "event fraction", "");
       }
     } // datatype
