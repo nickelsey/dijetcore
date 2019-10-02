@@ -928,7 +928,7 @@ int main(int argc, char *argv[]) {
       if (off_axis_aj_cent[AUAU].count(key)) {
         dijetcore::AjPrintout(match_aj_cent[AUAU][key][i],
                               off_axis_aj_cent[AUAU][key][i], nullptr, 0.0, 0.3,
-                              0.0, 0.9, matchPave, "Au+Au HT",
+                              0.0001, 0.9, matchPave, "Au+Au HT",
                               "Au+Au HC embedded", hopts, copts, out_loc,
                               "aj_embed", "", "|A_{J}|", "event fraction", "", true);
       }
