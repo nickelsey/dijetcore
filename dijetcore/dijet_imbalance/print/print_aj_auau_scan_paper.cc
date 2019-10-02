@@ -930,7 +930,7 @@ int main(int argc, char *argv[]) {
                               off_axis_aj_cent[AUAU][key][i], nullptr, 0.0, 0.3,
                               0.0, 0.9, matchPave, "Au+Au HT",
                               "Au+Au HC embedded", hopts, copts, out_loc,
-                              "aj_embed", "", "|A_{J}|", "event fraction");
+                              "aj_embed", "", "|A_{J}|", "event fraction", "", true);
       }
       dijetcore::AjPrintout(
           hard_aj_full_cent[AUAU][key][i], hard_aj_full_cent[PP][key][i],
