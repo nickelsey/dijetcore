@@ -797,22 +797,27 @@ int main(int argc, char *argv[]) {
           out_loc, "aj_match_full", "", "A_{J}", "event fraction");
 
       // print the systematic errors
-      dijetcore::Overlay1D(
-          hard_aj_cent[TOWP][key][i], hard_aj_cent[TOWM][key][i],
-          "increased tower E scale", "decreased tower E scale", hopts, copts,
-          out_loc, "tower_sys_var_hard", "", "A_{J}", "event fraction", "");
-      dijetcore::Overlay1D(
-          hard_aj_cent[TRACKP][key][i], hard_aj_cent[TRACKM][key][i],
-          "increased tracking eff", "decreased tracking eff", hopts, copts,
-          out_loc, "track_sys_var_hard", "", "A_{J}", "event fraction", "");
-      dijetcore::Overlay1D(
-          match_aj_cent[TOWP][key][i], match_aj_cent[TOWM][key][i],
-          "increased tower E scale", "decreased tower E scale", hopts, copts,
-          out_loc, "tower_sys_var_match", "", "A_{J}", "event fraction", "");
-      dijetcore::Overlay1D(
-          match_aj_cent[TRACKP][key][i], match_aj_cent[TRACKM][key][i],
-          "increased tracking eff", "decreased tracking eff", hopts, copts,
-          out_loc, "track_sys_var_match", "", "A_{J}", "event fraction", "");
+      dijetcore::AjPrintout(
+          hard_aj_cent[TOWP][key][i], hard_aj_cent[TOWM][key][i], nullptr, 0.0,
+          0.3, 0.0001, 0.9, hardPave, "increased tower E scale",
+          "decreased tower E scale", hopts, copts, out_loc,
+          "tower_sys_var_hard", "", "A_{J}", "event fraction", "");
+      dijetcore::AjPrintout(
+          hard_aj_cent[TRACKP][key][i], hard_aj_cent[TRACKM][key][i], nullptr,
+          0.0, 0.3, 0.0001, 0.9, hardPave, "increased tracking eff",
+          "decreased tracking eff", hopts, copts, out_loc, "track_sys_var_hard",
+          "", "A_{J}", "event fraction", "");
+
+      dijetcore::AjPrintout(
+          match_aj_cent[TOWP][key][i], match_aj_cent[TOWM][key][i], nullptr,
+          0.0, 0.3, 0.0001, 0.9, matchPave, "increased tower E scale",
+          "decreased tower E scale", hopts, copts, out_loc,
+          "tower_sys_var_match", "", "A_{J}", "event fraction", "");
+      dijetcore::AjPrintout(
+          match_aj_cent[TRACKP][key][i], match_aj_cent[TRACKM][key][i], nullptr,
+          0.0, 0.3, 0.0001, 0.9, matchPave, "increased tracking eff",
+          "decreased tracking eff", hopts, copts, out_loc, "track_sys_var_match",
+          "", "A_{J}", "event fraction", "");
 
       // run statistical tests - get ks values for each
       double ks_hard_val = hard_aj_test_cent[AUAU][key][i]->KolmogorovTest(
