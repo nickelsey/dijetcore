@@ -1117,56 +1117,78 @@ int main(int argc, char *argv[]) {
   std::vector<std::vector<std::vector<TPad *>>> hard_err_frac_pads;
   std::vector<TCanvas *> canvas_match_err_frac;
   std::vector<std::vector<std::vector<TPad *>>> match_err_frac_pads;
-  std::vector<TCanvas *> canvas_hard_sys;
-  std::vector<std::vector<std::vector<TPad *>>> hard_sys_pads;
-  std::vector<TCanvas *> canvas_match_sys;
-  std::vector<std::vector<std::vector<TPad *>>> match_sys_pads;
+  std::vector<TCanvas *> canvas_hard_sys_trk;
+  std::vector<std::vector<std::vector<TPad *>>> hard_sys_trk_pads;
+  std::vector<TCanvas *> canvas_match_sys_trk;
+  std::vector<std::vector<std::vector<TPad *>>> match_sys_trk_pads;
+  std::vector<TCanvas *> canvas_hard_sys_tow;
+  std::vector<std::vector<std::vector<TPad *>>> hard_sys_tow_pads;
+  std::vector<TCanvas *> canvas_match_sys_tow;
+  std::vector<std::vector<std::vector<TPad *>>> match_sys_tow_pads;
+
+  // define margins for the grids
+  double top_margin = 0.10;
+  double bottom_margin = 0.10;
+  double left_margin = 0.10;
+  double right_margin = 0.10;
 
   for (int cent = 0; cent < refcent_string.size(); ++cent) {
     canvas_hard.push_back(
         new TCanvas(dijetcore::MakeString("hard_canvas_", cent).c_str()));
-    hard_pads.push_back(dijetcore::CanvasPartition(canvas_hard[cent],
-                                                   radii.size(), constpt.size(),
-                                                   0.10, 0.10, 0.10, 0.10));
+    hard_pads.push_back(dijetcore::CanvasPartition(
+        canvas_hard[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
     canvas_match.push_back(
         new TCanvas(dijetcore::MakeString("match_canvas_", cent).c_str()));
-    match_pads.push_back(
-        dijetcore::CanvasPartition(canvas_match[cent], radii.size(),
-                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
+    match_pads.push_back(dijetcore::CanvasPartition(
+        canvas_match[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
     canvas_hard_full.push_back(
         new TCanvas(dijetcore::MakeString("hard_canvas_full_", cent).c_str()));
-    hard_pads_full.push_back(
-        dijetcore::CanvasPartition(canvas_hard_full[cent], radii.size(),
-                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
+    hard_pads_full.push_back(dijetcore::CanvasPartition(
+        canvas_hard_full[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
     canvas_match_full.push_back(
         new TCanvas(dijetcore::MakeString("match_canvas_full_", cent).c_str()));
-    match_pads_full.push_back(
-        dijetcore::CanvasPartition(canvas_match_full[cent], radii.size(),
-                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
+    match_pads_full.push_back(dijetcore::CanvasPartition(
+        canvas_match_full[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
     canvas_oa.push_back(
         new TCanvas(dijetcore::MakeString("oa_canvas_", cent).c_str()));
     oa_pads.push_back(dijetcore::CanvasPartition(
-        canvas_oa[cent], radii.size(), constpt.size(), 0.10, 0.10, 0.10, 0.10));
+        canvas_oa[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
     canvas_hard_err_frac.push_back(new TCanvas(
         dijetcore::MakeString("hard_err_frac_canvas_", cent).c_str()));
-    hard_err_frac_pads.push_back(
-        dijetcore::CanvasPartition(canvas_hard_err_frac[cent], radii.size(),
-                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
+    hard_err_frac_pads.push_back(dijetcore::CanvasPartition(
+        canvas_hard_err_frac[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
     canvas_match_err_frac.push_back(new TCanvas(
         dijetcore::MakeString("match_err_frac_canvas_", cent).c_str()));
-    match_err_frac_pads.push_back(
-        dijetcore::CanvasPartition(canvas_match_err_frac[cent], radii.size(),
-                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
-    canvas_hard_sys.push_back(
-        new TCanvas(dijetcore::MakeString("hard_sys_canvas_", cent).c_str()));
-    hard_sys_pads.push_back(
-        dijetcore::CanvasPartition(canvas_hard_sys[cent], radii.size(),
-                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
-    canvas_match_sys.push_back(
-        new TCanvas(dijetcore::MakeString("match_sys_canvas_", cent).c_str()));
-    match_sys_pads.push_back(
-        dijetcore::CanvasPartition(canvas_match_sys[cent], radii.size(),
-                                   constpt.size(), 0.10, 0.10, 0.10, 0.10));
+    match_err_frac_pads.push_back(dijetcore::CanvasPartition(
+        canvas_match_err_frac[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
+    canvas_hard_sys_trk.push_back(new TCanvas(
+        dijetcore::MakeString("hard_sys_trk_canvas_", cent).c_str()));
+    hard_sys_trk_pads.push_back(dijetcore::CanvasPartition(
+        canvas_hard_sys_trk[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
+    canvas_match_sys_trk.push_back(new TCanvas(
+        dijetcore::MakeString("match_sys_trk_canvas_", cent).c_str()));
+    match_sys_trk_pads.push_back(dijetcore::CanvasPartition(
+        canvas_match_sys_trk[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
+
+    canvas_hard_sys_tow.push_back(new TCanvas(
+        dijetcore::MakeString("hard_sys_tow_canvas_", cent).c_str()));
+    hard_sys_tow_pads.push_back(dijetcore::CanvasPartition(
+        canvas_hard_sys_tow[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
+    canvas_match_sys_tow.push_back(new TCanvas(
+        dijetcore::MakeString("match_sys_tow_canvas_", cent).c_str()));
+    match_sys_tow_pads.push_back(dijetcore::CanvasPartition(
+        canvas_match_sys_tow[cent], radii.size(), constpt.size(), left_margin,
+        right_margin, bottom_margin, top_margin));
   }
 
   // ------------------------------------------------------------------------------------
