@@ -1825,7 +1825,6 @@ int main(int argc, char *argv[]) {
     // systematic uncertainty for hard di-jets from tower variation
     dijetcore::GridPrintOptions hard_sys_tow_opts;
     hard_sys_tow_opts.layer_3_active = false;
-    hard_sys_tow_opts.layer_1_print = "e3";
     boost::filesystem::path hard_sys_tow_name = grid_dir;
     hard_sys_tow_name /= "hard_sys_tow.pdf";
     dijetcore::PrintGrid(canvas_hard_sys_tow[cent], hard_sys_tow_pads[cent],
@@ -1833,10 +1832,9 @@ int main(int argc, char *argv[]) {
                          dummy_grid, hard_sys_tow_opts, hard_sys_tow_text[cent],
                          invis, axis_text_aj, hard_sys_tow_name.string());
 
-    // systematic uncertaintyfor matched di-jets from tower variation
+    // systematic uncertainty for matched di-jets from tower variation
     dijetcore::GridPrintOptions match_sys_tow_opts;
     match_sys_tow_opts.layer_3_active = false;
-    match_sys_tow_opts.layer_1_print = "e3";
     boost::filesystem::path match_sys_tow_name = grid_dir;
     match_sys_tow_name /= "match_sys_tow.pdf";
     dijetcore::PrintGrid(canvas_match_sys_tow[cent], match_sys_tow_pads[cent],
@@ -1849,7 +1847,6 @@ int main(int argc, char *argv[]) {
     // variation
     dijetcore::GridPrintOptions hard_sys_trk_opts;
     hard_sys_trk_opts.layer_3_active = false;
-    hard_sys_trk_opts.layer_1_print = "e3";
     boost::filesystem::path hard_sys_trk_name = grid_dir;
     hard_sys_trk_name /= "hard_sys_trk.pdf";
     dijetcore::PrintGrid(canvas_hard_sys_trk[cent], hard_sys_trk_pads[cent],
@@ -1857,11 +1854,10 @@ int main(int argc, char *argv[]) {
                          dummy_grid, hard_sys_trk_opts, hard_sys_trk_text[cent],
                          invis, axis_text_aj, hard_sys_trk_name.string());
 
-    // systematic uncertaintyfor matched di-jets from tracking efficiency
+    // systematic uncertainty for matched di-jets from tracking efficiency
     // variation
     dijetcore::GridPrintOptions match_sys_trk_opts;
     match_sys_trk_opts.layer_3_active = false;
-    match_sys_trk_opts.layer_1_print = "e3";
     boost::filesystem::path match_sys_trk_name = grid_dir;
     match_sys_trk_name /= "match_sys_trk.pdf";
     dijetcore::PrintGrid(canvas_match_sys_trk[cent], match_sys_trk_pads[cent],
