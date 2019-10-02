@@ -1654,6 +1654,14 @@ int main(int argc, char *argv[]) {
       refcent_string.size());
   std::vector<std::vector<dijetcore::GridTextObject>> match_err_text(
       refcent_string.size());
+  std::vector<std::vector<dijetcore::GridTextObject>> hard_sys_trk_text(
+      refcent_string.size());
+  std::vector<std::vector<dijetcore::GridTextObject>> match_sys_trk_text(
+      refcent_string.size());
+  std::vector<std::vector<dijetcore::GridTextObject>> hard_sys_tow_text(
+      refcent_string.size());
+  std::vector<std::vector<dijetcore::GridTextObject>> match_sys_tow_text(
+      refcent_string.size());
 
   // add legends - legends will be in the top left corner (0xlast)
   // the legend position will have to be adjusted when the grid changes,
@@ -1715,6 +1723,46 @@ int main(int argc, char *argv[]) {
     match_err_text[cent].back().legend->AddEntry(
         err_frac_grid_match[cent][leg_x_index][leg_y_index],
         "p+p relative sys. err.");
+   
+    hard_sys_trk_text[cent].push_back(dijetcore::GridTextObject());
+    hard_sys_trk_text[cent].back().location_x = leg_x_index;
+    hard_sys_trk_text[cent].back().location_y = leg_y_index;
+    hard_sys_trk_text[cent].back().legend = std::move(
+        dijetcore::make_unique<TLegend>(x_low, y_low, x_high, y_high));
+    hard_sys_trk_text[cent].back().legend->AddEntry(
+        pp_grid_hard_trk_p[cent][leg_x_index][leg_y_index], "p+p increased tracking eff");
+    hard_sys_trk_text[cent].back().legend->AddEntry(
+        pp_grid_hard_trk_m[cent][leg_x_index][leg_y_index], "p+p decreased tracking eff");
+
+    match_sys_trk_text[cent].push_back(dijetcore::GridTextObject());
+    match_sys_trk_text[cent].back().location_x = leg_x_index;
+    match_sys_trk_text[cent].back().location_y = leg_y_index;
+    match_sys_trk_text[cent].back().legend = std::move(
+        dijetcore::make_unique<TLegend>(x_low, y_low, x_high, y_high));
+    match_sys_trk_text[cent].back().legend->AddEntry(
+        pp_grid_match_trk_p[cent][leg_x_index][leg_y_index], "p+p increased tracking eff");
+    match_sys_trk_text[cent].back().legend->AddEntry(
+        pp_grid_match_trk_m[cent][leg_x_index][leg_y_index], "p+p decreased tracking eff");
+    
+    hard_sys_tow_text[cent].push_back(dijetcore::GridTextObject());
+    hard_sys_tow_text[cent].back().location_x = leg_x_index;
+    hard_sys_tow_text[cent].back().location_y = leg_y_index;
+    hard_sys_tow_text[cent].back().legend = std::move(
+        dijetcore::make_unique<TLegend>(x_low, y_low, x_high, y_high));
+    hard_sys_tow_text[cent].back().legend->AddEntry(
+        pp_grid_hard_tow_p[cent][leg_x_index][leg_y_index], "p+p increased tower E");
+    hard_sys_tow_text[cent].back().legend->AddEntry(
+        pp_grid_hard_tow_m[cent][leg_x_index][leg_y_index], "p+p decreased tower E");
+
+    match_sys_tow_text[cent].push_back(dijetcore::GridTextObject());
+    match_sys_tow_text[cent].back().location_x = leg_x_index;
+    match_sys_tow_text[cent].back().location_y = leg_y_index;
+    match_sys_tow_text[cent].back().legend = std::move(
+        dijetcore::make_unique<TLegend>(x_low, y_low, x_high, y_high));
+    match_sys_tow_text[cent].back().legend->AddEntry(
+        pp_grid_match_tow_p[cent][leg_x_index][leg_y_index], "p+p increased tower E");
+    match_sys_tow_text[cent].back().legend->AddEntry(
+        pp_grid_match_tow_m[cent][leg_x_index][leg_y_index], "p+p decreased tower E");
   }
 
   // add a text box with centrality, jet pT, etc. This is almost same for all
