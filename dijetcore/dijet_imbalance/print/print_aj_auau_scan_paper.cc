@@ -926,11 +926,11 @@ int main(int argc, char *argv[]) {
           "Au+Au HT", "p+p HT #oplus Au+Au MB", hopts, copts, out_loc,
           "aj_match", "", "|A_{J}|", "event fraction");
       if (off_axis_aj_cent[AUAU].count(key)) {
-        dijetcore::AjPrintout(match_aj_cent[AUAU][key][i],
-                              off_axis_aj_cent[AUAU][key][i], nullptr, 0.0, 0.3,
-                              0.0001, 0.9, matchPave, "Au+Au HT",
-                              "Au+Au HC embedded", hopts, copts, out_loc,
-                              "aj_embed", "", "|A_{J}|", "event fraction", "", true);
+        dijetcore::AjPrintout(
+            match_aj_cent[AUAU][key][i], off_axis_aj_cent[AUAU][key][i],
+            nullptr, 0.0, 0.3, 0.0001, 0.9, matchPave, "Au+Au HT",
+            "Au+Au HC embedded", hopts, copts, out_loc, "aj_embed", "",
+            "|A_{J}|", "event fraction", "", true);
       }
       dijetcore::AjPrintout(
           hard_aj_full_cent[AUAU][key][i], hard_aj_full_cent[PP][key][i],
@@ -944,22 +944,27 @@ int main(int argc, char *argv[]) {
           out_loc, "aj_match_full", "", "A_{J}", "event fraction");
 
       // print the systematic errors
-      dijetcore::Overlay1D(
-          hard_aj_cent[TOWP][key][i], hard_aj_cent[TOWM][key][i],
-          "increased tower E scale", "decreased tower E scale", hopts, copts,
-          out_loc, "tower_sys_var_hard", "", "A_{J}", "event fraction", "");
-      dijetcore::Overlay1D(
-          hard_aj_cent[TRACKP][key][i], hard_aj_cent[TRACKM][key][i],
-          "increased tracking eff", "decreased tracking eff", hopts, copts,
-          out_loc, "track_sys_var_hard", "", "A_{J}", "event fraction", "");
-      dijetcore::Overlay1D(
-          match_aj_cent[TOWP][key][i], match_aj_cent[TOWM][key][i],
-          "increased tower E scale", "decreased tower E scale", hopts, copts,
-          out_loc, "tower_sys_var_match", "", "A_{J}", "event fraction", "");
-      dijetcore::Overlay1D(
-          match_aj_cent[TRACKP][key][i], match_aj_cent[TRACKM][key][i],
-          "increased tracking eff", "decreased tracking eff", hopts, copts,
-          out_loc, "track_sys_var_match", "", "A_{J}", "event fraction", "");
+      dijetcore::AjPrintout(
+          hard_aj_cent[TOWP][key][i], hard_aj_cent[TOWM][key][i], nullptr, 0.0,
+          0.3, 0.0001, 0.9, hardPave, "increased tower E scale",
+          "decreased tower E scale", hopts, copts, out_loc,
+          "tower_sys_var_hard", "", "A_{J}", "event fraction", "");
+      dijetcore::AjPrintout(
+          hard_aj_cent[TRACKP][key][i], hard_aj_cent[TRACKM][key][i], nullptr,
+          0.0, 0.3, 0.0001, 0.9, hardPave, "increased tracking eff",
+          "decreased tracking eff", hopts, copts, out_loc, "track_sys_var_hard",
+          "", "A_{J}", "event fraction", "");
+
+      dijetcore::AjPrintout(
+          match_aj_cent[TOWP][key][i], match_aj_cent[TOWM][key][i], nullptr,
+          0.0, 0.3, 0.0001, 0.9, matchPave, "increased tower E scale",
+          "decreased tower E scale", hopts, copts, out_loc,
+          "tower_sys_var_match", "", "A_{J}", "event fraction", "");
+      dijetcore::AjPrintout(
+          match_aj_cent[TRACKP][key][i], match_aj_cent[TRACKM][key][i], nullptr,
+          0.0, 0.3, 0.0001, 0.9, matchPave, "increased tracking eff",
+          "decreased tracking eff", hopts, copts, out_loc, "track_sys_var_match",
+          "", "A_{J}", "event fraction", "");
 
       // run statistical tests - get ks values for each
       double ks_hard_val = hard_aj_test_cent[AUAU][key][i]->KolmogorovTest(
@@ -1969,41 +1974,45 @@ int main(int argc, char *argv[]) {
     hard_sys_tow_opts.layer_1_print = "e3";
     boost::filesystem::path hard_sys_tow_name = grid_dir;
     hard_sys_tow_name /= "hard_sys_tow.pdf";
-    dijetcore::PrintGrid(canvas_hard_sys_tow[cent], hard_sys_tow_pads[cent], pp_grid_hard_tow_p[cent],
-                         pp_grid_hard_tow_m[cent], dummy_grid, hard_sys_tow_opts,
-                         hard_sys_tow_text[cent], invis, axis_text_aj,
-                         hard_sys_tow_name.string());
-    
+    dijetcore::PrintGrid(canvas_hard_sys_tow[cent], hard_sys_tow_pads[cent],
+                         pp_grid_hard_tow_p[cent], pp_grid_hard_tow_m[cent],
+                         dummy_grid, hard_sys_tow_opts, hard_sys_tow_text[cent],
+                         invis, axis_text_aj, hard_sys_tow_name.string());
+
     // systematic uncertaintyfor matched di-jets from tower variation
     dijetcore::GridPrintOptions match_sys_tow_opts;
     match_sys_tow_opts.layer_3_active = false;
     match_sys_tow_opts.layer_1_print = "e3";
     boost::filesystem::path match_sys_tow_name = grid_dir;
     match_sys_tow_name /= "match_sys_tow.pdf";
-    dijetcore::PrintGrid(canvas_match_sys_tow[cent], match_sys_tow_pads[cent], pp_grid_match_tow_p[cent],
-                         pp_grid_match_tow_m[cent], dummy_grid, match_sys_tow_opts,
+    dijetcore::PrintGrid(canvas_match_sys_tow[cent], match_sys_tow_pads[cent],
+                         pp_grid_match_tow_p[cent], pp_grid_match_tow_m[cent],
+                         dummy_grid, match_sys_tow_opts,
                          match_sys_tow_text[cent], invis, axis_text_aj,
                          match_sys_tow_name.string());
 
-    // systematic uncertainty for hard di-jets from tracking efficiency variation
+    // systematic uncertainty for hard di-jets from tracking efficiency
+    // variation
     dijetcore::GridPrintOptions hard_sys_trk_opts;
     hard_sys_trk_opts.layer_3_active = false;
     hard_sys_trk_opts.layer_1_print = "e3";
     boost::filesystem::path hard_sys_trk_name = grid_dir;
     hard_sys_trk_name /= "hard_sys_trk.pdf";
-    dijetcore::PrintGrid(canvas_hard_sys_trk[cent], hard_sys_trk_pads[cent], pp_grid_hard_trk_p[cent],
-                         pp_grid_hard_trk_m[cent], dummy_grid, hard_sys_trk_opts,
-                         hard_sys_trk_text[cent], invis, axis_text_aj,
-                         hard_sys_trk_name.string());
-    
-    // systematic uncertaintyfor matched di-jets from tracking efficiency variation
+    dijetcore::PrintGrid(canvas_hard_sys_trk[cent], hard_sys_trk_pads[cent],
+                         pp_grid_hard_trk_p[cent], pp_grid_hard_trk_m[cent],
+                         dummy_grid, hard_sys_trk_opts, hard_sys_trk_text[cent],
+                         invis, axis_text_aj, hard_sys_trk_name.string());
+
+    // systematic uncertaintyfor matched di-jets from tracking efficiency
+    // variation
     dijetcore::GridPrintOptions match_sys_trk_opts;
     match_sys_trk_opts.layer_3_active = false;
     match_sys_trk_opts.layer_1_print = "e3";
     boost::filesystem::path match_sys_trk_name = grid_dir;
     match_sys_trk_name /= "match_sys_trk.pdf";
-    dijetcore::PrintGrid(canvas_match_sys_trk[cent], match_sys_trk_pads[cent], pp_grid_match_trk_p[cent],
-                         pp_grid_match_trk_m[cent], dummy_grid, match_sys_trk_opts,
+    dijetcore::PrintGrid(canvas_match_sys_trk[cent], match_sys_trk_pads[cent],
+                         pp_grid_match_trk_p[cent], pp_grid_match_trk_m[cent],
+                         dummy_grid, match_sys_trk_opts,
                          match_sys_trk_text[cent], invis, axis_text_aj,
                          match_sys_trk_name.string());
   }
