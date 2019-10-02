@@ -15,7 +15,8 @@ void AjPrintout(H *h1, H *h2, TGraphErrors *sys, double y_min, double y_max,
                 string h2_title, dijetcore::histogramOpts hopts,
                 dijetcore::canvasOpts copts, string output_loc,
                 string output_name, string canvas_title, string x_axis_label,
-                string y_axis_label, string legend_title = "") {
+                string y_axis_label, string legend_title = "",
+                bool h2_fill = false) {
   // we assume the output location exists, so create
   // the final output string that will be used for pdf creation
   string canvas_name = output_loc + "/" + output_name + ".pdf";
@@ -31,7 +32,7 @@ void AjPrintout(H *h1, H *h2, TGraphErrors *sys, double y_min, double y_max,
   hopts.SetHistogram(h1);
   hopts.SetHistogram(h2);
 
-  if (sys == nullptr) {
+  if (h2_fill) {
     h2->SetLineColor(kBlue);
     h2->SetMarkerColor(kBlue);
   }
