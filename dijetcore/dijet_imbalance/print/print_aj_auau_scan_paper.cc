@@ -1464,8 +1464,8 @@ int main(int argc, char *argv[]) {
     for (auto &container2 : container1)
       for (auto &container3 : container2)
         for (auto &h : container3) {
-          h->SetLineColor(kAzure);
-          h->SetMarkerColor(kAzure);
+          h->SetLineColor(kGreen+2);
+          h->SetMarkerColor(kGreen+2);
           h->SetLineWidth(1);
           h->SetMarkerSize(0.1);
           h->GetXaxis()->SetTitle("");
@@ -1484,8 +1484,8 @@ int main(int argc, char *argv[]) {
     for (auto &container2 : container1)
       for (auto &container3 : container2)
         for (auto &h : container3) {
-          h->SetLineColor(kOrange);
-          h->SetMarkerColor(kOrange);
+          h->SetLineColor(kMagenta+1);
+          h->SetMarkerColor(kMagenta+1);
           h->SetLineWidth(1);
           h->SetMarkerSize(0.1);
           h->GetXaxis()->SetTitle("");
@@ -1693,6 +1693,32 @@ int main(int argc, char *argv[]) {
     match_err_text[cent].back().location_x = text_x_index;
     match_err_text[cent].back().location_y = text_y_index;
     match_err_text[cent].back().text =
+        std::move(dijetcore::make_unique<TPaveText>(gen_match_info));
+
+    
+    // for systematics
+    hard_sys_tow_text[cent].push_back(dijetcore::GridTextObject());
+    hard_sys_tow_text[cent].back().location_x = text_x_index;
+    hard_sys_tow_text[cent].back().location_y = text_y_index;
+    hard_sys_tow_text[cent].back().text =
+        std::move(dijetcore::make_unique<TPaveText>(gen_hard_info));
+    
+    match_sys_tow_text[cent].push_back(dijetcore::GridTextObject());
+    match_sys_tow_text[cent].back().location_x = text_x_index;
+    match_sys_tow_text[cent].back().location_y = text_y_index;
+    match_sys_tow_text[cent].back().text =
+        std::move(dijetcore::make_unique<TPaveText>(gen_match_info));
+
+    hard_sys_trk_text[cent].push_back(dijetcore::GridTextObject());
+    hard_sys_trk_text[cent].back().location_x = text_x_index;
+    hard_sys_trk_text[cent].back().location_y = text_y_index;
+    hard_sys_trk_text[cent].back().text =
+        std::move(dijetcore::make_unique<TPaveText>(gen_hard_info));
+    
+    match_sys_trk_text[cent].push_back(dijetcore::GridTextObject());
+    match_sys_trk_text[cent].back().location_x = text_x_index;
+    match_sys_trk_text[cent].back().location_y = text_y_index;
+    match_sys_trk_text[cent].back().text =
         std::move(dijetcore::make_unique<TPaveText>(gen_match_info));
   }
 
