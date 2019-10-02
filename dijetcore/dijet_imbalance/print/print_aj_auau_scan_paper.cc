@@ -804,7 +804,8 @@ int main(int argc, char *argv[]) {
 
         dijetcore::PrettyPrint1D(hard_rho_cent[data_index][key][i], hoptsRhoSig,
                                  cOptsRhoSig, "0-20% centrality", out_loc,
-                                 "hard_rho", "", "#rho [GeV/A]", "event fraction", "");
+                                 "hard_rho", "", "#rho [GeV/A]",
+                                 "event fraction", "");
         dijetcore::PrettyPrint1D(match_rho_cent[data_index][key][i],
                                  hoptsRhoSig, cOptsRhoSig, "0-20% centrality",
                                  out_loc, "match_rho", "", "#rho [GeV/A]",
@@ -941,6 +942,24 @@ int main(int argc, char *argv[]) {
           systematic_errors_match_full[key][i], 0.0, 0.3, -0.4999, 0.9,
           matchPave, "Au+Au HT", "p+p HT #oplus Au+Au MB", hopts, copts,
           out_loc, "aj_match_full", "", "A_{J}", "event fraction");
+
+      // print the systematic errors
+      dijetcore::Overlay1D(
+          hard_aj_cent[TOWP][key][i], hard_aj_cent[TOWM][key][i],
+          "increased tower E scale", "decreased tower E scale", hopts, copts,
+          out_loc, "tower_sys_var_hard", "", "A_{J}", "event fraction", "");
+      dijetcore::Overlay1D(
+          hard_aj_cent[TRACKP][key][i], hard_aj_cent[TRACKM][key][i],
+          "increased tracking eff", "decreased tracking eff", hopts, copts,
+          out_loc, "track_sys_var_hard", "", "A_{J}", "event fraction", "");
+      dijetcore::Overlay1D(
+          match_aj_cent[TOWP][key][i], match_aj_cent[TOWM][key][i],
+          "increased tower E scale", "decreased tower E scale", hopts, copts,
+          out_loc, "tower_sys_var_match", "", "A_{J}", "event fraction", "");
+      dijetcore::Overlay1D(
+          match_aj_cent[TRACKP][key][i], match_aj_cent[TRACKM][key][i],
+          "increased tracking eff", "decreased tracking eff", hopts, copts,
+          out_loc, "track_sys_var_match", "", "A_{J}", "event fraction", "");
 
       // run statistical tests - get ks values for each
       double ks_hard_val = hard_aj_test_cent[AUAU][key][i]->KolmogorovTest(
