@@ -1952,6 +1952,7 @@ int main(int argc, char *argv[]) {
                          error_grid_hard[cent], auau_grid_hard[cent], hard_opts,
                          hard_aj_text[cent], invis, axis_text_aj,
                          hard_aj_name.string());
+    invis->Clear();
 
     // print match aj
     dijetcore::GridPrintOptions match_opts;
@@ -1962,6 +1963,7 @@ int main(int argc, char *argv[]) {
                          pp_grid_match[cent], error_grid_match[cent],
                          auau_grid_match[cent], match_opts, match_aj_text[cent],
                          invis, axis_text_aj, match_aj_name.string());
+    invis->Clear();
 
     // print hard aj full
     dijetcore::GridPrintOptions hard_opts_full;
@@ -1972,6 +1974,7 @@ int main(int argc, char *argv[]) {
         canvas_hard_full[cent], hard_pads_full[cent], pp_grid_hard_full[cent],
         error_grid_hard_full[cent], auau_grid_hard_full[cent], hard_opts_full,
         hard_aj_text[cent], invis, axis_text_aj, hard_aj_full_name.string());
+    invis->Clear();
 
     // print match aj
     dijetcore::GridPrintOptions match_opts_full;
@@ -1983,6 +1986,7 @@ int main(int argc, char *argv[]) {
                          auau_grid_match_full[cent], match_opts_full,
                          match_aj_text[cent], invis, axis_text_aj,
                          match_aj_full_name.string());
+    invis->Clear();
 
     // print off axis aj
     dijetcore::GridPrintOptions oa_opts;
@@ -1994,6 +1998,7 @@ int main(int argc, char *argv[]) {
                          auau_grid_match[cent], dummy_grid, oa_opts,
                          oa_aj_text[cent], invis, axis_text_aj,
                          oa_aj_name.string());
+    invis->Clear();
 
     // print fractional error
     dijetcore::GridPrintOptions hard_rel_sys_err_opts;
@@ -2005,6 +2010,7 @@ int main(int argc, char *argv[]) {
                          err_frac_grid_hard[cent], dummy_grid, dummy_grid,
                          hard_rel_sys_err_opts, hard_err_text[cent], invis,
                          axis_text_err_frac, hard_rel_sys_err_name.string());
+    invis->Clear();
 
     dijetcore::GridPrintOptions match_rel_sys_err_opts;
     match_rel_sys_err_opts.layer_3_active = false;
@@ -2015,6 +2021,7 @@ int main(int argc, char *argv[]) {
                          err_frac_grid_match[cent], dummy_grid, dummy_grid,
                          match_rel_sys_err_opts, match_err_text[cent], invis,
                          axis_text_err_frac, match_rel_sys_err_name.string());
+    invis->Clear();
 
     // systematic uncertainty for hard di-jets from tower variation
     dijetcore::GridPrintOptions hard_sys_tow_opts;
@@ -2025,6 +2032,7 @@ int main(int argc, char *argv[]) {
                          pp_grid_hard_tow_p[cent], pp_grid_hard_tow_m[cent],
                          dummy_grid, hard_sys_tow_opts, hard_sys_tow_text[cent],
                          invis, axis_text_aj, hard_sys_tow_name.string());
+    invis->Clear();
 
     // systematic uncertainty for matched di-jets from tower variation
     dijetcore::GridPrintOptions match_sys_tow_opts;
@@ -2036,6 +2044,7 @@ int main(int argc, char *argv[]) {
                          dummy_grid, match_sys_tow_opts,
                          match_sys_tow_text[cent], invis, axis_text_aj,
                          match_sys_tow_name.string());
+    invis->Clear();
 
     // systematic uncertainty for hard di-jets from tracking efficiency
     // variation
@@ -2047,6 +2056,7 @@ int main(int argc, char *argv[]) {
                          pp_grid_hard_trk_p[cent], pp_grid_hard_trk_m[cent],
                          dummy_grid, hard_sys_trk_opts, hard_sys_trk_text[cent],
                          invis, axis_text_aj, hard_sys_trk_name.string());
+    invis->Clear();
 
     // systematic uncertainty for matched di-jets from tracking efficiency
     // variation
@@ -2059,6 +2069,7 @@ int main(int argc, char *argv[]) {
                          dummy_grid, match_sys_trk_opts,
                          match_sys_trk_text[cent], invis, axis_text_aj,
                          match_sys_trk_name.string());
+    invis->Clear();
   }
 
   return 0;
