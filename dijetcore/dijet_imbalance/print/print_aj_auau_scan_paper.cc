@@ -1438,7 +1438,7 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetLabelSize(10);
         h->GetYaxis()->SetLabelFont(43);
         h->GetYaxis()->SetLabelSize(10);
-        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.449);
       }
 
   for (auto &container1 : err_frac_grid_match)
@@ -1456,7 +1456,7 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetLabelSize(10);
         h->GetYaxis()->SetLabelFont(43);
         h->GetYaxis()->SetLabelSize(10);
-        h->GetYaxis()->SetRangeUser(0.0001, 0.249);
+        h->GetYaxis()->SetRangeUser(0.0001, 0.449);
       }
 
   for (auto &container1 : {pp_grid_hard_tow_p, pp_grid_hard_trk_p,
@@ -1464,8 +1464,8 @@ int main(int argc, char *argv[]) {
     for (auto &container2 : container1)
       for (auto &container3 : container2)
         for (auto &h : container3) {
-          h->SetLineColor(kGreen+2);
-          h->SetMarkerColor(kGreen+2);
+          h->SetLineColor(kGreen + 2);
+          h->SetMarkerColor(kGreen + 2);
           h->SetLineWidth(1);
           h->SetMarkerSize(0.1);
           h->GetXaxis()->SetTitle("");
@@ -1484,8 +1484,8 @@ int main(int argc, char *argv[]) {
     for (auto &container2 : container1)
       for (auto &container3 : container2)
         for (auto &h : container3) {
-          h->SetLineColor(kMagenta+1);
-          h->SetMarkerColor(kMagenta+1);
+          h->SetLineColor(kMagenta + 1);
+          h->SetMarkerColor(kMagenta + 1);
           h->SetLineWidth(1);
           h->SetMarkerSize(0.1);
           h->GetXaxis()->SetTitle("");
@@ -1695,14 +1695,13 @@ int main(int argc, char *argv[]) {
     match_err_text[cent].back().text =
         std::move(dijetcore::make_unique<TPaveText>(gen_match_info));
 
-    
     // for systematics
     hard_sys_tow_text[cent].push_back(dijetcore::GridTextObject());
     hard_sys_tow_text[cent].back().location_x = text_x_index;
     hard_sys_tow_text[cent].back().location_y = text_y_index;
     hard_sys_tow_text[cent].back().text =
         std::move(dijetcore::make_unique<TPaveText>(gen_hard_info));
-    
+
     match_sys_tow_text[cent].push_back(dijetcore::GridTextObject());
     match_sys_tow_text[cent].back().location_x = text_x_index;
     match_sys_tow_text[cent].back().location_y = text_y_index;
@@ -1714,7 +1713,7 @@ int main(int argc, char *argv[]) {
     hard_sys_trk_text[cent].back().location_y = text_y_index;
     hard_sys_trk_text[cent].back().text =
         std::move(dijetcore::make_unique<TPaveText>(gen_hard_info));
-    
+
     match_sys_trk_text[cent].push_back(dijetcore::GridTextObject());
     match_sys_trk_text[cent].back().location_x = text_x_index;
     match_sys_trk_text[cent].back().location_y = text_y_index;
@@ -1847,6 +1846,27 @@ int main(int argc, char *argv[]) {
                          auau_grid_match[cent], dummy_grid, oa_opts,
                          oa_aj_text[cent], invis, axis_text_aj,
                          oa_aj_name.string());
+
+    // print fractional error
+    dijetcore::GridPrintOptions hard_rel_sys_err_opts;
+    hard_rel_sys_err_opts.layer_3_active = false;
+    hard_rel_sys_err_opts.layer_2_active = false;
+    boost::filesystem::path hard_rel_sys_err_name = grid_dir;
+    hard_rel_sys_err_name /= "hard_rel_sys_err.pdf";
+    dijetcore::PrintGrid(canvas_hard_err_frac[cent], hard_err_frac_pads[cent],
+                         err_frac_grid_hard[cent], dummy_grid, dummy_grid,
+                         hard_rel_sys_err_opts, hard_err_text[cent], invis,
+                         axis_text_err_frac, hard_rel_sys_err_name.string());
+
+    dijetcore::GridPrintOptions match_rel_sys_err_opts;
+    match_rel_sys_err_opts.layer_3_active = false;
+    match_rel_sys_err_opts.layer_2_active = false;
+    boost::filesystem::path match_rel_sys_err_name = grid_dir;
+    match_rel_sys_err_name /= "match_rel_sys_err.pdf";
+    dijetcore::PrintGrid(canvas_match_err_frac[cent], match_err_frac_pads[cent],
+                         err_frac_grid_match[cent], dummy_grid, dummy_grid,
+                         match_rel_sys_err_opts, match_err_text[cent], invis,
+                         axis_text_err_frac, match_rel_sys_err_name.string());
 
     // systematic uncertainty for hard di-jets from tower variation
     dijetcore::GridPrintOptions hard_sys_tow_opts;
