@@ -1682,6 +1682,11 @@ int main(int argc, char *argv[]) {
     double y_low = 0.4;
     double y_high = 0.6;
 
+    double x_low_err = 0.45;
+    double x_high_err = 0.8;
+    double y_low_err = 0.4;
+    double y_high_err = 0.6;
+ 
     hard_aj_text[cent].push_back(dijetcore::GridTextObject());
     hard_aj_text[cent].back().location_x = leg_x_index;
     hard_aj_text[cent].back().location_y = leg_y_index;
@@ -1717,7 +1722,7 @@ int main(int argc, char *argv[]) {
     hard_err_text[cent].back().location_x = leg_x_index;
     hard_err_text[cent].back().location_y = leg_y_index;
     hard_err_text[cent].back().legend = std::move(
-        dijetcore::make_unique<TLegend>(x_low, y_low, x_high, y_high));
+        dijetcore::make_unique<TLegend>(x_low_err, y_low_err, x_high_err, y_high_err));
     hard_err_text[cent].back().legend->AddEntry(
         err_frac_grid_hard[cent][leg_x_index][leg_y_index],
         "p+p relative sys. err.");
@@ -1726,7 +1731,7 @@ int main(int argc, char *argv[]) {
     match_err_text[cent].back().location_x = leg_x_index;
     match_err_text[cent].back().location_y = leg_y_index;
     match_err_text[cent].back().legend = std::move(
-        dijetcore::make_unique<TLegend>(x_low, y_low, x_high, y_high));
+        dijetcore::make_unique<TLegend>(x_low_err, y_low_err, x_high_err, y_high_err));
     match_err_text[cent].back().legend->AddEntry(
         err_frac_grid_match[cent][leg_x_index][leg_y_index],
         "p+p relative sys. err.");
@@ -1790,6 +1795,11 @@ int main(int argc, char *argv[]) {
     double y_low = 0.3;
     double y_high = 0.6;
 
+    double x_low_err = 0.2;
+    double x_high_err = 0.48;
+    double y_low_err = 0.3;
+    double y_high_err = 0.6;
+
     std::string cent_string = "Au+Au, " + refcent_string[cent];
     std::string pt_lead_string = dijetcore::MakeString(
         "p_{T}^{hard,lead} > ", grid_key_params[0][0].lead_init_pt, " GeV/c");
@@ -1805,6 +1815,13 @@ int main(int argc, char *argv[]) {
     gen_hard_info.AddText(pt_lead_string.c_str())->SetTextSize(0.038);
     gen_hard_info.AddText(pt_sub_string.c_str())->SetTextSize(0.038);
 
+    TPaveText gen_hard_info_err(x_low_err, y_low_err, x_high_err, y_high_err, "NB NDC");
+    gen_hard_info_err.SetFillStyle(0);
+    gen_hard_info_err.SetBorderSize(0);
+    gen_hard_info_err.AddText(cent_string.c_str())->SetTextSize(0.038);
+    gen_hard_info_err.AddText(pt_lead_string.c_str())->SetTextSize(0.038);
+    gen_hard_info_err.AddText(pt_sub_string.c_str())->SetTextSize(0.038);
+
     TPaveText gen_match_info(x_low, y_low, x_high, y_high, "NB NDC");
     gen_match_info.SetFillStyle(0);
     gen_match_info.SetBorderSize(0);
@@ -1812,6 +1829,14 @@ int main(int argc, char *argv[]) {
     gen_match_info.AddText(pt_lead_string.c_str())->SetTextSize(0.038);
     gen_match_info.AddText(pt_sub_string.c_str())->SetTextSize(0.038);
     gen_match_info.AddText(match_pt_string.c_str())->SetTextSize(0.038);
+
+    TPaveText gen_match_info_err(x_low_err, y_low_err, x_high_err, y_high_err, "NB NDC");
+    gen_match_info_err.SetFillStyle(0);
+    gen_match_info_err.SetBorderSize(0);
+    gen_match_info_err.AddText(cent_string.c_str())->SetTextSize(0.038);
+    gen_match_info_err.AddText(pt_lead_string.c_str())->SetTextSize(0.038);
+    gen_match_info_err.AddText(pt_sub_string.c_str())->SetTextSize(0.038);
+    gen_match_info_err.AddText(match_pt_string.c_str())->SetTextSize(0.038);
 
     hard_aj_text[cent].push_back(dijetcore::GridTextObject());
     hard_aj_text[cent].back().location_x = text_x_index;
@@ -1835,13 +1860,13 @@ int main(int argc, char *argv[]) {
     hard_err_text[cent].back().location_x = text_x_index;
     hard_err_text[cent].back().location_y = text_y_index;
     hard_err_text[cent].back().text =
-        std::move(dijetcore::make_unique<TPaveText>(gen_hard_info));
+        std::move(dijetcore::make_unique<TPaveText>(gen_hard_info_err));
 
     match_err_text[cent].push_back(dijetcore::GridTextObject());
     match_err_text[cent].back().location_x = text_x_index;
     match_err_text[cent].back().location_y = text_y_index;
     match_err_text[cent].back().text =
-        std::move(dijetcore::make_unique<TPaveText>(gen_match_info));
+        std::move(dijetcore::make_unique<TPaveText>(gen_match_info_err));
 
     // for systematics
     hard_sys_tow_text[cent].push_back(dijetcore::GridTextObject());
