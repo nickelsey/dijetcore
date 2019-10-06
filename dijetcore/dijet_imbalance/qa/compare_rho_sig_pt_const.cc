@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
   TTreeReaderValue<int> run_2(tree_2_0, "runid");
   TTreeReaderValue<int> event_2(tree_2_0, "eventid");
   TTreeReaderValue<int> refmult_2(tree_2_0, "refmult");
+  TTreeReaderValue<int> cent_2(tree_2_0, "cent");
   TTreeReaderValue<TLorentzVector> jl_2(tree_2_0, "jl");
   TTreeReaderValue<TLorentzVector> js_2(tree_2_0, "js");
   TTreeReaderValue<TLorentzVector> jlm_2(tree_2_0, "jlm");
@@ -75,6 +76,7 @@ int main(int argc, char *argv[]) {
   TTreeReaderValue<int> run_1(tree_1_0, "runid");
   TTreeReaderValue<int> event_1(tree_1_0, "eventid");
   TTreeReaderValue<int> refmult_1(tree_1_0, "refmult");
+  TTreeReaderValue<int> cent_1(tree_1_0, "cent");
   TTreeReaderValue<TLorentzVector> jl_1(tree_1_0, "jl");
   TTreeReaderValue<TLorentzVector> js_1(tree_1_0, "js");
   TTreeReaderValue<TLorentzVector> jlm_1(tree_1_0, "jlm");
@@ -93,6 +95,8 @@ int main(int argc, char *argv[]) {
   TH1D *sig_0_2 = new TH1D("sig02", ";#sigma;event fraction", 100, 0, 20);
 
   while (tree_2_0.Next()) {
+    if (*cent_2 < 0 || *cent_2 >= 3)
+      continue;
     rho_0_2->Fill(*rho_2);
     rho_2_0->Fill(*rho_2_hard);
     sig_0_2->Fill(*sig_2);
@@ -100,6 +104,8 @@ int main(int argc, char *argv[]) {
   }
 
   while (tree_1_0.Next()) {
+    if (*cent_1 < 0 || *cent_1 >= 3)
+      continue;
     rho_1_0->Fill(*rho_1_hard);
     sig_1_0->Fill(*sig_1_hard);
   }
