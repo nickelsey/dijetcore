@@ -1,5 +1,7 @@
 #include "centrality_def.h"
 
+namespace dijetcore {
+
 CentralityDef &CentralityDef::instance() {
   static CentralityDef instance_;
   return instance_;
@@ -46,3 +48,5 @@ CentralityDef::CentralityDef() {
                        {10, 14, 21, 29, 40, 54, 71, 91, 115, 143, 176, 214, 257,
                         307, 364, 430}});
 }
+
+} // namespace dijetcore

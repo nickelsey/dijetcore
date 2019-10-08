@@ -1,17 +1,19 @@
-#ifndef CENTRALITY_RUN14_H
-#define CENTRALITY_RUN14_H
+#ifndef DIJETCORE_UTIL_CENTRALITY_CENTRALITY_RUN14_H
+#define DIJETCORE_UTIL_CENTRALITY_CENTRALITY_RUN14_H
 
 // defines a lightweight class that can handle StRefMultCorr corrections
 // allows similar cuts to be set from an internal lookup table
 
-#include "centrality_def.h"
+#include "dijetcore/util/data/centrality/centrality_def.h"
 
 #include <random>
 #include <vector>
 
+namespace dijetcore {
+
 class CentralityRun14 {
 public:
-  CentralityRun14();
+  CentralityRun14(CentDefId id = CentDefId::Run14);
   ~CentralityRun14();
 
   // loads the selected refmultcorr & centrality definitions - for list of
@@ -126,4 +128,6 @@ private:
   std::uniform_real_distribution<double> dis_;
 };
 
-#endif // CENTRALITY_RUN14_H
+} // namespace dijetcore
+
+#endif // DIJETCORE_UTIL_CENTRALITY_CENTRALITY_RUN14_H

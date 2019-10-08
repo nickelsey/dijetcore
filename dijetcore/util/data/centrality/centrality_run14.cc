@@ -1,16 +1,19 @@
 
-#include "centrality_run14.h"
+#include "dijetcore/util/data/centrality/centrality_run14.h"
 
 #include <iostream>
 #include <math.h>
 
-CentralityRun14::CentralityRun14()
+namespace dijetcore {
+
+CentralityRun14::CentralityRun14(CentDefId id)
     : refmultcorr_(-1.0), centrality_16_(-1), centrality_9_(-1), weight_(1.0),
       min_vz_(0.0), max_vz_(0.0), min_zdc_(0.0), max_zdc_(0.0), min_run_(0),
       max_run_(0), weight_bound_(0), vz_norm_(0), zdc_norm_(0),
       smoothing_(true) {
 
   dis_ = std::uniform_real_distribution<double>(0.0, 1.0);
+  loadCentralityDef(id);
 }
 
 CentralityRun14::~CentralityRun14() {}
@@ -29,7 +32,8 @@ void CentralityRun14::loadCentralityDef(CentDefId id) {
   setCentralityBounds16Bin(def.centralityBounds(id));
 }
 
-void CentralityRun14::setEvent(int runid, double refmult, double zdc, double vz) {
+void CentralityRun14::setEvent(int runid, double refmult, double zdc,
+                               double vz) {
   if (checkEvent(runid, refmult, zdc, vz)) {
     calculateCentrality(refmult, zdc, vz);
   }
@@ -58,8 +62,8 @@ void CentralityRun14::setZDCParameters(const std::vector<double> &pars) {
   zdc_par_ = pars;
 }
 void CentralityRun14::setVzParameters(double par0, double par1, double par2,
-                                 double par3, double par4, double par5,
-                                 double par6) {
+                                      double par3, double par4, double par5,
+                                      double par6) {
   vz_par_ = std::vector<double>{par0, par1, par2, par3, par4, par5, par6};
 }
 
@@ -77,7 +81,8 @@ void CentralityRun14::setVzParameters(const std::vector<double> &pars) {
   vz_par_ = pars;
 }
 
-void CentralityRun14::setCentralityBounds16Bin(const std::vector<unsigned> &bounds) {
+void CentralityRun14::setCentralityBounds16Bin(
+    const std::vector<unsigned> &bounds) {
   cent_bin_16_.clear();
   cent_bin_9_.clear();
 
@@ -96,7 +101,7 @@ void CentralityRun14::setCentralityBounds16Bin(const std::vector<unsigned> &boun
 }
 
 void CentralityRun14::setWeightParameters(const std::vector<double> &pars,
-                                     double bound) {
+                                          double bound) {
   weight_par_.clear();
   weight_bound_ = 0;
   if (pars.size() != 7) {
@@ -116,7 +121,8 @@ bool CentralityRun14::isValid() {
   return true;
 }
 
-bool CentralityRun14::checkEvent(int runid, double refmult, double zdc, double vz) {
+bool CentralityRun14::checkEvent(int runid, double refmult, double zdc,
+                                 double vz) {
   if (refmult < 0)
     return false;
   if (max_run_ > 0 && (runid < min_run_ || runid > max_run_))
@@ -128,7 +134,8 @@ bool CentralityRun14::checkEvent(int runid, double refmult, double zdc, double v
   return true;
 }
 
-void CentralityRun14::calculateCentrality(double refmult, double zdc, double vz) {
+void CentralityRun14::calculateCentrality(double refmult, double zdc,
+                                          double vz) {
 
   // we randomize raw refmult within 1 bin to avoid the peaky structures at low
   // refmult
@@ -199,3 +206,5 @@ void CentralityRun14::calculateCentrality(double refmult, double zdc, double vz)
     weight_ = 1.0;
   }
 }
+
+} // namespace dijetcore

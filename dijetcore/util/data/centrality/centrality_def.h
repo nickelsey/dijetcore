@@ -1,5 +1,5 @@
-#ifndef CENTRALITY_DEF_H
-#define CENTRALITY_DEF_H
+#ifndef DIJETCORE_UTIL_CENTRALITY_CENTRALITY_DEF_H
+#define DIJETCORE_UTIL_CENTRALITY_CENTRALITY_DEF_H
 
 // dictionary of centrality definition parameters. New centrality definitions
 // can be added by giving them a unique tag in the CentDefId enum class, and
@@ -9,6 +9,8 @@
 
 #include <unordered_map>
 #include <vector>
+
+namespace dijetcore {
 
 enum class CentDefId { Run14LowMid, Run14 };
 
@@ -62,4 +64,6 @@ private:
   CentralityDef(const CentralityDef &) = delete;
 };
 
-#endif // CENTRALITY_DEF_H
+} // namespace dijetcore
+
+#endif // DIJETCORE_UTIL_CENTRALITY_CENTRALITY_DEF_H
