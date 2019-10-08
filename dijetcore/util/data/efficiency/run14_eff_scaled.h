@@ -23,7 +23,7 @@ namespace dijetcore {
   class Run14EffScaled {
     public:
     
-    Run14EffScaled(std::string filename = "resources/efficiencies/y14_effic_dca1.root");
+    Run14EffScaled(std::string filename = "resources/efficiencies/y14_p17id_effic_dca1.root");
     
     ~Run14EffScaled();
     
