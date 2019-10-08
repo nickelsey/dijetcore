@@ -1,110 +1,129 @@
-
-#ifndef DIJETCORE_UTIL_DATA_CENTRALITY_CENTRALITY_RUN14_H
-#define DIJETCORE_UTIL_DATA_CENTRALITY_CENTRALITY_RUN14_H
+#ifndef CENTRALITY_RUN14_H
+#define CENTRALITY_RUN14_H
 
 // defines a lightweight class that can handle StRefMultCorr corrections
-// allows similar cuts to be set, but by hand instead of reading from a
-// table
+// allows similar cuts to be set from an internal lookup table
 
-#include <vector>
+#include "centrality_def.h"
+
 #include <random>
+#include <vector>
 
-namespace dijetcore {
-  
-  class CentralityRun14 {
-    public:
-    CentralityRun14();
-    ~CentralityRun14();
-    
-    // sets the parameters necessary for refmultcorr calculations, must
-    // be called before refMultCorr(), weight(), etc
-    void setEvent(int runid, double refmult, double zdc, double vz);
-    
-    // given a luminosity, a vz position, and a refmult, calculate
-    // the corrected refmult
-    double refMultCorr() const {return refmultcorr_;}
-    
-    // get the weight associated with the corrected reference multiplicity
-    double weight() {return weight_;}
-    
-    // given a corrected refmult, calculate the 16 or 9 bin centrality
-    int centrality16() {return centrality_16_;}
-    int centrality9() {return centrality_9_;}
-    
-    // two parameters for luminosity correction -
-    // [0] + [1] * zdcRate
-    void setZDCParameters(double par0, double par1);
-    void setZDCParameters(const std::vector<double>& pars);
-    std::vector<double> ZDCParameters() const {return zdc_par_;}
-    
-    // 6 parameters for vz correction - sixth order polynomial
-    void setVzParameters(double par0, double par1, double par2, double par3,
-                         double par4, double par5, double par6);
-    void setVzParameters(const std::vector<double>& pars);
-    std::vector<double> VzParameters() const {return vz_par_;}
-    
-    // set ZDC range for which the fits were performed
-    void setZDCRange(double min, double max) {min_zdc_ = min; max_zdc_ = max;}
-    double ZDCMin() const {return min_zdc_;}
-    double ZDCMax() const {return max_zdc_;}
-    void setZDCNormalizationPoint(double norm) {zdc_norm_ = norm;}
-    double ZDCNormalizationPoint() const {return zdc_norm_;}
-    
-    // set Vz range for which the fits were performed
-    void setVzRange(double min, double max) {min_vz_ = min; max_vz_ = max;}
-    double VzMin() const {return min_vz_;}
-    double VzMax() const {return max_vz_;}
-    void setVzNormalizationPoint(double norm) {vz_norm_ = norm;}
-    double VzNormalizationPoint() const {return vz_norm_;}
-    
-    // set minimum and maximum run numbers that the corrections are valid for
-    void setRunRange(int min, int max) {min_run_ = min; max_run_ = max;}
-    int runMin() const {return min_run_;}
-    int runMax() const {return max_run_;}
-    
-    // load refmultcorr centrality bin edges
-    void setCentralityBounds16Bin(const std::vector<unsigned>& bounds);
-    std::vector<unsigned> CentralityBounds16Bin() const {return cent_bin_16_;}
-    std::vector<unsigned> CentralityBounds9Bin() const {return cent_bin_9_;}
-    
-    // parameters for refmultcorr weighting
-    // bound is the cutoff for normalization: beyond this point, weight = 1.0
-    void setWeightParameters(const std::vector<double>& pars, double bound = 400);
-    std::vector<double> weightParameters() const {return weight_par_;}
-    double reweightingBound() const {return weight_bound_;}
-    
-    private:
-    
-    bool checkEvent(int runid, double refmult, double zdc, double vz);
-    void calculateCentrality(double refmult, double zdc, double vz);
-    
-    double refmultcorr_;
-    int centrality_16_;
-    int centrality_9_;
-    double weight_;
-    
-    double min_vz_;
-    double max_vz_;
-    double min_zdc_;
-    double max_zdc_;
-    int min_run_;
-    int max_run_;
-    double weight_bound_;
-    
-    double vz_norm_;
-    double zdc_norm_;
-    
-    std::vector<double> zdc_par_;
-    std::vector<double> vz_par_;
-    std::vector<double> weight_par_;
-    std::vector<unsigned> cent_bin_16_;
-    std::vector<unsigned> cent_bin_9_;
-    
-    std::default_random_engine gen_;
-    std::uniform_real_distribution<double> dis_;
-    
-  };
-  
-} // namespace dijetcore
+class CentralityRun14 {
+public:
+  CentralityRun14();
+  ~CentralityRun14();
 
-#endif // DIJETCORE_UTIL_DATA_CENTRALITY_CENTRALITY_RUN14_H
+  // loads the selected refmultcorr & centrality definitions - for list of
+  // available definitions, see centrality_def.h. Must be called before
+  // setEvent()
+  void loadCentralityDef(CentDefId id);
+
+  // sets the parameters necessary for refmultcorr calculations, must
+  // be called before refMultCorr(), weight(), etc
+  void setEvent(int runid, double refmult, double zdc, double vz);
+
+  // given a luminosity, a vz position, and a refmult, calculate
+  // the corrected refmult
+  double refMultCorr() const { return refmultcorr_; }
+
+  // get the weight associated with the corrected reference multiplicity
+  double weight() { return weight_; }
+
+  // given a corrected refmult, calculate the 16 or 9 bin centrality
+  int centrality16() { return centrality_16_; }
+  int centrality9() { return centrality_9_; }
+
+  // two parameters for luminosity correction -
+  // [0] + [1] * zdcRate
+  void setZDCParameters(double par0, double par1);
+  void setZDCParameters(const std::vector<double> &pars);
+  std::vector<double> ZDCParameters() const { return zdc_par_; }
+
+  // 6 parameters for vz correction - sixth order polynomial
+  void setVzParameters(double par0, double par1, double par2, double par3,
+                       double par4, double par5, double par6);
+  void setVzParameters(const std::vector<double> &pars);
+  std::vector<double> VzParameters() const { return vz_par_; }
+
+  // set ZDC range for which the fits were performed
+  void setZDCRange(double min, double max) {
+    min_zdc_ = min;
+    max_zdc_ = max;
+  }
+  double ZDCMin() const { return min_zdc_; }
+  double ZDCMax() const { return max_zdc_; }
+  void setZDCNormalizationPoint(double norm) { zdc_norm_ = norm; }
+  double ZDCNormalizationPoint() const { return zdc_norm_; }
+
+  // set Vz range for which the fits were performed
+  void setVzRange(double min, double max) {
+    min_vz_ = min;
+    max_vz_ = max;
+  }
+  double VzMin() const { return min_vz_; }
+  double VzMax() const { return max_vz_; }
+  void setVzNormalizationPoint(double norm) { vz_norm_ = norm; }
+  double VzNormalizationPoint() const { return vz_norm_; }
+
+  // set minimum and maximum run numbers that the corrections are valid for
+  void setRunRange(int min, int max) {
+    min_run_ = min;
+    max_run_ = max;
+  }
+  int runMin() const { return min_run_; }
+  int runMax() const { return max_run_; }
+
+  // load refmultcorr centrality bin edges
+  void setCentralityBounds16Bin(const std::vector<unsigned> &bounds);
+  std::vector<unsigned> CentralityBounds16Bin() const { return cent_bin_16_; }
+  std::vector<unsigned> CentralityBounds9Bin() const { return cent_bin_9_; }
+
+  // parameters for refmultcorr weighting
+  // bound is the cutoff for normalization: beyond this point, weight = 1.0
+  void setWeightParameters(const std::vector<double> &pars, double bound = 400);
+  std::vector<double> weightParameters() const { return weight_par_; }
+  double reweightingBound() const { return weight_bound_; }
+
+  // allows the user to check if the loaded centrality definition appears to be
+  // in a valid form. Does not guarantee meaningful results, just that the
+  // calculation can be performed without accessing uninitialized memory
+  bool isValid();
+
+  // turns off the randomization of the refmult distribution, allows for easier
+  // testing. In general, should be kept on
+  void useSmoothing(bool flag = true) { smoothing_ = flag; }
+
+private:
+  bool checkEvent(int runid, double refmult, double zdc, double vz);
+  void calculateCentrality(double refmult, double zdc, double vz);
+
+  double refmultcorr_;
+  int centrality_16_;
+  int centrality_9_;
+  double weight_;
+
+  double min_vz_;
+  double max_vz_;
+  double min_zdc_;
+  double max_zdc_;
+  int min_run_;
+  int max_run_;
+  double weight_bound_;
+
+  double vz_norm_;
+  double zdc_norm_;
+
+  bool smoothing_;
+
+  std::vector<double> zdc_par_;
+  std::vector<double> vz_par_;
+  std::vector<double> weight_par_;
+  std::vector<unsigned> cent_bin_16_;
+  std::vector<unsigned> cent_bin_9_;
+
+  std::default_random_engine gen_;
+  std::uniform_real_distribution<double> dis_;
+};
+
+#endif // CENTRALITY_RUN14_H
