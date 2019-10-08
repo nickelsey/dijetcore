@@ -21,11 +21,11 @@ namespace dijetcore {
   class Run14Eff {
     public:
     
-    Run14Eff(std::string filename = "resources/efficiencies/y14_effic_dca1.root");
+    Run14Eff(std::string filename = "", int nBinsZDC = 10, int nBinsCent = 16);
     
     ~Run14Eff();
     
-    void loadFile(std::string filename, int nBinsZDC = 3, int nBinsCent = 16);
+    void loadFile(std::string filename, int nBinsZDC = 10, int nBinsCent = 16);
     
     double AuAuEff(double pt, double eta, int cent, double zdcrate);
     double pp6Eff(double pt, double eta);
@@ -46,7 +46,7 @@ namespace dijetcore {
     
     private:
     
-    void loadCurves(int nBinsZDC = 3, int nBinsCent = 16);
+    void loadCurves(int nBinsZDC =10, int nBinsCent = 16);
     
     std::shared_ptr<TFile> file;
     
