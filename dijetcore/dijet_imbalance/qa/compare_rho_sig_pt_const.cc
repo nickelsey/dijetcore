@@ -131,7 +131,11 @@ int main(int argc, char *argv[]) {
                                        "p_{T}^{const}>0.2 GeV/c"};
   dijetcore::Overlay1D(rho_hists, hist_labels, hopts, copts, FLAGS_outputDir, "pt_dep_rho", "", rho_x_axis, y_axis, "", false);
   dijetcore::Overlay1D(sigma_hists, hist_labels, hopts, copts, FLAGS_outputDir, "pt_dep_sigma", "", sigma_x_axis, y_axis, "", false);
-  
+  copts.log_y = false;
+  sig_0_2->SetTitle("0-20% centrality");
+  dijetcore::PrettyPrint1D(sig_0_2, hopts, copts, "", FLAGS_outputDir, "base_sig", "", "#sigma [GeV/A]", "event fraction", "");
+ 
+ 
   gflags::ShutDownCommandLineFlags();
   return 0;
 }
