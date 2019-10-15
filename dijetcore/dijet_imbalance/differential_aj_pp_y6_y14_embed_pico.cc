@@ -7,6 +7,7 @@
 
 #include "dijetcore/lib/flags.h"
 #include "dijetcore/lib/logging.h"
+#include "dijetcore/lib/json.h"
 #include "dijetcore/lib/string/string_utils.h"
 #include "dijetcore/lib/types.h"
 #include "dijetcore/util/data/centrality/centrality_run14.h"
@@ -44,68 +45,48 @@
 using std::string;
 
 DIJETCORE_DEFINE_string(input, "", "input file");
-DIJETCORE_DEFINE_string(embedInput, "", "input file for embedding Au+Au");
-DIJETCORE_DEFINE_int(nEmbed, 1, "number of times to reuse a pp event");
-DIJETCORE_DEFINE_string(efficiencyFile, "",
-                        "file with efficiency curves if applicable");
-DIJETCORE_DEFINE_string(outputDir, "tmp", "directory for output");
 DIJETCORE_DEFINE_string(name, "job", "name for output file");
 DIJETCORE_DEFINE_int(id, 0, "job id (when running parallel jobs)");
-DIJETCORE_DEFINE_string(towList,
-                        "resources/bad_tower_lists/y14_y6_bad_tower.txt",
-                        "bad tower list");
-DIJETCORE_DEFINE_string(runList, "resources/bad_run_lists/y14_bad_run.txt",
-                        "bad run list");
-DIJETCORE_DEFINE_string(triggers, "y6ppht", "trigger selection");
-DIJETCORE_DEFINE_string(embedTriggers, "y14vpdmb30",
-                        "trigger selection for embedding");
-DIJETCORE_DEFINE_string(constEta, "1.0",
-                        "constitutent eta cuts (comma separated)");
-DIJETCORE_DEFINE_string(leadConstPt, "2.0",
-                        "leading constituent pT cut (comma separated)");
-DIJETCORE_DEFINE_string(subConstPt, "2.0",
-                        "subleading constituent pT cut (comma separated)");
-DIJETCORE_DEFINE_string(leadConstPtMatch, "0.2",
-                        "matched leading constituent pT cut (comma separated)");
-DIJETCORE_DEFINE_string(
-    subConstPtMatch, "0.2",
-    "matched subleading constituent pT cut (comma separated)");
-DIJETCORE_DEFINE_string(leadR, "0.4", "leading jet R (comma separated");
-DIJETCORE_DEFINE_string(leadMatchR, "0.4",
-                        "leading matched jet R (comma separated");
-DIJETCORE_DEFINE_string(subR, "0.4", "subleading jet R (comma separated");
-DIJETCORE_DEFINE_string(subMatchR, "0.4",
-                        "subleading matched jet R (comma separated");
-DIJETCORE_DEFINE_string(leadJetPt, "20.0",
-                        "leading jet pT cut (comma separated)");
-DIJETCORE_DEFINE_string(subJetPt, "10.0",
-                        "subleading jet pT cut (comma separated)");
-DIJETCORE_DEFINE_int(towerUnc, 0, "tower scaling for systematic uncertainties");
-DIJETCORE_DEFINE_int(
-    trackingUnc, 0,
-    "tracking efficiency ratio scaling for systematic uncertainties");
-DIJETCORE_DEFINE_int(seed, 0,
-                     "seed for the random number generator, so that results "
-                     "can be reproducible");
-DIJETCORE_DEFINE_bool(useEfficiency, true,
-                      "flag to scale pp efficiency to be run 7 AuAu-like");
-DIJETCORE_DEFINE_int(minCentrality, 3,
-                     "minimum cutoff for embedding centrality - should not be "
-                     "greater than 2 if efficiency is on")
-    DIJETCORE_DEFINE_bool(forceConstituentPtEquality, true,
-                          "Only use DijetDefinitions where pT const is equal "
-                          "in leading/subleading jets");
-DIJETCORE_DEFINE_bool(forceConstituentEtaEquality, true,
-                      "Only use DijetDefinitions where eta const is equal in "
-                      "leading/subleading jets");
-DIJETCORE_DEFINE_bool(
-    forceJetResolutionEquality, true,
-    "Only use DijetDefinitions where leading/subleading R are equivalent");
-DIJETCORE_DEFINE_bool(
-    forceMatchJetResolutionEquality, false,
-    "Only use DijetDefinitions where initial and matched R are equivalent");
+DIJETCORE_DEFINE_string(config, "", "configuration file");
 
-bool GetEmbedEvent(jetreader::Reader &reader);
+// define the set of parameters required in config
+const std::set<string> required_params = {
+    "embed_input",         // file with embedding trees (run14)
+    "pp_reuse",            // number of times to reuse a pp event
+    "efficiency_file",     // efficiency file for run 14
+    "output_dir",          // directory to save results in
+    "bad_tower_list",      // list of bad towers
+    "bad_run_list",        // list of bad runs
+    "triggers",            // triggers for pp data
+    "embed_triggers",      // triggers for au+au data
+    "const_eta",           // constituent  eta
+    "lead_const_pt",       // lead jet constituent pT cut (comma separated)
+    "sublead_const_pt",    // sublead jet constituent pT cut (comma separated)
+    "lead_const_pt_match", // same, for leading matched jets
+    "sublead_const_pt_match", // same, for subleading matched jets
+    "lead_r",                 // leading jet R (comma separated)
+    "sublead_r",              // leading jet R (comma separated)
+    "lead_r_match",           // same for matched leading jet
+    "sublead_r_match",        // same for matched subleading jet
+    "lead_jet_pt",            // lead hard-core jet pt minimum (comma separated)
+    "sublead_jet_pt",         // lead hard-core jet pt minimum (comma separated)
+    "tower_uncertainty", // tower scaling for systematic uncertainty (0, -1, 1)
+    "track_uncertainty", // rel track eff scaling for systematic uncertainty (0,
+                         // -1, 1)
+    "seed",              // seed for RNG for reproducibility
+    "use_efficiency",    // scale pp efficiency to be Au+Au-like
+    "maximum_centrality",      // set a max centrality value (16 bin definition)
+    "force_const_pt_equality", // force di-jet definition to have equal hard
+                               // core pt const
+    "force_const_eta_equality",      // force di-jet definition to have equal
+                                     // constituent eta
+    "force_jet_resolution_equality", // force leading/subleading jet R
+                                     // equivalance
+    "force_match_jet_resolution_equality" // force initial and matched di-jet R
+                                          // equivalance
+};
+
+bool GetEmbedEvent(jetreader::Reader &reader, int max_centrality);
 
 void ConvertPPToPseudojets(TStarJetPicoReader *reader,
                            jetreader::Reader &embed_reader,
@@ -113,7 +94,8 @@ void ConvertPPToPseudojets(TStarJetPicoReader *reader,
                            std::vector<fastjet::PseudoJet> &particles,
                            std::mt19937 &gen,
                            std::uniform_real_distribution<> &dis,
-                           TProfile2D* eff_ratio);
+                           TProfile2D *eff_ratio,
+                           bool use_efficiency);
 
 std::array<fastjet::PseudoJet, 4>
 ClusterPP(std::vector<fastjet::PseudoJet> &input,
@@ -130,40 +112,60 @@ int main(int argc, char *argv[]) {
   dijetcore::ParseCommandLineFlags(&argc, argv);
   dijetcore::InitLogging(argv[0]);
 
+  // parse configuration file
+  dijetcore::json config;
+  try {
+    config = dijetcore::LoadConfig(FLAGS_config, required_params);
+  } catch (std::exception& e) {
+    LOG(ERROR) << "error loading config: " << e.what();
+    return 1;
+  }
+
   // check to make sure the input file paths are sane
   if (!boost::filesystem::exists(FLAGS_input)) {
     LOG(ERROR) << "input file does not exist: " << FLAGS_input;
     return 1;
   }
 
+  // find output directory from configuration file
+  string output_dir = config["output_directory"];
+
   // build output directory if it doesn't exist, using boost::filesystem
-  if (FLAGS_outputDir.empty())
-    FLAGS_outputDir = "tmp";
-  boost::filesystem::path dir(FLAGS_outputDir.c_str());
+  if (output_dir.empty())
+    output_dir = "tmp";
+  boost::filesystem::path dir(output_dir.c_str());
   boost::filesystem::create_directories(dir);
+
+  // copy config file to output directory
+  boost::filesystem::path input_file(FLAGS_config.c_str());
+  boost::filesystem::path copy_path(dir);
+  copy_path /= input_file.filename();
+  boost::filesystem::copy_file(
+      input_file, copy_path,
+      boost::filesystem::copy_option::overwrite_if_exists);
 
   // first, build our input chain
   TChain *chain = dijetcore::NewChainFromInput(FLAGS_input);
 
   // initialize the reader
   TStarJetPicoReader *reader = new TStarJetPicoReader();
-  dijetcore::InitReaderWithDefaults(reader, chain, FLAGS_towList);
+  dijetcore::InitReaderWithDefaults(reader, chain, config["bad_tower_list"]);
 
   // if requested, setup the embedding reader
-  if (FLAGS_embedInput.empty()) {
+  if (config["embed_input"].empty()) {
     LOG(ERROR) << "No embedding file specified - exiting";
     return 1;
   }
 
   // create the jetreader for the embedding event
-  jetreader::Reader embed_reader(FLAGS_embedInput);
+  jetreader::Reader embed_reader(config["embed_input"]);
   embed_reader.centrality().loadCentralityDef(jetreader::CentDefId::Run14);
-  if (!FLAGS_runList.empty())
-    embed_reader.eventSelector()->addBadRuns(FLAGS_runList);
+  if (!config["bad_run_list"].empty())
+    embed_reader.eventSelector()->addBadRuns(config["bad_run_list"].get<std::string>());
   embed_reader.eventSelector()->setVzRange(-30, 30);
   embed_reader.eventSelector()->setdVzMax(3.0);
-  if (!FLAGS_towList.empty())
-    embed_reader.towerSelector()->addBadTowers(FLAGS_towList);
+  if (!config["bad_tower_list"].empty())
+    embed_reader.towerSelector()->addBadTowers(config["bad_tower_list"].get<std::string>());
   embed_reader.towerSelector()->setEtMax(30.0);
   embed_reader.towerSelector()->setEtMin(0.2);
   embed_reader.trackSelector()->setDcaMax(3.0);
@@ -174,31 +176,31 @@ int main(int argc, char *argv[]) {
 
   // get the trigger IDs that will be used for the pp data
   std::set<unsigned> triggers;
-  if (!FLAGS_triggers.empty()) {
-    triggers = dijetcore::GetTriggerIDs(FLAGS_triggers);
-    LOG(INFO) << "taking triggers: " << FLAGS_triggers << " for primary";
+  if (!config["triggers"].empty()) {
+    triggers = dijetcore::GetTriggerIDs(config["triggers"]);
+    LOG(INFO) << "taking triggers: " << config["triggers"] << " for primary";
     LOG(INFO) << "trigger ids: " << triggers;
   }
 
   // and load the trigger IDs for the embedding event
   std::set<unsigned> embed_triggers;
-  if (!FLAGS_embedTriggers.empty()) {
-    embed_triggers = dijetcore::GetTriggerIDs(FLAGS_embedTriggers);
-    LOG(INFO) << "taking triggers: " << FLAGS_embedTriggers << " for embedding";
+  if (!config["embed_triggers"].empty()) {
+    embed_triggers = dijetcore::GetTriggerIDs(config["embed_triggers"]);
+    LOG(INFO) << "taking triggers: " << config["embed_triggers"] << " for embedding";
     LOG(INFO) << "trigger ids: " << embed_triggers;
-    embed_reader.eventSelector()->addTriggerIds(FLAGS_embedTriggers);
+    embed_reader.eventSelector()->addTriggerIds(config["embed_triggers"]);
   }
   // initialize reader
   embed_reader.init();
 
   // initialize efficiency curves
   dijetcore::Run14Eff *efficiency;
-  if (FLAGS_efficiencyFile.empty())
+  if (config["efficiency_file"].empty())
     efficiency = new dijetcore::Run14Eff();
   else
-    efficiency = new dijetcore::Run14Eff(FLAGS_efficiencyFile);
+    efficiency = new dijetcore::Run14Eff(config["efficiency_file"]);
 
-  switch (FLAGS_trackingUnc) {
+  switch (config["track_uncertainty"].get<int>()) {
   case 0:
     efficiency->setSystematicUncertainty(dijetcore::TrackingUnc::NONE);
     break;
@@ -215,14 +217,14 @@ int main(int argc, char *argv[]) {
 
   // define our tower uncertainty scaling as well
   const double tower_scale_percent = 0.02;
-  if (abs(FLAGS_towerUnc) > 1) {
-    LOG(ERROR) << "undefined tower efficiency setting, exiting";
+  if (abs(config["tower_uncertainty"].get<int>()) > 1) {
+    LOG(ERROR) << "undefined tower scale setting, exiting";
     return 1;
   }
-  double tower_scale = 1.0 + tower_scale_percent * FLAGS_towerUnc;
+  double tower_scale = 1.0 + tower_scale_percent * config["tower_uncertainty"].get<int>();
 
   // and we'll need a random number generator for randomly throwing away tracks
-  std::mt19937 gen(FLAGS_seed);
+  std::mt19937 gen(config["seed"].get<int>());
   std::uniform_real_distribution<> dis(0.0, 1.0);
 
   // define a selector to accept tracks with pT > 0.2 GeV, inside our nominal
@@ -238,29 +240,29 @@ int main(int argc, char *argv[]) {
 
   // constituent range
   std::set<double> const_eta =
-      dijetcore::ParseArgString<double>(FLAGS_constEta);
+      dijetcore::ParseArgString<double>(config["const_eta"]);
 
   // leading jet
   std::set<double> lead_const_hard_pt =
-      dijetcore::ParseArgString<double>(FLAGS_leadConstPt);
+      dijetcore::ParseArgString<double>(config["lead_const_pt"]);
   std::set<double> lead_const_match_pt =
-      dijetcore::ParseArgString<double>(FLAGS_leadConstPtMatch);
-  std::set<double> lead_R = dijetcore::ParseArgString<double>(FLAGS_leadR);
+      dijetcore::ParseArgString<double>(config["lead_const_pt_match"]);
+  std::set<double> lead_R = dijetcore::ParseArgString<double>(config["lead_r"]);
   std::set<double> lead_R_match =
-      dijetcore::ParseArgString<double>(FLAGS_leadMatchR);
+      dijetcore::ParseArgString<double>(config["lead_r_match"]);
   std::set<double> lead_hard_pt =
-      dijetcore::ParseArgString<double>(FLAGS_leadJetPt);
+      dijetcore::ParseArgString<double>(config["lead_jet_pt"]);
 
   // subleading jet
   std::set<double> sublead_const_hard_pt =
-      dijetcore::ParseArgString<double>(FLAGS_subConstPt);
+      dijetcore::ParseArgString<double>(config["sublead_const_pt"]);
   std::set<double> sublead_const_match_pt =
-      dijetcore::ParseArgString<double>(FLAGS_subConstPtMatch);
-  std::set<double> sublead_R = dijetcore::ParseArgString<double>(FLAGS_subR);
+      dijetcore::ParseArgString<double>(config["sublead_const_pt_match"]);
+  std::set<double> sublead_R = dijetcore::ParseArgString<double>(config["sublead_r"]);
   std::set<double> sublead_R_match =
-      dijetcore::ParseArgString<double>(FLAGS_subMatchR);
+      dijetcore::ParseArgString<double>(config["sublead_r_match"]);
   std::set<double> sublead_hard_pt =
-      dijetcore::ParseArgString<double>(FLAGS_subJetPt);
+      dijetcore::ParseArgString<double>(config["sublead_jet_pt"]);
 
   LOG(INFO) << "grid variables ";
   LOG(INFO) << "constituent eta: " << const_eta;
@@ -281,10 +283,10 @@ int main(int argc, char *argv[]) {
       alg, lead_hard_pt, lead_R, lead_R_match, sublead_hard_pt, sublead_R,
       sublead_R_match, lead_const_hard_pt, lead_const_match_pt,
       sublead_const_hard_pt, sublead_const_match_pt, const_eta);
-  worker.forceConstituentPtEquality(FLAGS_forceConstituentPtEquality);
-  worker.forceConstituentEtaEquality(FLAGS_forceConstituentEtaEquality);
-  worker.forceJetResolutionEquality(FLAGS_forceJetResolutionEquality);
-  worker.forceMatchJetResolutionEquality(FLAGS_forceMatchJetResolutionEquality);
+  worker.forceConstituentPtEquality(config["force_const_pt_equality"]);
+  worker.forceConstituentEtaEquality(config["force_const_eta_equality"]);
+  worker.forceJetResolutionEquality(config["force_jet_resolution_equality"]);
+  worker.forceMatchJetResolutionEquality(config["force_match_jet_resolution_equality"]);
   worker.initialize();
 
   LOG(INFO) << "worker initialized - number of dijet definitions: "
@@ -295,7 +297,7 @@ int main(int argc, char *argv[]) {
     LOG(INFO) << key;
 
   // create output file from the given directory, name & id
-  string outfile_name = FLAGS_outputDir + "/" + FLAGS_name +
+  string outfile_name = config["output_dir"].get<std::string>() + "/" + FLAGS_name +
                         dijetcore::MakeString(FLAGS_id) + ".root";
   TFile out(outfile_name.c_str(), "RECREATE");
 
@@ -552,10 +554,10 @@ int main(int argc, char *argv[]) {
       }
 
       // we're using this p+p event - start the embedding loop
-      for (int emb = 0; emb < FLAGS_nEmbed; ++emb) {
+      for (int emb = 0; emb < config["pp_reuse"]; ++emb) {
 
-        if (!GetEmbedEvent(embed_reader)) {
-          if (!GetEmbedEvent(embed_reader)) {
+        if (!GetEmbedEvent(embed_reader, config["maximum_centrality"])) {
+          if (!GetEmbedEvent(embed_reader, config["maximum_centrality"])) {
             LOG(ERROR) << "No embedding events satisfy criteria: exiting";
             return 1;
           }
@@ -579,7 +581,7 @@ int main(int argc, char *argv[]) {
         // and now convert the pp - if there are any efficiency curves to
         // apply, do it now
         ConvertPPToPseudojets(reader, embed_reader, efficiency, tower_scale,
-                              primary_particles, gen, dis, eff_ratio.get());
+                              primary_particles, gen, dis, eff_ratio.get(), config["use_efficiency"]);
 
         // add pp tracks to the full event
         particles.insert(particles.end(), primary_particles.begin(),
@@ -620,8 +622,10 @@ int main(int argc, char *argv[]) {
             npart_dict[key] = primary_particles.size();
 
             embed_runid_dict[key] = embed_reader.picoDst()->event()->runId();
-            embed_eventid_dict[key] = embed_reader.picoDst()->event()->eventId();
-            embed_refmult_dict[key] = embed_reader.picoDst()->event()->refMult();
+            embed_eventid_dict[key] =
+                embed_reader.picoDst()->event()->eventId();
+            embed_refmult_dict[key] =
+                embed_reader.picoDst()->event()->refMult();
             embed_grefmult_dict[key] =
                 embed_reader.picoDst()->event()->grefMult();
             embed_refmultcorr_dict[key] =
@@ -629,7 +633,8 @@ int main(int argc, char *argv[]) {
             embed_grefmultcorr_dict[key] =
                 embed_reader.picoDst()->event()->grefMult();
             embed_cent_dict[key] = embed_centrality;
-            embed_vz_dict[key] = embed_reader.picoDst()->event()->primaryVertex().Z();
+            embed_vz_dict[key] =
+                embed_reader.picoDst()->event()->primaryVertex().Z();
             embed_zdc_dict[key] = embed_reader.picoDst()->event()->ZDCx();
             embed_rp_dict[key] = 0.0;
             embed_npart_dict[key] = embed_particles.size();
@@ -750,14 +755,14 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-bool GetEmbedEvent(jetreader::Reader &reader) {
+bool GetEmbedEvent(jetreader::Reader &reader, int max_centrality) {
   while (reader.next()) {
 
     int centrality = reader.centrality16();
 
     if (centrality < 0)
       continue;
-    if (centrality > FLAGS_minCentrality)
+    if (centrality > max_centrality)
       continue;
     return true;
   }
@@ -770,7 +775,8 @@ void ConvertPPToPseudojets(TStarJetPicoReader *reader,
                            std::vector<fastjet::PseudoJet> &particles,
                            std::mt19937 &gen,
                            std::uniform_real_distribution<> &dis,
-                           TProfile2D* eff_ratio) {
+                           TProfile2D *eff_ratio,
+                           bool use_efficiency) {
   TStarJetVectorContainer<TStarJetVector> *container =
       reader->GetOutputContainer();
   for (int i = 0; i < container->GetEntries(); ++i) {
@@ -781,12 +787,13 @@ void ConvertPPToPseudojets(TStarJetPicoReader *reader,
 
     double scale = 1.0;
 
-    if (sv->GetCharge() && FLAGS_useEfficiency) {
+    if (sv->GetCharge() && use_efficiency) {
       // if the track is charged and we are using efficiencies,
       // then we get the efficiency ratio, and use that as the
       // probability to keep the track
-      double ratio = efficiency->ratio(sv->Pt(), sv->Eta(), embed_reader.centrality16(),
-                                       embed_reader.picoDst()->event()->ZDCx());
+      double ratio =
+          efficiency->ratio(sv->Pt(), sv->Eta(), embed_reader.centrality16(),
+                            embed_reader.picoDst()->event()->ZDCx());
       if (!std::isfinite(ratio))
         continue;
 
