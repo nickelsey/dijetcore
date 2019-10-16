@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   }
 
   // find output directory from configuration file
-  string output_dir = config["output_directory"];
+  string output_dir = config["output_dir"];
 
   // build output directory if it doesn't exist, using boost::filesystem
   if (output_dir.empty())
