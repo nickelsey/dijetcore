@@ -46,7 +46,7 @@ using std::string;
 
 DIJETCORE_DEFINE_string(input, "", "input file");
 DIJETCORE_DEFINE_string(name, "job", "name for output file");
-DIJETCORE_DEFINE_int(id, 0, "job id (when running parallel jobs)");
+DIJETCORE_DEFINE_int(id, 0, "job id (when running parallel jobs) and set the RNG seed");
 DIJETCORE_DEFINE_string(config, "", "configuration file");
 
 // define the set of parameters required in config
@@ -73,7 +73,6 @@ const std::set<string> required_params = {
     "tower_uncertainty", // tower scaling for systematic uncertainty (0, -1, 1)
     "track_uncertainty", // rel track eff scaling for systematic uncertainty (0,
                          // -1, 1)
-    "seed",              // seed for RNG for reproducibility
     "use_efficiency",    // scale pp efficiency to be Au+Au-like
     "maximum_centrality",      // set a max centrality value (16 bin definition)
     "force_const_pt_equality", // force di-jet definition to have equal hard
@@ -145,7 +144,14 @@ int main(int argc, char *argv[]) {
       boost::filesystem::copy_option::overwrite_if_exists);
 
   // and we'll need a random number generator for randomly throwing away tracks
-  std::mt19937 gen(config["seed"].get<int>());
+  int seed = 0;
+  if (FLAGS_id >= 0)
+    seed = FLAGS_id;
+  else {
+    std::random_device rand_dev;
+    seed = rand_dev();
+  }
+  std::mt19937 gen(seed);
   std::uniform_real_distribution<> dis(0.0, 1.0);
 
 
