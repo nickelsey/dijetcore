@@ -144,7 +144,12 @@ int main(int argc, char *argv[]) {
       input_file, copy_path,
       boost::filesystem::copy_option::overwrite_if_exists);
 
-  // first, build our input chain
+  // and we'll need a random number generator for randomly throwing away tracks
+  std::mt19937 gen(config["seed"].get<int>());
+  std::uniform_real_distribution<> dis(0.0, 1.0);
+
+
+  // build our input chain
   TChain *chain = dijetcore::NewChainFromInput(FLAGS_input);
 
   // initialize the reader
@@ -193,6 +198,11 @@ int main(int argc, char *argv[]) {
   // initialize reader
   embed_reader.init();
 
+  // we will now pick a random index to start from
+  std::uniform_int_distribution<> evt_start(0, embed_reader.tree()->GetEntries());
+  int embed_start_idx = evt_start(gen);
+  embed_reader.readEvent(embed_start_idx);
+
   // initialize efficiency curves
   dijetcore::Run14Eff *efficiency;
   if (config["efficiency_file"].empty())
@@ -222,10 +232,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   double tower_scale = 1.0 + tower_scale_percent * config["tower_uncertainty"].get<int>();
-
-  // and we'll need a random number generator for randomly throwing away tracks
-  std::mt19937 gen(config["seed"].get<int>());
-  std::uniform_real_distribution<> dis(0.0, 1.0);
 
   // define a selector to accept tracks with pT > 0.2 GeV, inside our nominal
   // eta acceptance of + / -1.0
