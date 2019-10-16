@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
   std::uniform_int_distribution<> evt_start(0, embed_reader.tree()->GetEntries());
   int embed_start_idx = evt_start(gen);
   embed_reader.readEvent(embed_start_idx);
-
+  LOG(INFO) << "loaded embedding event: " << embed_start_idx;
   // initialize efficiency curves
   dijetcore::Run14Eff *efficiency;
   if (config["efficiency_file"].empty())
