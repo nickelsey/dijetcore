@@ -580,21 +580,20 @@ int main(int argc, char *argv[]) {
       }
       LOG(INFO) << "looking at  trigger objects";
       // we're using this p+p event - find the trigger object then start the embedding loop
-      TClonesArray* trig_objs = reader->GetEvent()->GetTrigObjs();
       std::vector<fastjet::PseudoJet> triggers;
       std::vector<int> trigger_tow_ids;
-      // for (int i = 0; i < trig_objs->GetSize(); ++i) {
-      //   TStarJetPicoTriggerInfo* t = (TStarJetPicoTriggerInfo*) (*trig_objs)[i];
-      //   if (t->isBHT2() || t->isBHT3()) {
-      //     int idx = t->GetId();
-      //     double eta = t->GetEta();
-      //     double phi = t->GetPhi();
-      //     fastjet::PseudoJet vec_trig;
-      //     vec_trig.reset_PtYPhiM(1.0, eta, phi, 0.0);
-      //     triggers.push_back(vec_trig);
-      //     trigger_tow_ids.push_back(idx);
-      //   }
-      // }
+      for (int i = 0; i < reader->GetEvent()->GetHeader()->GetNOfTrigObjs(); ++i) {
+        TStarJetPicoTriggerInfo* t = reader->GetEvent()->GetTrigObj(i);
+        if (t->isBHT2() || t->isBHT3()) {
+          int idx = t->GetId();
+          double eta = t->GetEta();
+          double phi = t->GetPhi();
+          fastjet::PseudoJet vec_trig;
+          vec_trig.reset_PtYPhiM(1.0, eta, phi, 0.0);
+          triggers.push_back(vec_trig);
+          trigger_tow_ids.push_back(idx);
+        }
+      }
       LOG(INFO) << "looking at  trigger towers";
       TList* towers = reader->GetListOfSelectedTowers();
       TIter nextTower(towers);
