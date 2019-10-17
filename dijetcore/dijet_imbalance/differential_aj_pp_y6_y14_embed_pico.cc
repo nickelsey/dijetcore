@@ -584,10 +584,7 @@ int main(int argc, char *argv[]) {
       std::vector<int> trigger_tow_ids;
       for (int i = 0; i < reader->GetEvent()->GetHeader()->GetNOfTrigObjs(); ++i) {
         TStarJetPicoTriggerInfo* t = reader->GetEvent()->GetTrigObj(i);
-        LOG(INFO) << "trigger object: " << i;
-        t->PrintInfo();
-        LOG(INFO) << "trigger flag: " << t->GetTriggerFlag();
-        if (t->isBHT2() || t->isBHT3()) {
+        if (t->isHTL0()) {
           int idx = t->GetId();
           double eta = t->GetEta();
           double phi = t->GetPhi();
