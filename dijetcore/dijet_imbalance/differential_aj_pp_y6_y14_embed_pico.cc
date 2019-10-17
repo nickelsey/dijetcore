@@ -62,7 +62,7 @@ const std::set<string> required_params = {
     "bad_run_list",        // list of bad runs
     "triggers",            // triggers for pp data
     "embed_triggers",      // triggers for au+au data
-    "trig_et_threshold"    // ET  threshold for calorimeter trigger
+    "trig_et_threshold",   // ET  threshold for calorimeter trigger
     "const_eta",           // constituent  eta
     "lead_const_pt",       // lead jet constituent pT cut (comma separated)
     "sublead_const_pt",    // sublead jet constituent pT cut (comma separated)
