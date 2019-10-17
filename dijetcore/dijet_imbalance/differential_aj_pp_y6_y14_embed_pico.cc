@@ -26,6 +26,7 @@
 #include "TH2.h"
 #include "TProfile2D.h"
 #include "TTree.h"
+#include "TClonesArray.h"
 
 #include "TStarJetPicoEvent.h"
 #include "TStarJetPicoEventCuts.h"
@@ -35,6 +36,8 @@
 #include "TStarJetPicoTrackCuts.h"
 #include "TStarJetVector.h"
 #include "TStarJetVectorContainer.h"
+#include "TStarJetPicoTriggerInfo.h"
+#include "TStarJetPicoTower.h"
 
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/Selector.hh"
@@ -59,6 +62,7 @@ const std::set<string> required_params = {
     "bad_run_list",        // list of bad runs
     "triggers",            // triggers for pp data
     "embed_triggers",      // triggers for au+au data
+    "trig_et_threshold"    // ET  threshold for calorimeter trigger
     "const_eta",           // constituent  eta
     "lead_const_pt",       // lead jet constituent pT cut (comma separated)
     "sublead_const_pt",    // sublead jet constituent pT cut (comma separated)
@@ -330,6 +334,9 @@ int main(int argc, char *argv[]) {
   std::unordered_map<std::string, double> reactionplane_dict;
   std::unordered_map<std::string, int> nglobal_dict;
   std::unordered_map<std::string, int> npart_dict;
+  std::unordered_map<std::string, TLorentzVector> trig_vec_dict;
+  std::unordered_map<std::string, bool> trig_lead_dict;
+  std::unordered_map<std::string, bool> trig_sub_dict;
   std::unordered_map<std::string, TLorentzVector> lead_hard_jet_dict;
   std::unordered_map<std::string, int> lead_hard_jet_nconst_dict;
   std::unordered_map<std::string, double> lead_hard_rho_dict;
@@ -393,6 +400,9 @@ int main(int argc, char *argv[]) {
     reactionplane_dict.insert({key, 0});
     nglobal_dict.insert({key, 0});
     npart_dict.insert({key, 0});
+    trig_vec_dict.insert({key, TLorentzVector()});
+    trig_lead_dict.insert({key, false});
+    trig_sub_dict.insert({key, false});
     lead_hard_jet_dict.insert({key, TLorentzVector()});
     lead_hard_jet_const_pt_dict.insert(
         {key, new TH1D(dijetcore::MakeString(key, "jlconstpt").c_str(), "", 90,
@@ -473,6 +483,9 @@ int main(int argc, char *argv[]) {
     tmp->Branch("rp", &reactionplane_dict[key]);
     tmp->Branch("nglobal", &nglobal_dict[key]);
     tmp->Branch("npart", &npart_dict[key]);
+    tmp->Branch("trig_vec", &trig_vec_dict[key]);
+    tmp->Branch("trig_lead", &trig_lead_dict[key]);
+    tmp->Branch("trig_sub", &trig_sub_dict[key]);
     tmp->Branch("jl", &lead_hard_jet_dict[key]);
     tmp->Branch("js", &sublead_hard_jet_dict[key]);
     tmp->Branch("jlm", &lead_match_jet_dict[key]);
@@ -565,7 +578,49 @@ int main(int argc, char *argv[]) {
           continue;
       }
 
-      // we're using this p+p event - start the embedding loop
+      // we're using this p+p event - find the trigger object then start the embedding loop
+      TClonesArray* trig_objs = reader->GetEvent()->GetTrigObjs();
+      std::vector<fastjet::PseudoJet> triggers;
+      std::vector<int> trigger_tow_ids;
+      for (int i = 0; i < trig_objs->GetSize(); ++i) {
+        TStarJetPicoTriggerInfo* t = (TStarJetPicoTriggerInfo*) (*trig_objs)[i];
+        if (t->isBHT2() || t->isBHT3()) {
+          int idx = t->GetId();
+          double eta = t->GetEta();
+          double phi = t->GetPhi();
+          fastjet::PseudoJet vec_trig;
+          vec_trig.reset_PtYPhiM(1.0, eta, phi, 0.0);
+          triggers.push_back(vec_trig);
+          trigger_tow_ids.push_back(idx);
+        }
+      }
+
+      TList* towers = reader->GetListOfSelectedTowers();
+      TIter nextTower(towers);
+      std::vector<fastjet::PseudoJet> found_triggers;
+      fastjet::PseudoJet primary_trigger;
+      while(TStarJetPicoTower* tower = (TStarJetPicoTower*) nextTower()) {
+        int idx = tower->GetId();
+        double e = tower->GetEnergy();
+        double et = tower->GetEt();
+        double eta = tower->GetEta();
+        double phi = tower->GetPhi();
+        double eta_c = tower->GetEtaCorrected();
+        fastjet::PseudoJet potential_trig;
+        fastjet::PseudoJet potential_trig_uc;
+        potential_trig.reset_PtYPhiM(et, eta_c, phi, 0);
+        potential_trig_uc.reset_PtYPhiM(et, eta, phi, 0);
+        for (int i = 0; i < triggers.size(); ++i) {
+          if (potential_trig_uc.delta_R(triggers[i]) < 0.05) {
+            found_triggers.push_back(potential_trig);
+            if (potential_trig.pt() > primary_trigger.pt())
+              primary_trigger = potential_trig;
+            break;
+          }
+        }
+      }
+
+
       for (int emb = 0; emb < config["pp_reuse"]; ++emb) {
 
         if (!GetEmbedEvent(embed_reader, config["maximum_centrality"])) {
@@ -609,6 +664,8 @@ int main(int argc, char *argv[]) {
         for (auto &result : worker_out) {
           std::string key = result.first;
           dijetcore::ClusterOutput &out = *result.second.get();
+          double lead_r = out.dijet_def->lead->initialJetDef().R();
+          double sub_r = out.dijet_def->sub->initialJetDef().R();
 
           if (out.found_lead)
             lead_jet_count_dict[key]->Fill(header->GetReferenceMultiplicity());
@@ -632,6 +689,19 @@ int main(int argc, char *argv[]) {
             reactionplane_dict[key] = header->GetReactionPlaneAngle();
             nglobal_dict[key] = header->GetNGlobalTracks();
             npart_dict[key] = primary_particles.size();
+
+            // add the trigger info if it exists
+            if (primary_trigger.pt() > config["trig_et_threshold"].get<double>()) {
+              trig_vec_dict[key] = TLorentzVector(primary_trigger.px(), primary_trigger.py(), 
+                                                  primary_trigger.pz(), primary_trigger.E());
+              trig_lead_dict[key] = primary_trigger.delta_R(out.lead_hard) < lead_r ? true : false;
+              trig_sub_dict[key] = primary_trigger.delta_R(out.sublead_hard) < sub_r ? true : false;
+            }
+            else {
+              trig_vec_dict[key] = TLorentzVector(0.0, 0.0, 0.0, 0.0);
+              trig_lead_dict[key] = false;
+              trig_sub_dict[key] = false;
+            }
 
             embed_runid_dict[key] = embed_reader.picoDst()->event()->runId();
             embed_eventid_dict[key] =
@@ -762,6 +832,7 @@ int main(int argc, char *argv[]) {
   for (auto &entry : trees) {
     entry.second->Write();
   }
+  eff_ratio->Write();
   out.Close();
 
   return 0;
