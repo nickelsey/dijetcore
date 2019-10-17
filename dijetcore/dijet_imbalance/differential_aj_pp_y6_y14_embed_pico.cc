@@ -582,9 +582,11 @@ int main(int argc, char *argv[]) {
       // we're using this p+p event - find the trigger object then start the embedding loop
       std::vector<fastjet::PseudoJet> triggers;
       std::vector<int> trigger_tow_ids;
-      LOG(INFO) << "trig objs: " << reader->GetEvent()->GetHeader()->GetNOfTrigObjs();
       for (int i = 0; i < reader->GetEvent()->GetHeader()->GetNOfTrigObjs(); ++i) {
         TStarJetPicoTriggerInfo* t = reader->GetEvent()->GetTrigObj(i);
+        LOG(INFO) << "trigger object: " << i;
+        t->PrintInfo();
+        LOG(INFO) << "trigger flag: " << t->GetTriggerFlag();
         if (t->isBHT2() || t->isBHT3()) {
           int idx = t->GetId();
           double eta = t->GetEta();
