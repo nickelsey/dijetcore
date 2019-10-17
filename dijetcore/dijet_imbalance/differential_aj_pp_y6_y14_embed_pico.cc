@@ -611,6 +611,7 @@ int main(int argc, char *argv[]) {
         potential_trig.reset_PtYPhiM(et, eta_c, phi, 0);
         potential_trig_uc.reset_PtYPhiM(et, eta, phi, 0);
         for (int i = 0; i < triggers.size(); ++i) {
+          LOG(INFO) << "HERE";
           if (potential_trig_uc.delta_R(triggers[i]) < 0.05) {
             found_triggers.push_back(potential_trig);
             if (potential_trig.pt() > primary_trigger.pt())
