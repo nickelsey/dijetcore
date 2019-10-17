@@ -24,6 +24,7 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TProfile.h"
 #include "TProfile2D.h"
 #include "TTree.h"
 #include "TClonesArray.h"
@@ -98,7 +99,8 @@ void ConvertPPToPseudojets(TStarJetPicoReader *reader,
                            std::mt19937 &gen,
                            std::uniform_real_distribution<> &dis,
                            TProfile2D *eff_ratio,
-                           bool use_efficiency);
+                           bool use_efficiency,
+                           std::vector<TProfile*>& cent_profiles);
 
 std::array<fastjet::PseudoJet, 4>
 ClusterPP(std::vector<fastjet::PseudoJet> &input,
@@ -557,6 +559,14 @@ int main(int argc, char *argv[]) {
     sublead_jet_count_dict[key]->SetDirectory(0);
   }
 
+  std::vector<TProfile*> efficiency_cent;
+  for (int i = 0; i < 16; ++i) {
+    std::string h_name = "eff_cent_" + std::to_string(i);
+    TProfile* p = new TProfile(h_name.c_str(), ";p_{T};<efficiency>", 50, 0, 5);
+    p->SetDirectory(0);
+    efficiency_cent.push_back(p);
+  }
+
   // start the analysis loop
   // -----------------------
   LOG(INFO) << "starting analysis loop";
@@ -647,7 +657,8 @@ int main(int argc, char *argv[]) {
         // and now convert the pp - if there are any efficiency curves to
         // apply, do it now
         ConvertPPToPseudojets(reader, embed_reader, efficiency, tower_scale,
-                              primary_particles, gen, dis, eff_ratio.get(), config["use_efficiency"]);
+                              primary_particles, gen, dis, eff_ratio.get(), 
+                              config["use_efficiency"], efficiency_cent);
 
         // add pp tracks to the full event
         particles.insert(particles.end(), primary_particles.begin(),
@@ -832,6 +843,8 @@ int main(int argc, char *argv[]) {
     entry.second->Write();
   }
   eff_ratio->Write();
+  for (auto p : efficiency_cent)
+    p->Write();
   out.Close();
 
   return 0;
@@ -858,7 +871,8 @@ void ConvertPPToPseudojets(TStarJetPicoReader *reader,
                            std::mt19937 &gen,
                            std::uniform_real_distribution<> &dis,
                            TProfile2D *eff_ratio,
-                           bool use_efficiency) {
+                           bool use_efficiency,
+                           std::vector<TProfile*>& cent_profiles) {
   TStarJetVectorContainer<TStarJetVector> *container =
       reader->GetOutputContainer();
   for (int i = 0; i < container->GetEntries(); ++i) {
@@ -876,10 +890,11 @@ void ConvertPPToPseudojets(TStarJetPicoReader *reader,
       double ratio =
           efficiency->ratio(sv->Pt(), sv->Eta(), embed_reader.centrality16(),
                             embed_reader.picoDst()->event()->ZDCx());
-      if (!std::isfinite(ratio))
+      if (!std::isfinite(ratio) || ratio < 0.0)
         continue;
 
       eff_ratio->Fill(sv->Pt(), sv->Eta(), ratio);
+      cent_profiles[embed_reader.centrality16()]->Fill(sv->Pt(), ratio);
 
       double random_ = dis(gen);
       if (random_ > ratio)
