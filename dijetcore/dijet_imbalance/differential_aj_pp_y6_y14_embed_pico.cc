@@ -583,43 +583,43 @@ int main(int argc, char *argv[]) {
       TClonesArray* trig_objs = reader->GetEvent()->GetTrigObjs();
       std::vector<fastjet::PseudoJet> triggers;
       std::vector<int> trigger_tow_ids;
-      for (int i = 0; i < trig_objs->GetSize(); ++i) {
-        TStarJetPicoTriggerInfo* t = (TStarJetPicoTriggerInfo*) (*trig_objs)[i];
-        if (t->isBHT2() || t->isBHT3()) {
-          int idx = t->GetId();
-          double eta = t->GetEta();
-          double phi = t->GetPhi();
-          fastjet::PseudoJet vec_trig;
-          vec_trig.reset_PtYPhiM(1.0, eta, phi, 0.0);
-          triggers.push_back(vec_trig);
-          trigger_tow_ids.push_back(idx);
-        }
-      }
-      LOG(INFO) << "looking at  trigger towers";
-      //TList* towers = reader->GetListOfSelectedTowers();
-      //TIter nextTower(towers);
-      std::vector<fastjet::PseudoJet> found_triggers;
-      fastjet::PseudoJet primary_trigger;
-      // while(TStarJetPicoTower* tower = (TStarJetPicoTower*) nextTower()) {
-      //   int idx = tower->GetId();
-      //   double e = tower->GetEnergy();
-      //   double et = tower->GetEt();
-      //   double eta = tower->GetEta();
-      //   double phi = tower->GetPhi();
-      //   double eta_c = tower->GetEtaCorrected();
-      //   fastjet::PseudoJet potential_trig;
-      //   fastjet::PseudoJet potential_trig_uc;
-      //   potential_trig.reset_PtYPhiM(et, eta_c, phi, 0);
-      //   potential_trig_uc.reset_PtYPhiM(et, eta, phi, 0);
-      //   for (int i = 0; i < triggers.size(); ++i) {
-      //     if (potential_trig_uc.delta_R(triggers[i]) < 0.05) {
-      //       found_triggers.push_back(potential_trig);
-      //       if (potential_trig.pt() > primary_trigger.pt())
-      //         primary_trigger = potential_trig;
-      //       break;
-      //     }
+      // for (int i = 0; i < trig_objs->GetSize(); ++i) {
+      //   TStarJetPicoTriggerInfo* t = (TStarJetPicoTriggerInfo*) (*trig_objs)[i];
+      //   if (t->isBHT2() || t->isBHT3()) {
+      //     int idx = t->GetId();
+      //     double eta = t->GetEta();
+      //     double phi = t->GetPhi();
+      //     fastjet::PseudoJet vec_trig;
+      //     vec_trig.reset_PtYPhiM(1.0, eta, phi, 0.0);
+      //     triggers.push_back(vec_trig);
+      //     trigger_tow_ids.push_back(idx);
       //   }
       // }
+      LOG(INFO) << "looking at  trigger towers";
+      TList* towers = reader->GetListOfSelectedTowers();
+      TIter nextTower(towers);
+      std::vector<fastjet::PseudoJet> found_triggers;
+      fastjet::PseudoJet primary_trigger;
+      while(TStarJetPicoTower* tower = (TStarJetPicoTower*) nextTower()) {
+        int idx = tower->GetId();
+        double e = tower->GetEnergy();
+        double et = tower->GetEt();
+        double eta = tower->GetEta();
+        double phi = tower->GetPhi();
+        double eta_c = tower->GetEtaCorrected();
+        fastjet::PseudoJet potential_trig;
+        fastjet::PseudoJet potential_trig_uc;
+        potential_trig.reset_PtYPhiM(et, eta_c, phi, 0);
+        potential_trig_uc.reset_PtYPhiM(et, eta, phi, 0);
+        for (int i = 0; i < triggers.size(); ++i) {
+          if (potential_trig_uc.delta_R(triggers[i]) < 0.05) {
+            found_triggers.push_back(potential_trig);
+            if (potential_trig.pt() > primary_trigger.pt())
+              primary_trigger = potential_trig;
+            break;
+          }
+        }
+      }
 
       LOG(INFO) <<  "looping over embed";
       for (int emb = 0; emb < config["pp_reuse"]; ++emb) {
