@@ -559,9 +559,10 @@ int main(int argc, char *argv[]) {
 
   // start the analysis loop
   // -----------------------
+  LOG(INFO) << "starting analysis loop";
   try {
     while (reader->NextEvent()) {
-
+      LOG(INFO) << "next event";
       // Print out reader status every 10 seconds
       reader->PrintStatus(10);
 
@@ -577,7 +578,7 @@ int main(int argc, char *argv[]) {
         if (!use_event)
           continue;
       }
-
+      LOG(INFO) << "looking at  trigger objects";
       // we're using this p+p event - find the trigger object then start the embedding loop
       TClonesArray* trig_objs = reader->GetEvent()->GetTrigObjs();
       std::vector<fastjet::PseudoJet> triggers;
@@ -594,7 +595,7 @@ int main(int argc, char *argv[]) {
           trigger_tow_ids.push_back(idx);
         }
       }
-
+      LOG(INFO) << "looking at  trigger towers";
       TList* towers = reader->GetListOfSelectedTowers();
       TIter nextTower(towers);
       std::vector<fastjet::PseudoJet> found_triggers;
@@ -620,7 +621,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-
+      LOG(INFO) <<  "looping over embed";
       for (int emb = 0; emb < config["pp_reuse"]; ++emb) {
 
         if (!GetEmbedEvent(embed_reader, config["maximum_centrality"])) {
@@ -823,6 +824,7 @@ int main(int argc, char *argv[]) {
           }
         }
       }
+      LOG(INFO) << "event done";
     }
   } catch (std::exception &e) {
     LOG(ERROR) << "Caught: " << e.what() << " during analysis loop.";
