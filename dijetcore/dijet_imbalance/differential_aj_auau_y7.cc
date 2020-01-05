@@ -174,6 +174,7 @@ int main(int argc, char* argv[]) {
   // define the centrality cuts for year 7
   std::vector<unsigned> cent_boundaries = {485, 399, 269, 178, 114, 69, 39, 21, 10};
   
+  LOG(INFO) << "built keys: ";
   for (auto key : keys)
     LOG(INFO) << key;
   

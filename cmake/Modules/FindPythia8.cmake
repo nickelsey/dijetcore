@@ -10,6 +10,7 @@
 
 set(_pythia8dirs
     ${PYTHIA8}
+    $ENV{PYTHIA8_DIR}
     $ENV{PYTHIA8}
     ${PYTHIA8DIR}
     $ENV{PYTHIA8DIR}
