@@ -15,6 +15,7 @@ option(BUILD_BINARIES "Build analysis binaries" ON)
 option(BUILD_JETREADER "Build jetreader library and relevant analysis routines" ON)
 option(BUILD_EXPENSIVE "Build certain routines that have large compile times" ON)
 option(BUILD_DATA_QA_BINARIES "Routines used to analyze data quality and QA productions" ON)
+option(BUILD_SUBJET_BINARIES "Routines used to analyze subjet physics in data and MC" ON)
 
 ## compiler & system checks
 include(cmake/SysCheck.cmake)

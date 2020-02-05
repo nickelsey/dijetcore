@@ -23,6 +23,9 @@ INCLUDE_DIRECTORIES ( ${FASTJET_INCLUDE_PATH} )
 # We'll set up all the libraries, including optional libraries
 SET ( REQ_LIB_NAMES fastjet fastjettools fastjetplugins )
 SET ( OPT_LIB_NAMES siscone siscone_spherical )
+SET ( CONTRIB_OPT_NAMES VariableR ClusteringVetoPlugin 
+      ConstituentSubtractor GenericSubtractor JetCleanser 
+      Nsubjettiness RecursiveTools SoftKiller SubjetCounting )
 
 FOREACH ( lib_name ${REQ_LIB_NAMES} )
 UNSET (lib CACHE)
@@ -35,7 +38,7 @@ MESSAGE ( FATAL_ERROR "Can't find FastJet library ${lib_name}" )
 ENDIF ( lib )
 ENDFOREACH ( lib_name )
 
-FOREACH ( lib_name ${OPT_LIB_NAMES} )
+FOREACH ( lib_name ${OPT_LIB_NAMES} ${CONTRIB_OPT_NAMES} )
 UNSET (lib CACHE)
 FIND_LIBRARY ( lib ${lib_name} PATHS ${FASTJET_LIB_PATH} NO_DEFAULT_PATH)
 FIND_LIBRARY ( lib ${lib_name} )

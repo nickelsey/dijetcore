@@ -25,7 +25,7 @@ list(APPEND DC_DEPENDENCY_LIBS ${Boost_LIBRARIES})
 
 ## ROOT
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net)
+find_package(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net Geom)
 list(APPEND DC_DEPENDENCY_LIBS ${ROOT_LIBRARIES})
 include(${ROOT_USE_FILE})
 message(STATUS "Found ROOT")
@@ -64,7 +64,7 @@ add_subdirectory(third_party/jetreader)
 list(APPEND DC_DEPENDENCY_LIBS StPicoEvent)
 list(APPEND DC_DEPENDENCY_LIBS jetreader)
 dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/jetreader)
-dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/jetreader/third_party/StPicoEvent/SL18h)
+dc_include_directories(${PROJECT_SOURCE_DIR}/third_party/jetreader/third_party/StPicoEvent/SL19c)
 
 ## testing is done via gtest, gmock (currently not used)
 ## and google benchmark. They are compiled as static libraries
