@@ -880,7 +880,7 @@ int main(int argc, char *argv[]) {
                        .c_str())
           ->SetTextSize(0.038);
       hardPave
-          .AddText(dijetcore::MakeString("p_{T}^{hard const} > ",
+          .AddText(dijetcore::MakeString("p_{T}^{hard-const} > ",
                                          streamConstPt.str(), "GeV/c")
                        .c_str())
           ->SetTextSize(0.038);
@@ -905,7 +905,7 @@ int main(int argc, char *argv[]) {
                        .c_str())
           ->SetTextSize(0.038);
       matchPave
-          .AddText(dijetcore::MakeString("p_{T}^{hard const} > ",
+          .AddText(dijetcore::MakeString("p_{T}^{hard-const} > ",
                                          streamConstPt.str(), "GeV/c")
                        .c_str())
           ->SetTextSize(0.038);
@@ -1918,7 +1918,7 @@ int main(int argc, char *argv[]) {
   TPaveText y_axis_text_right(0.94, 0.2, 0.99, 0.8, "NB NDC");
   y_axis_text_right.SetFillStyle(0);
   y_axis_text_right.SetBorderSize(0);
-  tmp_text = y_axis_text_right.AddText("p_{T}^{hard const} [GeV/c]");
+  tmp_text = y_axis_text_right.AddText("p_{T}^{hard-const} [GeV/c]");
   tmp_text->SetTextSize(0.04);
   tmp_text->SetTextAngle(270);
   TPaveText x_axis_text_top(0.4, 0.94, 0.6, 0.99, "NB NDC");
