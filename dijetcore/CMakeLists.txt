@@ -24,7 +24,7 @@ add_subdirectory(dijet_imbalance)
 add_subdirectory(resources)
 if (BUILD_DATA_QA_BINARIES)
   add_subdirectory(data)
-endif(BUILD_DATA_QA_BINARIES
+endif(BUILD_DATA_QA_BINARIES)
 if(BUILD_SUBJET_BINARIES) 
   message(STATUS "adding subjet")
   add_subdirectory(subjet)
