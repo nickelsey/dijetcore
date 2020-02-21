@@ -28,6 +28,7 @@ endif(DC_BENCH_SRCS)
 install(FILES ${DC_HDRS} DESTINATION include/dijetcore/subjet/mc)
 
 ## add subdirectories
+add_subdirectory(print)
 
 ## export file lists to parent scope
 set(DC_BINARY_SRCS ${DC_BINARY_SRCS} PARENT_SCOPE)
