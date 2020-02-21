@@ -14,7 +14,9 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TH3.h"
 #include "TProfile2D.h"
+#include "TProfile3D.h"
 
 #include "fastjet/ClusterSequence.hh"
 #include "fastjet/PseudoJet.hh"
@@ -141,19 +143,20 @@ int main(int argc, char *argv[]) {
   TFile out(outfile_name.c_str(), "RECREATE");
 
   // create generator
-  dijetcore::PythiaStarSim gen;
-  gen.SetPtHatRange(config["pthat_min"].get<double>(),
-                    config["pthat_max"].get<double>());
-  gen.SetJetPtMin(config["jet_pt_min"].get<double>());
-  gen.SetTrackPtMin(config["track_pt_min"].get<double>());
-  gen.SetTrackPtMax(config["track_pt_max"].get<double>());
-  gen.SetTrackEtaMax(config["track_eta_max"].get<double>());
-  gen.SetJetRadius(config["jet_radius"].get<double>());
+  dijetcore::PythiaStarSim generator;
+  generator.SetRandomSeed(FLAGS_id);
+  generator.SetPtHatRange(config["pthat_min"].get<double>(),
+                          config["pthat_max"].get<double>());
+  generator.SetJetPtMin(config["jet_pt_min"].get<double>());
+  generator.SetTrackPtMin(config["track_pt_min"].get<double>());
+  generator.SetTrackPtMax(config["track_pt_max"].get<double>());
+  generator.SetTrackEtaMax(config["track_eta_max"].get<double>());
+  generator.SetJetRadius(config["jet_radius"].get<double>());
 
   double jet_eta_max = config["track_eta_max"].get<double>() -
                        config["jet_radius"].get<double>();
   if (jet_eta_max > 0.0) {
-    gen.SetJetEtaMax(jet_eta_max);
+    generator.SetJetEtaMax(jet_eta_max);
   } else {
     LOG(ERROR) << "can not have a jet radius ("
                << config["jet_radius"].get<double>()
@@ -165,18 +168,18 @@ int main(int argc, char *argv[]) {
   string opt_tag = "opt";
   int opt_idx = 1;
   while (config.count(dijetcore::MakeString(opt_tag, opt_idx)) > 0) {
-    gen.AddSettingString(config[dijetcore::MakeString(opt_tag, opt_idx)]);
+    generator.AddSettingString(config[dijetcore::MakeString(opt_tag, opt_idx)]);
     opt_idx++;
   }
 
   string jet_alg = config["jet_alg"];
 
   if (jet_alg == "kt") {
-    gen.SetJetAlgorithm(fastjet::kt_algorithm);
+    generator.SetJetAlgorithm(fastjet::kt_algorithm);
   } else if (jet_alg == "antikt") {
-    gen.SetJetAlgorithm(fastjet::antikt_algorithm);
+    generator.SetJetAlgorithm(fastjet::antikt_algorithm);
   } else if (jet_alg == "ca") {
-    gen.SetJetAlgorithm(fastjet::cambridge_aachen_algorithm);
+    generator.SetJetAlgorithm(fastjet::cambridge_aachen_algorithm);
   } else {
     LOG(ERROR) << "unrecognized jetfinding algorithm: " << jet_alg
                << " select from kt, antikt or ca";
@@ -185,29 +188,31 @@ int main(int argc, char *argv[]) {
   string sim_mode = config["det_sim_mode"];
 
   if (sim_mode == "none") {
-    gen.SetEfficiencyMode(dijetcore::PythiaStarSim::EfficiencyMode::None);
+    generator.SetEfficiencyMode(dijetcore::PythiaStarSim::EfficiencyMode::None);
   } else if (sim_mode == "gauss") {
-    gen.SetEfficiencyMode(
+    generator.SetEfficiencyMode(
         dijetcore::PythiaStarSim::EfficiencyMode::GaussianSmearing);
   } else if (sim_mode == "star") {
-    gen.SetEfficiencyMode(dijetcore::PythiaStarSim::EfficiencyMode::STAR);
+    generator.SetEfficiencyMode(dijetcore::PythiaStarSim::EfficiencyMode::STAR);
   } else {
     LOG(ERROR) << "unrecognized simulation mode: " << sim_mode
                << " select from none, gauss or star";
   }
 
   // initialize the generator
-  gen.Initialize();
+  generator.Initialize();
 
   // now create output histograms
   TH1D *matched_jet_count =
       new TH1D("matchedcount", ";N_{matched}", 5, -0.5, 4.5);
+  TH2D *matched_jet_dr = new TH2D("matcheddr", ";#Delta p_{T};#Delta R", 30,
+                                  -15, 15, 50, 0.0, 0.4);
 
   // measure of the pT smearing and track loss
   TH2D *track_pt_smearing = new TH2D("ptsmear", ";p_{T};#Delta p_{T}/p_{T}", 50,
                                      0, 10, 50, -0.5, 0.5);
-  TH2D *jet_mult = new TH2D("jetmult", ";det N_{part};gen N_{part}", 20, -0.5,
-                            19, 20, -0.5, 19);
+  TH2D *jet_mult = new TH2D("jetmult", ";det N_{part};gen N_{part}", 30, -0.5,
+                            29.5, 30, -0.5, 29.5);
 
   TH2D *jet_pt =
       new TH2D("jetpt", ";det p_{T}; gen p_{T}", 50, 0, 50, 50, 0, 50);
@@ -217,11 +222,11 @@ int main(int argc, char *argv[]) {
   TH2D *jet_rg =
       new TH2D("jetrg", ";det R_{g}; gen R_{g}", 25, 0, 1.0, 25, 0, 1.0);
   TH2D *jet_form_1 =
-      new TH2D("jetform1", ";det t_{f} split 1; gen t_{f} split 1", 50, 0, 10.0,
-               50, 0, 10.0);
+      new TH2D("jetform1", ";det t_{f} split 1; gen t_{f} split 1", 60, 0, 15.0,
+               60, 0, 15.0);
   TH2D *jet_form_2 =
-      new TH2D("jetform2", ";det t_{f} split 2; gen t_{f} split 2", 50, 0, 10.0,
-               50, 0, 10.0);
+      new TH2D("jetform2", ";det t_{f} split 2; gen t_{f} split 2", 60, 0, 15.0,
+               60, 0, 15.0);
 
   TH2D *jet_zg_rel_err_1_2 = new TH2D(
       "jetzgrelerr", ";#Delta z_{g}^{1}/z_{g}^{1}; #Delta z_{g}^{2}/z_{g}^{2}",
@@ -234,6 +239,27 @@ int main(int argc, char *argv[]) {
                ";#Delta t_{f}^{1}/t_{f}^{1}; #Delta t_{f}^{2}/t_{f}^{2}", 25,
                -1.0, 1.0, 25, -1.0, 1.0);
 
+  TH2D* pt_zg_smear1 = new TH2D("ptzgsmear1", ";p_{T};#Delta z_{g}/z_{g}", 50, 0, 50, 101, -2.0, 2.0);
+  TH2D* pt_zg_smear2 = new TH2D("ptzgsmear2", ";p_{T};#Delta z_{g}/z_{g}", 50, 0, 50, 101, -2.0, 2.0);
+  TH2D* pt_rg_smear1 = new TH2D("ptrgsmear1", ";p_{T};#Delta R_{g}/R_{g}", 50, 0, 50, 101, -2.0, 2.0);
+  TH2D* pt_rg_smear2 = new TH2D("ptrgsmear2", ";p_{T};#Delta R_{g}/R_{g}", 50, 0, 50, 101, -2.0, 2.0);
+  TH2D* pt_tf_smear1 = new TH2D("pttfsmear1", ";p_{T};#Delta t_{f}/t_{f}", 50, 0, 50, 101, -2.0, 2.0);
+  TH2D* pt_tf_smear2 = new TH2D("pttfsmear2", ";p_{T};#Delta t_{f}/t_{f}", 50, 0, 50, 101, -2.0, 2.0);
+
+  TH2D* zg_zg_smear1 = new TH2D("zgzgsmear1", ";z_{g};#Delta z_{g}/z_{g}", 24, 0, 0.6, 101, -2.0, 2.0);
+  TH2D* zg_zg_smear2 = new TH2D("zgzgsmear2", ";z_{g};#Delta z_{g}/z_{g}", 24, 0, 0.6, 101, -2.0, 2.0);
+  TH2D* zg_rg_smear1 = new TH2D("zgrgsmear1", ";z_{g};#Delta R_{g}/R_{g}", 24, 0, 0.6, 101, -2.0, 2.0);
+  TH2D* zg_rg_smear2 = new TH2D("zgrgsmear2", ";z_{g};#Delta R_{g}/R_{g}", 24, 0, 0.6, 101, -2.0, 2.0);
+  TH2D* zg_tf_smear1 = new TH2D("zgtfsmear1", ";z_{g};#Delta t_{f}/t_{f}", 24, 0, 0.6, 101, -2.0, 2.0);
+  TH2D* zg_tf_smear2 = new TH2D("zgtfsmear2", ";z_{g};#Delta t_{f}/t_{f}", 24, 0, 0.6, 101, -2.0, 2.0);
+
+  TH2D* rg_zg_smear1 = new TH2D("rgzgsmear1", ";R_{g};#Delta z_{g}/z_{g}", 25, 0, 1.0, 101, -2.0, 2.0);
+  TH2D* rg_zg_smear2 = new TH2D("rgzgsmear2", ";R_{g};#Delta z_{g}/z_{g}", 25, 0, 1.0, 101, -2.0, 2.0);
+  TH2D* rg_rg_smear1 = new TH2D("rgrgsmear1", ";R_{g};#Delta R_{g}/R_{g}", 25, 0, 1.0, 101, -2.0, 2.0);
+  TH2D* rg_rg_smear2 = new TH2D("rgrgsmear2", ";R_{g};#Delta R_{g}/R_{g}", 25, 0, 1.0, 101, -2.0, 2.0);
+  TH2D* rg_tf_smear1 = new TH2D("rgtfsmear1", ";R_{g};#Delta t_{f}/t_{f}", 25, 0, 1.0, 101, -2.0, 2.0);
+  TH2D* rg_tf_smear2 = new TH2D("rgtfsmear2", ";R_{g};#Delta t_{f}/t_{f}", 25, 0, 1.0, 101, -2.0, 2.0);
+
   // get Iterated SoftDrop variables
   double beta = config["beta"].get<double>();
   double z_cut = config["z_cut"].get<double>();
@@ -244,10 +270,10 @@ int main(int argc, char *argv[]) {
   int n_events = config["n_events"].get<int>();
   for (int i = 0; i < n_events; ++i) {
 
-    gen.Run();
+    generator.Run();
 
-    std::vector<fastjet::PseudoJet> gen_jets = gen.GenJets();
-    std::vector<fastjet::PseudoJet> det_jets = gen.DetectorJets();
+    std::vector<fastjet::PseudoJet> gen_jets = generator.GenJets();
+    std::vector<fastjet::PseudoJet> det_jets = generator.DetectorJets();
 
     // create all matches, everything else is a fake
     std::vector<std::pair<fastjet::PseudoJet, fastjet::PseudoJet>> jet_pairs;
@@ -297,7 +323,9 @@ int main(int argc, char *argv[]) {
         }
       }
 
+      // fill jet quantities
       jet_pt->Fill(det.pt(), gen.pt());
+      matched_jet_dr->Fill(det.pt() - gen.pt(), det.delta_R(gen));
 
       // create RSD
       fastjet::contrib::RecursiveSoftDrop det_rsd(beta, z_cut, -1, r0);
@@ -311,13 +339,13 @@ int main(int argc, char *argv[]) {
 
       fastjet::PseudoJet det_result_jet = det_rsd(det);
       fastjet::PseudoJet gen_result_jet = gen_rsd(gen);
-      
+
       splitInfo det_first_split = parse_split(det_result_jet);
       splitInfo det_second_split = parse_split(det_first_split.leading_prong);
-      
+
       splitInfo gen_first_split = parse_split(gen_result_jet);
       splitInfo gen_second_split = parse_split(gen_first_split.leading_prong);
-      
+
       if (det_first_split.zg > 0.0 && gen_first_split.zg > 0.0) {
         jet_zg->Fill(det_first_split.zg, gen_first_split.zg);
         jet_rg->Fill(det_first_split.rg, gen_first_split.rg);
@@ -326,8 +354,21 @@ int main(int argc, char *argv[]) {
         double form_gen_1 = formation_time(
             gen_first_split.zg, gen_first_split.pt, gen_first_split.rg);
         jet_form_1->Fill(form_det_1, form_gen_1);
+
+
+        pt_zg_smear1->Fill(det_first_split.pt, rel_err(gen_first_split.zg, det_first_split.zg));
+        pt_rg_smear1->Fill(det_first_split.pt, rel_err(gen_first_split.rg, det_first_split.rg));
+        pt_tf_smear1->Fill(det_first_split.pt, rel_err(form_gen_1, form_det_1));
+
+        zg_zg_smear1->Fill(det_first_split.zg, rel_err(gen_first_split.zg, det_first_split.zg));
+        zg_rg_smear1->Fill(det_first_split.zg, rel_err(gen_first_split.rg, det_first_split.rg));
+        zg_tf_smear1->Fill(det_first_split.zg, rel_err(form_gen_1, form_det_1));
+
+        rg_zg_smear1->Fill(det_first_split.rg, rel_err(gen_first_split.zg, det_first_split.zg));
+        rg_rg_smear1->Fill(det_first_split.rg, rel_err(gen_first_split.rg, det_first_split.rg));
+        rg_tf_smear1->Fill(det_first_split.rg, rel_err(form_gen_1, form_det_1));
       }
-      
+
       if (det_second_split.zg > 0.0 && gen_second_split.zg > 0.0) {
         double form_det_1 = formation_time(
             det_first_split.zg, det_first_split.pt, det_first_split.rg);
@@ -349,9 +390,21 @@ int main(int argc, char *argv[]) {
         jet_zg_rel_err_1_2->Fill(rel_err_zg_1, rel_err_zg_2);
 
         double rel_err_rg_1 = rel_err(gen_first_split.rg, det_first_split.rg);
-        double rel_err_rg_2 = rel_err(gen_first_split.rg, det_first_split.rg);
+        double rel_err_rg_2 = rel_err(gen_second_split.rg, det_second_split.rg);
 
         jet_rg_rel_err_1_2->Fill(rel_err_rg_1, rel_err_rg_2);
+
+        pt_zg_smear2->Fill(det_second_split.pt, rel_err(gen_second_split.zg, det_second_split.zg));
+        pt_rg_smear2->Fill(det_second_split.pt, rel_err(gen_second_split.rg, det_second_split.rg));
+        pt_tf_smear2->Fill(det_second_split.pt, rel_err(form_gen_2, form_det_2));
+
+        zg_zg_smear2->Fill(det_second_split.zg, rel_err(gen_second_split.zg, det_second_split.zg));
+        zg_rg_smear2->Fill(det_second_split.zg, rel_err(gen_second_split.rg, det_second_split.rg));
+        zg_tf_smear2->Fill(det_second_split.zg, rel_err(form_gen_2, form_det_2));
+
+        rg_zg_smear2->Fill(det_second_split.rg, rel_err(gen_second_split.zg, det_second_split.zg));
+        rg_rg_smear2->Fill(det_second_split.rg, rel_err(gen_second_split.rg, det_second_split.rg));
+        rg_tf_smear2->Fill(det_second_split.rg, rel_err(form_gen_2, form_det_2));
       }
     }
   }
