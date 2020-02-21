@@ -48,6 +48,8 @@ class PythiaStarSim {
   EfficiencyMode GetEfficiencyMode() const { return eff_mode_; }
   void SetSmearingParams(double mean, double sigma);
 
+  void SetRandomSeed(int seed) { seed_ = seed; }
+
   void SetPtHatRange(double min, double max) {
     pt_hat_min_ = min;
     pt_hat_max_ = max;

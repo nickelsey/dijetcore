@@ -55,8 +55,6 @@ void PythiaStarSim::Run() {
   det_particles_.clear();
   truth_jets_.clear();
   det_jets_.clear();
-  truth_seq_.release();
-  det_seq_.release();
 
   if (initialized_ == false)
     DIJETCORE_THROW(
@@ -124,8 +122,10 @@ void PythiaStarSim::AddDetectorTrack(fastjet::PseudoJet &part) {
     break;
 
   case EfficiencyMode::STAR:
-    if (part.user_index() == 0)
+    if (part.user_index() == 0) {
       det_particles_.push_back(part);
+      break;
+    }
 
     prob = flat_dis_(gen_);
     eff = efficiency_.ppEff(part.pt(), part.eta());
