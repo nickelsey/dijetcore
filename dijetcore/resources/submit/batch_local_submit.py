@@ -129,11 +129,11 @@ def main(args):
                 continue
             
             # this index will be submitted - create log directory 
-            std_out = open('{}/{}{}.log'.format(log_dir, args.name, current_job_id), 'w')
-            std_err = open('{}/{}{}.err'.format(log_dir, args.name, current_job_id), 'w')
+            std_out = open('{}/{}{}.log'.format(log_dir, args.name, current_job_id + args.startIndex), 'w')
+            std_err = open('{}/{}{}.err'.format(log_dir, args.name, current_job_id + args.startIndex), 'w')
 
             # create job submission for Popen
-            job_submit = generate_submission(executable, args.name, current_job_id, args.configFile)
+            job_submit = generate_submission(executable, args.name, current_job_id + args.startIndex, args.configFile)
             
             print('submitting job: {}\nlog directory: {}\nerr directory: {}'.format(job_submit, std_out.name, std_err.name))
             # create subprocess and store
@@ -160,6 +160,8 @@ if __name__ == "__main__":
                         help=' number of job submissions to run concurrently')
     parser.add_argument('--name', default='job_',
                         help=' job name (identifier for output)')
+    parser.add_argument('--startIndex', type=int, default=0,
+                        help='index to start submission at')
     parser.add_argument('--numJobs', type=int, default=1,
                         help=' number of times to submit the job: not used if input files are specified')
     parser.add_argument('--binary', default='', required=True,
