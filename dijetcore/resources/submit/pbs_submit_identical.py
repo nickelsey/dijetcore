@@ -195,8 +195,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Submit jobs via PBS & resubmit if necessary')
-    parser.add_argument('strings', metavar='S',
-                        nargs='*', help=' input files ')
     parser.add_argument('--max_failures', default=200,
                         help=' number of job submissions that can fail before forcing an exit')
     parser.add_argument('--name', default='job_',
