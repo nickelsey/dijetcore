@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
   // create output file from the given directory, name & id
   string outfile_name =
-      output_dir + "/" + FLAGS_name + dijetcore::MakeString(FLAGS_id) + ".root";
+      output_dir + "/" + FLAGS_name + dijetcore::MakeString("_", FLAGS_id) + ".root";
   TFile out(outfile_name.c_str(), "RECREATE");
 
   // create generator
