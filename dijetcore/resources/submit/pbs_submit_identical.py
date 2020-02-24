@@ -164,11 +164,11 @@ def main(args):
                 continue
 
             # build log & error locations
-            outstream = "log/" + args.name + str(i) + ".log"
-            errstream = "log/" + args.name + str(i) + ".err"
+            outstream = "log/" + args.name + str(i+args.idOffset) + ".log"
+            errstream = "log/" + args.name + str(i+args.idOffset) + ".err"
 
             qsub = generate_submission(executable, args.configFile, qwrap, execpath, outstream,
-                                       errstream, args.name, i, args.priority, args.mem, args.nodes, 
+                                       errstream, args.name, i+args.idOffset, args.priority, args.mem, args.nodes, 
                                        args.ppn, args.queue)
             print("submitting job: ")
             print(qsub)
@@ -219,6 +219,8 @@ if __name__ == "__main__":
                         help='qwrap file used during pbs submission')
     parser.add_argument('--configFile', default='config.json',
                         help='JSON configuration file for the specified binary')
+    parser.add_argument('--idOffset', type=int, default=0,
+                        help='offset for first submission id (0->idOffset, 1->idOffset+1...)')
 
     if len(sys.argv) < 2:
         parser.print_usage()
