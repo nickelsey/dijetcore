@@ -164,8 +164,8 @@ def main(args):
                 continue
 
             # build log & error locations
-            outstream = "log/" + args.name + str(i+args.idOffset) + ".log"
-            errstream = "log/" + args.name + str(i+args.idOffset) + ".err"
+            outstream = "log/" + args.name + '_' + str(i+args.idOffset) + ".log"
+            errstream = "log/" + args.name + '_' + str(i+args.idOffset) + ".err"
 
             qsub = generate_submission(executable, args.configFile, qwrap, execpath, outstream,
                                        errstream, args.name, i+args.idOffset, args.priority, args.mem, args.nodes, 
