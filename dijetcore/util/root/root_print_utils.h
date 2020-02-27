@@ -545,7 +545,7 @@ namespace dijetcore {
       std::cerr << "warning: only one histogram, cant take ratios, exiting" << std::endl;
       return;
     }
-    if (h.size() + 1 != h_titles.size()) {
+    if (h.size() != h_titles.size()) {
       std::cerr << "warning, mismatched number of histograms & histogram names, exiting" << std::endl;
       return;
     }
