@@ -250,6 +250,8 @@ int main(int argc, char *argv[]) {
   TLorentzVector lead_match_det;
   TLorentzVector sub_hc_det;
   TLorentzVector sub_match_det;
+  TLorentzVector trigger_gen;
+  TLorentzVector trigger_det;
 
   result_tree->Branch("eventid", &event_id);
   result_tree->Branch("leadhcgen", &lead_hc_gen);
@@ -260,6 +262,8 @@ int main(int argc, char *argv[]) {
   result_tree->Branch("leadmatchdet", &lead_match_det);
   result_tree->Branch("subhcdet", &sub_hc_det);
   result_tree->Branch("submatchdet", &sub_match_det);
+  result_tree->Branch("triggen", &trigger_gen);
+  result_tree->Branch("trigdet", &trigger_det);
 
   // start event loop
   int n_events = config["n_events"].get<int>();
@@ -272,6 +276,8 @@ int main(int argc, char *argv[]) {
     lead_match_gen = TLorentzVector(0.0, 0.0, 0.0, 0.0);
     sub_hc_gen = TLorentzVector(0.0, 0.0, 0.0, 0.0);
     sub_match_gen = TLorentzVector(0.0, 0.0, 0.0, 0.0);
+    trigger_gen = TLorentzVector(0.0, 0.0, 0.0, 0.0);
+    trigger_det = TLorentzVector(0.0, 0.0, 0.0, 0.0);
 
     generator.Run();
 
@@ -304,6 +310,15 @@ int main(int argc, char *argv[]) {
         sub_match_gen =
             TLorentzVector(out.sublead_match.px(), out.sublead_match.py(),
                            out.sublead_match.pz(), out.sublead_match.E());
+        // find highest pt neutral object for generator level
+        auto possible_triggers = fastjet::sorted_by_pt(gen_part);
+        for (auto& p : possible_triggers) {
+          if (p.user_index() == 0) {
+            trigger_gen = TLorentzVector(p.px(), p.py(), p.pz(), p.E());
+            break;
+          }
+        }
+
       }
     }
     for (auto &result : worker_out_det) {
@@ -322,6 +337,14 @@ int main(int argc, char *argv[]) {
         sub_match_det =
             TLorentzVector(out.sublead_match.px(), out.sublead_match.py(),
                            out.sublead_match.pz(), out.sublead_match.E());
+        // find highest pt neutral object for detector level
+        auto possible_triggers = fastjet::sorted_by_pt(det_part);
+        for (auto& p : possible_triggers) {
+          if (p.user_index() == 0) {
+            trigger_det = TLorentzVector(p.px(), p.py(), p.pz(), p.E());
+            break;
+          }
+        }
       }
     }
     result_tree->Fill();
