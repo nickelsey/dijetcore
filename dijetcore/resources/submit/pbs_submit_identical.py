@@ -37,7 +37,7 @@ def checkstatus(jobstatus):
     return loop
 
 
-def updatestatus(jobstatus, outdir, name):
+def updatestatus(jobstatus, outdir, name, idOffset):
     from ROOT import TFile
     print("Updating job status")
     print("Total: " + str(len(jobstatus)))
@@ -54,7 +54,7 @@ def updatestatus(jobstatus, outdir, name):
             continue
 
         # check if the job is still underway
-        jobinprocess = qstat_result.find((name + '_' + str(i)).encode())
+        jobinprocess = qstat_result.find((name + '_' + str(i + idOffset)).encode())
         if jobinprocess >= 0:
             jobstatus[i] = 1
             continue
@@ -138,7 +138,7 @@ def main(args):
     while checkstatus(jobstatus):
 
         # update status of all jobs & output
-        jobstatus = updatestatus(jobstatus, output, args.name)
+        jobstatus = updatestatus(jobstatus, output, args.name, args.idOffset)
 
         # if we have completed all jobs, exit
         if len(jobstatus) == jobstatus.count(2):
@@ -151,7 +151,7 @@ def main(args):
         while jobsactive >= maxjobs:
             print("reached max number of active jobs: pausing")
             time.sleep(60)
-            jobstatus = updatestatus(jobstatus, output, args.name)
+            jobstatus = updatestatus(jobstatus, output, args.name, args.idOffset)
             jobsactive = jobstatus.count(1)
 
         # now submit jobs up to maxjobs - jobsqueued
