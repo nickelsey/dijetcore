@@ -17,10 +17,8 @@
 
 namespace dijetcore {
 
-
-
 class PythiaStarSim {
- public:
+public:
   enum class EfficiencyMode { None, GaussianSmearing, STAR };
 
   PythiaStarSim();
@@ -37,12 +35,14 @@ class PythiaStarSim {
   void Run();
 
   // returns particles for current event
-  std::vector<fastjet::PseudoJet>& GenParticles() { return truth_particles_; }
-  std::vector<fastjet::PseudoJet>& DetectorParticles() { return det_particles_; }
+  std::vector<fastjet::PseudoJet> &GenParticles() { return truth_particles_; }
+  std::vector<fastjet::PseudoJet> &DetectorParticles() {
+    return det_particles_;
+  }
 
   // returns jets for current event
-  std::vector<fastjet::PseudoJet>& GenJets() { return truth_jets_; }
-  std::vector<fastjet::PseudoJet>& DetectorJets() { return det_jets_; }
+  std::vector<fastjet::PseudoJet> &GenJets() { return truth_jets_; }
+  std::vector<fastjet::PseudoJet> &DetectorJets() { return det_jets_; }
 
   void SetEfficiencyMode(EfficiencyMode mode) { eff_mode_ = mode; }
   EfficiencyMode GetEfficiencyMode() const { return eff_mode_; }
@@ -54,7 +54,7 @@ class PythiaStarSim {
     pt_hat_min_ = min;
     pt_hat_max_ = max;
   };
-  void AddSettingString(const std::string& str) { gen_args_.push_back(str); }
+  void AddSettingString(const std::string &str) { gen_args_.push_back(str); }
 
   void SetJetPtMin(double pt) { jet_pt_min_ = pt; }
   double JetPtMin() const { return jet_pt_min_; }
@@ -79,7 +79,9 @@ class PythiaStarSim {
   void SetJetAlgorithm(fastjet::JetAlgorithm alg) { alg_ = alg; }
   fastjet::JetAlgorithm JetAlgorithm() const { return alg_; }
 
- private:
+  Pythia8::Pythia &Pythia() { return pythia_; }
+
+private:
   // Pythia generator settings
   double pt_hat_min_;
   double pt_hat_max_;
@@ -122,13 +124,13 @@ class PythiaStarSim {
 
   // internally used functions
   void ConvertToPseudoJet();
-  void AddDetectorTrack(fastjet::PseudoJet& part);
+  void AddDetectorTrack(fastjet::PseudoJet &part);
 
   // random number distribution
   std::uniform_real_distribution<double> flat_dis_;
   std::mt19937 gen_;
 };
 
-}  // namespace dijetcore
+} // namespace dijetcore
 
-#endif  // DIJETCORE_WORKER_MC_DETECTOR_SIM_WORKER_PYTHIA_STAR_SIM_H
+#endif // DIJETCORE_WORKER_MC_DETECTOR_SIM_WORKER_PYTHIA_STAR_SIM_H
