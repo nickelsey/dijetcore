@@ -369,7 +369,8 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    result_tree->Fill();
+    if (lead_hc_det.Pt() > 0.0 || lead_hc_gen.Pt() > 0.0)
+      result_tree->Fill(); 
   }
 
   out.Write();
