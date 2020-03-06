@@ -71,8 +71,7 @@ const std::set<string> required_params = {
 
 int main(int argc, char *argv[]) {
 
-  string usage =
-      "Aj for Pythia with detector sim of STAR detector";
+  string usage = "Aj for Pythia with detector sim of STAR detector";
 
   dijetcore::SetUsageMessage(usage);
   dijetcore::ParseCommandLineFlags(&argc, argv);
@@ -103,8 +102,8 @@ int main(int argc, char *argv[]) {
       boost::filesystem::copy_option::overwrite_if_exists);
 
   // create output file from the given directory, name & id
-  string outfile_name =
-      output_dir + "/" + FLAGS_name + dijetcore::MakeString("_", FLAGS_id) + ".root";
+  string outfile_name = output_dir + "/" + FLAGS_name +
+                        dijetcore::MakeString("_", FLAGS_id) + ".root";
   TFile out(outfile_name.c_str(), "RECREATE");
 
   // create generator
@@ -252,6 +251,10 @@ int main(int argc, char *argv[]) {
   TLorentzVector sub_match_det;
   TLorentzVector trigger_gen;
   TLorentzVector trigger_det;
+  TLorentzVector gen1;
+  TLorentzVector gen2;
+  bool gen1_gluon;
+  bool gen2_gluon;
 
   result_tree->Branch("eventid", &event_id);
   result_tree->Branch("leadhcgen", &lead_hc_gen);
@@ -264,6 +267,10 @@ int main(int argc, char *argv[]) {
   result_tree->Branch("submatchdet", &sub_match_det);
   result_tree->Branch("triggen", &trigger_gen);
   result_tree->Branch("trigdet", &trigger_det);
+  result_tree->Branch("gen1", &gen1);
+  result_tree->Branch("gen2", &gen2);
+  result_tree->Branch("gen1_g", &gen1_gluon);
+  result_tree->Branch("gen2_g", &gen2_gluon);
 
   // start event loop
   int n_events = config["n_events"].get<int>();
@@ -278,6 +285,10 @@ int main(int argc, char *argv[]) {
     sub_match_gen = TLorentzVector(0.0, 0.0, 0.0, 0.0);
     trigger_gen = TLorentzVector(0.0, 0.0, 0.0, 0.0);
     trigger_det = TLorentzVector(0.0, 0.0, 0.0, 0.0);
+    gen1 = TLorentzVector(0.0, 0.0, 0.0, 0.0);
+    gen2 = TLorentzVector(0.0, 0.0, 0.0, 0.0);
+    gen1_gluon = false;
+    gen2_gluon = false;
 
     generator.Run();
 
@@ -312,13 +323,12 @@ int main(int argc, char *argv[]) {
                            out.sublead_match.pz(), out.sublead_match.E());
         // find highest pt neutral object for generator level
         auto possible_triggers = fastjet::sorted_by_pt(gen_part);
-        for (auto& p : possible_triggers) {
+        for (auto &p : possible_triggers) {
           if (p.user_index() == 0) {
             trigger_gen = TLorentzVector(p.px(), p.py(), p.pz(), p.E());
             break;
           }
         }
-
       }
     }
     for (auto &result : worker_out_det) {
@@ -337,9 +347,21 @@ int main(int argc, char *argv[]) {
         sub_match_det =
             TLorentzVector(out.sublead_match.px(), out.sublead_match.py(),
                            out.sublead_match.pz(), out.sublead_match.E());
+
+        // identify jet initiator (quark/gluon)
+        gen1 = TLorentzVector(
+            generator.Pythia().event[5].px(), generator.Pythia().event[5].py(),
+            generator.Pythia().event[5].pz(), generator.Pythia().event[5].e());
+        gen2 = TLorentzVector(
+            generator.Pythia().event[6].px(), generator.Pythia().event[6].py(),
+            generator.Pythia().event[6].pz(), generator.Pythia().event[6].e());
+
+        gen1_gluon = generator.Pythia().event[5].id() == 21;
+        gen2_gluon = generator.Pythia().event[6].id() == 21;
+
         // find highest pt neutral object for detector level
         auto possible_triggers = fastjet::sorted_by_pt(det_part);
-        for (auto& p : possible_triggers) {
+        for (auto &p : possible_triggers) {
           if (p.user_index() == 0) {
             trigger_det = TLorentzVector(p.px(), p.py(), p.pz(), p.E());
             break;
