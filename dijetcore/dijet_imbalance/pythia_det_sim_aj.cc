@@ -348,17 +348,6 @@ int main(int argc, char *argv[]) {
             TLorentzVector(out.sublead_match.px(), out.sublead_match.py(),
                            out.sublead_match.pz(), out.sublead_match.E());
 
-        // identify jet initiator (quark/gluon)
-        gen1 = TLorentzVector(
-            generator.Pythia().event[5].px(), generator.Pythia().event[5].py(),
-            generator.Pythia().event[5].pz(), generator.Pythia().event[5].e());
-        gen2 = TLorentzVector(
-            generator.Pythia().event[6].px(), generator.Pythia().event[6].py(),
-            generator.Pythia().event[6].pz(), generator.Pythia().event[6].e());
-
-        gen1_gluon = generator.Pythia().event[5].id() == 21;
-        gen2_gluon = generator.Pythia().event[6].id() == 21;
-
         // find highest pt neutral object for detector level
         auto possible_triggers = fastjet::sorted_by_pt(det_part);
         for (auto &p : possible_triggers) {
@@ -369,8 +358,20 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    if (lead_hc_det.Pt() > 0.0 || lead_hc_gen.Pt() > 0.0)
-      result_tree->Fill(); 
+    if (lead_hc_det.Pt() > 0.0 || lead_hc_gen.Pt() > 0.0) {
+      // identify jet initiator (quark/gluon)
+      gen1 = TLorentzVector(
+          generator.Pythia().event[5].px(), generator.Pythia().event[5].py(),
+          generator.Pythia().event[5].pz(), generator.Pythia().event[5].e());
+      gen2 = TLorentzVector(
+          generator.Pythia().event[6].px(), generator.Pythia().event[6].py(),
+          generator.Pythia().event[6].pz(), generator.Pythia().event[6].e());
+
+      gen1_gluon = generator.Pythia().event[5].id() == 21;
+      gen2_gluon = generator.Pythia().event[6].id() == 21;
+      
+      result_tree->Fill();
+    }
   }
 
   out.Write();
