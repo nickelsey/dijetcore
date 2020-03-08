@@ -216,7 +216,7 @@ namespace dijetcore {
       LOG(ERROR) << "histograms do not exist: was Init() called?";
       return false;
     }
-
+    LOG(INFO) << "writing general qa";
     zdc_vz_->Write();
     zdc_dvz_->Write();
     vz_vx_->Write();
@@ -227,6 +227,7 @@ namespace dijetcore {
     n_vertices_->Write();
 
     // check if we have runid observables
+    LOG(INFO) << "writing runid qa";
     if (run_id_ref_gref_ != nullptr) {
       run_id_ref_gref_->Write();
       run_id_nprim_nglob_->Write();
@@ -238,6 +239,7 @@ namespace dijetcore {
     }
 
     // check if we have track observables 
+    LOG(INFO) << "writing track qa";
     if (px_py_ != nullptr) {
       px_py_->Write();
       pz_px_->Write();
@@ -268,6 +270,7 @@ namespace dijetcore {
     }
 
     // check if we have tower observables
+    LOG(INFO) << "writing tower qa";
     if (e_et_ != nullptr) {
       e_et_->Write();
       zdc_e_->Write();
