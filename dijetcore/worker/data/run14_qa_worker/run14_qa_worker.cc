@@ -283,7 +283,7 @@ namespace dijetcore {
         run_id_tower_adc_->Write();
       }
     }
-
+    LOG(INFO) << "finished?";
     // change back to current_dir
     current_dir->cd();
 
