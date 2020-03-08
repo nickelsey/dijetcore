@@ -205,7 +205,7 @@ namespace dijetcore {
       LOG(ERROR) << "input file " << file.GetName() << " is not open, failed to write histograms to disk";
       return false;
     }
-    
+    LOG(INFO) << "WRITING TO FILE";
     // record current directory
     TDirectory* current_dir = TDirectory::CurrentDirectory();
     // change to TFile to write out
@@ -306,7 +306,7 @@ namespace dijetcore {
     // make sure initialization has happened
     if (initialized_ == false)
       init();
-    
+    LOG(INFO) << "general qa";
     zdc_vz_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetPrimaryVertexZ());
     zdc_dvz_->Fill(header->GetZdcCoincidenceRate()/1000.0, header->GetPrimaryVertexZ() - header->GetVpdVz());
     vz_vx_->Fill(header->GetPrimaryVertexZ(), header->GetPrimaryVertexX());
@@ -317,6 +317,7 @@ namespace dijetcore {
     n_vertices_->Fill(header->GetNumberOfVertices());
 
     // check if we are doing run-by-run QA
+    LOG(INFO) << "run qa";
     if (run_id_map_.size() > 0 && run_id_ref_gref_ != nullptr) {
       if (runQA(reader) == false) {
         LOG(ERROR) << "failure in RunQA";
@@ -324,18 +325,19 @@ namespace dijetcore {
     }
     
     // check if we are doing tower QA
+    LOG(INFO) << "tower qa";
     if (e_et_ != nullptr) {
       if (!towerQA(reader)) {
         LOG(ERROR) << "failure in TowerQA";
       }
     }
-    
+    LOG(INFO) << "track qa";
     if (px_py_ != nullptr) {
       if (!trackQA(reader)) {
         LOG(ERROR) << "failure in TrackQA";
       }
     }
-
+    LOG(INFO) << "done qa";
     return true;
   }
 
