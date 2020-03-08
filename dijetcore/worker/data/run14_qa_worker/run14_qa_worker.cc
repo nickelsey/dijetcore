@@ -285,8 +285,8 @@ namespace dijetcore {
     }
     LOG(INFO) << "finished?";
     // change back to current_dir
-    current_dir->cd();
-
+    //current_dir->cd();
+    LOG(INFO) << "finished";
     return true;
   }
 
