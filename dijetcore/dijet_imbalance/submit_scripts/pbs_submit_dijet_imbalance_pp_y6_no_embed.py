@@ -151,7 +151,7 @@ def main(args):
                 args.leadJetPt + ' --subJetPt=' + args.subJetPt
             clargs = clargs + ' --leadMatchR=' + \
                 args.leadMatchR + ' --subMatchR=' + args.subMatchR
-            clargs = clargs + ' --offAxisInput=' + args.offAxisData + ' --logtostderr'
+            clargs = clargs + ' --logtostderr'
             if args.forceConstPtEquality:
                 clargs = clargs + ' --forceConstituentPtEquality=true'
             else:
@@ -248,8 +248,6 @@ if __name__ == "__main__":
                         help='list of jet radii to be used for subleading matched jet')
     parser.add_argument('--subJetPt', default='10.0',
                         help='list of subleading jet pt cuts to use during jetfinding')
-    parser.add_argument('--offAxisData', default='resources/data_lists/y14_mb_file_list.txt',
-                        help='data file/list for estimating the effect of background on the dijet imbalance')
     parser.add_argument('--forceConstPtEquality',
                         dest='forceConstPtEquality', action='store_true')
     parser.add_argument('--no-forceConstPtEquality',
