@@ -222,7 +222,7 @@ if __name__ == "__main__":
                         help=' max number of jobs to have in running or queue states')
     parser.add_argument('--output', default='results/pp_no_embed',
                         help=' directory for output root files')
-    parser.add_argument('--badTowers', default='resources/bad_tower_lists/y14_y6_bad_tower.txt',
+    parser.add_argument('--badTowers', default='resources/bad_tower_lists/y7_y6_bad_tower_strict.txt',
                         help=' csv file containing towers to mask')
     parser.add_argument('--triggers', default='y6ppht',
                         help=' event triggers to consider: [y7, y10, y11, y14, y6pp, y9pp, y12pp] + [HT, MB, HT2, HT3, VPDMB30, VPDMB5, MBMON, ALL] (default "ALL": accept all events)')
