@@ -1204,9 +1204,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1222,9 +1222,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1240,9 +1240,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1258,9 +1258,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1276,9 +1276,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1294,9 +1294,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1312,9 +1312,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1330,9 +1330,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1349,9 +1349,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1366,9 +1366,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1383,9 +1383,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1400,9 +1400,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1417,9 +1417,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.249);
       }
 
@@ -1435,9 +1435,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.449);
       }
 
@@ -1453,9 +1453,9 @@ int main(int argc, char *argv[]) {
         h->GetXaxis()->SetNdivisions(305);
         h->GetYaxis()->SetNdivisions(305);
         h->GetXaxis()->SetLabelFont(43);
-        h->GetXaxis()->SetLabelSize(10);
+        h->GetXaxis()->SetLabelSize(13);
         h->GetYaxis()->SetLabelFont(43);
-        h->GetYaxis()->SetLabelSize(10);
+        h->GetYaxis()->SetLabelSize(13);
         h->GetYaxis()->SetRangeUser(0.0001, 0.449);
       }
 
@@ -1473,9 +1473,9 @@ int main(int argc, char *argv[]) {
           h->GetXaxis()->SetNdivisions(305);
           h->GetYaxis()->SetNdivisions(305);
           h->GetXaxis()->SetLabelFont(43);
-          h->GetXaxis()->SetLabelSize(10);
+          h->GetXaxis()->SetLabelSize(13);
           h->GetYaxis()->SetLabelFont(43);
-          h->GetYaxis()->SetLabelSize(10);
+          h->GetYaxis()->SetLabelSize(13);
           h->GetYaxis()->SetRangeUser(0.0001, 0.249);
         }
 
@@ -1493,9 +1493,9 @@ int main(int argc, char *argv[]) {
           h->GetXaxis()->SetNdivisions(305);
           h->GetYaxis()->SetNdivisions(305);
           h->GetXaxis()->SetLabelFont(43);
-          h->GetXaxis()->SetLabelSize(10);
+          h->GetXaxis()->SetLabelSize(13);
           h->GetYaxis()->SetLabelFont(43);
-          h->GetYaxis()->SetLabelSize(10);
+          h->GetYaxis()->SetLabelSize(13);
           h->GetYaxis()->SetRangeUser(0.0001, 0.249);
         }
 
