@@ -1748,11 +1748,11 @@ int main(int argc, char *argv[]) {
     oa_aj_text[cent].back().location_x = leg_x_index_2;
     oa_aj_text[cent].back().location_y = leg_y_index_2;
     oa_aj_text[cent].back().legend = std::move(
-        dijetcore::make_unique<TLegend>(x_low_2, y_low_2, x_high_2, y_high_2));
+        dijetcore::make_unique<TLegend>(x_low_2 - 0.055, y_low_2, x_high_2, y_high_2));
     oa_aj_text[cent].back().legend->AddEntry(
         auau_oa_grid[cent][leg_x_index][leg_y_index],
         "Au+Au HT #oplus Au+Au MB");
-    oa_aj_text[cent].back().legend->SetTextSize(text_size_2);
+    oa_aj_text[cent].back().legend->SetTextSize(text_size_2 - 0.02);
 
     hard_err_text[cent].push_back(dijetcore::GridTextObject());
     hard_err_text[cent].back().location_x = leg_x_index;
