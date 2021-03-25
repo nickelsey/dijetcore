@@ -3,8 +3,7 @@ file(GLOB tmp *.cc)
 set(DC_BINARY_SRCS ${DC_BINARY_SRCS} ${tmp})
 
 ## get header files for libdijetcore
-file(GLOB tmp *.h)
-set(DC_HDRS ${tmp})
+file(GLOB DC_HDRS *.h)
 
 ## get test source files
 file(GLOB tmp *_test.cc)
