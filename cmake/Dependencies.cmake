@@ -13,7 +13,7 @@ dc_include_directories(${ROOT_INCLUDE_DIRS})
 list(APPEND DC_LINKER_LIBS ${ROOT_LIBRARIES})
 
 ## eventstructure
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/eventStructuredAu)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/TStarJetPicoReader)
 list(APPEND DC_LINKER_LIBS ${PICO_LIBS})
 dc_include_directories(${PICO_INCLUDE_DIRS})
 

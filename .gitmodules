@@ -4,6 +4,6 @@
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
 	url = https://github.com/google/benchmark.git
-[submodule "third_party/eventStructuredAu"]
-	path = third_party/eventStructuredAu
-	url = git@github.com:nickelsey/eventStructuredAu.git
+[submodule "third_party/TStarJetPicoReader"]
+	path = third_party/TStarJetPicoReader
+	url = git@github.com:nickelsey/TStarJetPicoReader.git
