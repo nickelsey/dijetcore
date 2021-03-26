@@ -3,8 +3,7 @@ file(GLOB tmp *.cc)
 set(DC_SRCS ${DC_SRCS} ${tmp})
 
 ## get header files for libdijetcore
-file(GLOB tmp *.h)
-set(DC_HDRS ${DC_HDRS} ${tmp})
+file(GLOB DC_HDRS *.h)
 
 ## get test source files
 file(GLOB tmp *_test.cc)
@@ -41,7 +40,6 @@ install(FILES ${DC_HDRS} DESTINATION include/dijetcore/test)
 
 ## export file lists to parent scope
 set(DC_SRCS ${DC_SRCS} PARENT_SCOPE)
-set(DC_HDRS ${DC_HDRS} PARENT_SCOPE)
 set(DC_TEST_SRCS ${DC_TEST_SRCS} PARENT_SCOPE)
 set(DC_TEST_MAIN ${DC_TEST_MAIN} PARENT_SCOPE)
 set(DC_BENCH_SRCS ${DC_BENCH_SRCS} PARENT_SCOPE)
