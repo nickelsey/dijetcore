@@ -24,12 +24,11 @@ list(REMOVE_ITEM DC_SRCS ${DC_BENCH_SRCS})
 endif(DC_BENCH_SRCS)
 
 ## install headers
-install(FILES ${DC_HDRS} DESTINATION include/dijetcore/worker)
+install(FILES ${DC_HDRS} DESTINATION include/dijetcore/worker/mc)
 
 ## add subdirectories
-add_subdirectory(dijet_worker)
-add_subdirectory(data)
-add_subdirectory(mc)
+add_subdirectory(detector_sim_worker)
+
 
 ## export file lists to parent scope
 set(DC_SRCS ${DC_SRCS} PARENT_SCOPE)
