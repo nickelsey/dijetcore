@@ -2,7 +2,7 @@ if (NOT _PYTHIA8_INCLUDE)
     set(_PYTHIA8_INCLUDE TRUE)
 
     # if pythia is installed on the system, we will use that
-    find_package(pythia8)
+    find_package(Pythia8)
 
     IF(NOT PYTHIA8_FOUND)
         # otherwise we build from an external download
