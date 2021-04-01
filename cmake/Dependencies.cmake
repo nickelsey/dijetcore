@@ -41,6 +41,12 @@ dc_include_directories(${FASTJET_INCLUDE_DIRS})
 link_directories(${FASTJET_LIBRARY_DIRS})
 list(APPEND DC_DEPENDENCY_LIBS ${FASTJET_LIBRARIES})
 
+## pythia8
+include("cmake/external/pythia.cmake")
+dc_include_directories(${PYTHIA8_INCLUDE_DIRS})
+link_directories(${PYTHIA8_LIBRARY_DIRS})
+list(APPEND DC_DEPENDENCY_LIBS ${PYTHIA8_LIBRARIES})
+
 if(BUILD_TEST)
   set(TEMP_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
   set(TEMP_CXX_FLAGS ${CMAKE_CXX_FLAGS})

@@ -39,8 +39,6 @@ if (NOT _FASTJET_INCLUDE)
         set(FJ_SOURCE_DIR ${CMAKE_BINARY_DIR}/external/fastjet-${FASTJET_VERSION})
         set(FJ_INSTALL_DIR ${CMAKE_BINARY_DIR}/external/fastjet)
 
-        set(FJ_EXTRA_COMPILER_FLAGS -m32)
-
         # build the configure command 
         set(FJ_CONFIGURE ./configure
             --prefix=${FJ_INSTALL_DIR}
