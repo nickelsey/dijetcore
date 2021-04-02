@@ -25,7 +25,7 @@ public:
 
   ~PythiaStarSim(){};
 
-  bool Initialize();
+  bool Initialize(unsigned n_events = 0);
 
   // sets if the generator should run fastjet clustering
   // default on
@@ -33,6 +33,9 @@ public:
 
   // generates a new event
   void Run();
+
+  // will generate events until max_events has been reached
+  bool Next();
 
   // returns particles for current event
   std::vector<fastjet::PseudoJet> &GenParticles() { return truth_particles_; }
@@ -82,6 +85,11 @@ public:
   Pythia8::Pythia &Pythia() { return pythia_; }
 
 private:
+  // number of events to generate
+  unsigned max_events_;
+  // current event number
+  unsigned current_event_;
+
   // Pythia generator settings
   double pt_hat_min_;
   double pt_hat_max_;

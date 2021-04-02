@@ -4,7 +4,7 @@
 namespace dijetcore {
 
 PythiaStarSim::PythiaStarSim()
-    : pt_hat_min_(20.0), pt_hat_max_(30.0), jet_radius_(0.6),
+    : max_events_(0), current_event_(0), pt_hat_min_(20.0), pt_hat_max_(30.0), jet_radius_(0.6),
       alg_(fastjet::antikt_algorithm), track_pt_min_(0.2), track_pt_max_(30.0),
       track_eta_max_(1.0), jet_pt_min_(10), jet_eta_max_(1.0), seed_(1343),
       initialized_(false), eff_mode_(EfficiencyMode::STAR), gauss_mean_(0.0),
@@ -13,7 +13,9 @@ PythiaStarSim::PythiaStarSim()
   gauss_smear_.SetParameters(1.0, gauss_mean_, gauss_sigma_);
 }
 
-bool PythiaStarSim::Initialize() {
+bool PythiaStarSim::Initialize(unsigned n_events) {
+  max_events_ = n_events;
+
   // build selectors for fastjet
   track_selector_ = fastjet::SelectorPtMin(track_pt_min_) &&
                     fastjet::SelectorPtMax(track_pt_max_) &&
@@ -84,6 +86,14 @@ void PythiaStarSim::Run() {
     det_jets_ =
         jet_selector_(fastjet::sorted_by_pt(det_seq_->inclusive_jets()));
   }
+}
+
+bool PythiaStarSim::Next() {
+  if (max_events_ == 0 || (max_events_ > 0 && current_event_ < max_events_)) {
+    Run();
+    return true;
+  }
+  return false;
 }
 
 void PythiaStarSim::SetSmearingParams(double mean, double sigma) {
