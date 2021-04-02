@@ -39,7 +39,7 @@ if (NOT _PYTHIA8_INCLUDE)
         # build the configure command 
         set(PY8_CONFIGURE ./configure
             --prefix=${PY8_INSTALL_DIR}
-            --cxx-common=${PY8_CXX_FLAGS}
+            --cxx-common='${PY8_CXX_FLAGS} --std=c++11'
             )
 
         # define the external project
