@@ -150,4 +150,9 @@ void PythiaStarSim::AddDetectorTrack(fastjet::PseudoJet &part) {
   }
 }
 
+std::string PythiaStarSim::GetStatus() {
+  std::string ret = dijetcore::MakeString("event ", current_event_, "/", max_events_);
+  return ret;
+}
+
 } // namespace dijetcore

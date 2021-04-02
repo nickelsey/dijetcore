@@ -84,6 +84,8 @@ public:
 
   Pythia8::Pythia &Pythia() { return pythia_; }
 
+  std::string GetStatus();
+
 private:
   // number of events to generate
   unsigned max_events_;
