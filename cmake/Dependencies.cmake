@@ -6,6 +6,17 @@ set(DC_TEST_LIBS "")
 set(DC_LINKER_LIBS "")
 set(DC_EXTERNAL_DEPS "")
 
+## ROOT
+include("cmake/external/root.cmake")
+link_directories(${ROOT_LIBRARY_DIRS})
+dc_include_directories(${ROOT_INCLUDE_DIRS})
+list(APPEND DC_LINKER_LIBS ${ROOT_LIBRARIES})
+
+## eventstructure
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/TStarJetPicoReader)
+list(APPEND DC_LINKER_LIBS ${PICO_LIBS})
+dc_include_directories(${PICO_INCLUDE_DIRS})
+
 ## boost
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -18,17 +29,6 @@ if(Boost_VERSION VERSION_LESS 105600)
     message(STATUS "Boost version < 1.56, building with BOOST_NO_CXX11_SCOPED_ENUMS")
     set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif()
-
-## ROOT
-include("cmake/external/root.cmake")
-link_directories(${ROOT_LIBRARY_DIRS})
-dc_include_directories(${ROOT_INCLUDE_DIRS})
-list(APPEND DC_LINKER_LIBS ${ROOT_LIBRARIES})
-
-## eventstructure
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/TStarJetPicoReader)
-list(APPEND DC_LINKER_LIBS ${PICO_LIBS})
-dc_include_directories(${PICO_INCLUDE_DIRS})
 
 ## glog
 include("cmake/external/glog.cmake")
