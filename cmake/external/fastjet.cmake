@@ -60,8 +60,8 @@ if (NOT _FASTJET_INCLUDE)
             set(FJ_EXTRA_COMPILER_FLAGS "${FJ_EXTRA_COMPILER_FLAGS} -m32")
         endif(BUILD_32BIT)
 
-        set(FJ_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${FJ_EXTRA_COMPILER_FLAGS})
-        set(FJ_C_FLAGS ${CMAKE_C_FLAGS} ${FJ_EXTRA_COMPILER_FLAGS})
+        set(FJ_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FJ_EXTRA_COMPILER_FLAGS}")
+        set(FJ_C_FLAGS "${CMAKE_C_FLAGS} ${FJ_EXTRA_COMPILER_FLAGS}")
 
         # define the external project
         ExternalProject_Add(FastJet
