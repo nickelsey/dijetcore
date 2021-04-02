@@ -20,11 +20,6 @@ if (NOT _PYTHIA8_INCLUDE)
         set(PY8_SOURCE_DIR ${CMAKE_BINARY_DIR}/external/pythia${PYTHIA8_VERSION})
         set(PY8_INSTALL_DIR ${CMAKE_BINARY_DIR}/external/pythia8)
 
-        # build the configure command 
-        set(PY8_CONFIGURE ./configure
-            --prefix=${PY8_INSTALL_DIR}
-            )
-
         # check if cmake build type is debug
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
             set (configure_command ${configure_command} --enable-debug)
@@ -38,15 +33,21 @@ if (NOT _PYTHIA8_INCLUDE)
             set(PY8_EXTRA_COMPILER_FLAGS "${PY8_EXTRA_COMPILER_FLAGS} -m32")
         endif(BUILD_32BIT)
 
-        set(PY8_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${PY8_EXTRA_COMPILER_FLAGS})
+        set(PY8_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PY8_EXTRA_COMPILER_FLAGS}")
         set(PY8_C_FLAGS ${CMAKE_C_FLAGS} ${PY8_EXTRA_COMPILER_FLAGS})
+
+        # build the configure command 
+        set(PY8_CONFIGURE ./configure
+            --prefix=${PY8_INSTALL_DIR}
+            --cxx-common=${PY8_CXX_FLAGS}
+            )
 
         # define the external project
         ExternalProject_Add(Pythia8
             URL ${PY8_URL}
             DOWNLOAD_DIR ${PY8_DOWNLOAD_DIR}
             SOURCE_DIR ${PY8_SOURCE_DIR}
-            CONFIGURE_COMMAND env "CFLAGS=${PY8_C_FLAGS}" "CXXFLAGS=${PY8_CXX_FLAGS}" ${PY8_CONFIGURE}
+            CONFIGURE_COMMAND env "CFLAGS=${PY8_C_FLAGS}" ${PY8_CONFIGURE}
             BUILD_IN_SOURCE 1
             BUILD_COMMAND make
             INSTALL_COMMAND make install
