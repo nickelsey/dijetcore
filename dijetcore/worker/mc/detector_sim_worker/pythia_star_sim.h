@@ -85,6 +85,7 @@ public:
   Pythia8::Pythia &Pythia() { return pythia_; }
 
   std::string GetStatus();
+  unsigned CurrentEvent() { return current_event_; }
 
 private:
   // number of events to generate
