@@ -52,5 +52,5 @@ if(PYTHIA8_FOUND)
   # Add pythia include path to cmake
   include_directories(${PYTHIA8_INCLUDE_DIRS})
 else(PYTHIA8_FOUND)
-  message(WARNING "Didn't find Pythia8")
+  message(STATUS "Didn't find Pythia8")
 endif(PYTHIA8_FOUND)
